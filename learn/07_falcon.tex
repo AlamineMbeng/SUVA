@@ -1,0 +1,474 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{code_bg}{RGB}{245, 247, 250}
+\definecolor{code_kw}{RGB}{0, 80, 200}
+\definecolor{code_str}{RGB}{180, 40, 40}
+\definecolor{code_cmt}{RGB}{80, 130, 80}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{success_bg}{RGB}{230, 255, 235}
+\definecolor{falcon_color}{RGB}{180, 40, 120}
+\definecolor{falcon_bg}{RGB}{255, 240, 250}
+
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+}
+\lstdefinestyle{output}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{gray!10},
+  frame=single, rulecolor=\color{gray!50},
+  breaklines=true,
+}
+
+\newtcolorbox{defbox}[2][]{colback=success_bg,colframe=green!50!black,
+  fonttitle=\bfseries,title={Définition : #2},#1}
+\newtcolorbox{falconbox}[2][]{colback=falcon_bg,colframe=falcon_color,
+  fonttitle=\bfseries,title={Falcon : #2},#1}
+\newtcolorbox{exercice}[2][]{colback=white,colframe=suva_blue!60,
+  fonttitle=\bfseries,title={Exercice #2},#1,breakable}
+\newtcolorbox{solution}[1][]{colback=gray!5,colframe=gray!40,
+  fonttitle=\bfseries\itshape,title={Solution},#1,breakable}
+\newtcolorbox{importantbox}[1][]{colback=suva_blue!10,colframe=suva_blue,
+  fonttitle=\bfseries,title={Connexion avec SuVa},#1}
+\newtcolorbox{warningbox}[1][]{colback=warn_bg,colframe=orange!80!black,
+  fonttitle=\bfseries,title={Attention},#1}
+\newtcolorbox{compbox}[1][]{colback=gray!5,colframe=gray!60,
+  fonttitle=\bfseries,title={Comparaison Falcon vs Dilithium},#1}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{suva_blue}\textbf{SuVa --- Chapitre 7}}
+\fancyhead[R]{\color{gray}Falcon / FN-DSA}
+\fancyfoot[L]{\footnotesize\color{gray}Mohamed Lamine MBENGUE}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\footnotesize\color{gray}portfolio-alamine.web.app}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% ══════════════════════════════════════════════════════════════════════
+\begin{document}
+
+\begin{center}
+  {\color{suva_blue}\rule{\linewidth}{2pt}}\\[0.5cm]
+  {\Huge\bfseries\color{suva_blue} Chapitre 7}\\[0.3cm]
+  {\large\bfseries Falcon / FN-DSA (NIST FIPS 206)}\\[0.2cm]
+  {\small\color{gray} La prochaine étape du projet SuVa --- la cible production}\\[0.3cm]
+  {\color{suva_blue}\rule{\linewidth}{2pt}}
+\end{center}
+
+\vspace{0.3cm}
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40,
+  left=6pt, right=6pt, top=4pt, bottom=4pt]
+\small
+\begin{tabular}{ll}
+  \textbf{Auteur}      & Mohamed Lamine MBENGUE \\
+  \textbf{Spécialités} & Sécurité · DevOps · Dev Full Stack Web \& Mobile \\
+  \textbf{Contact}     & +221 78 178 44 36 · mbenguemohamedlamine2022@gmail.com \\
+  \textbf{Portfolio}   & \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}} \\
+\end{tabular}
+\end{tcolorbox}
+\vspace{0.3cm}
+
+\tableofcontents
+\newpage
+
+%══════════════════════════════════════════════════════════════════════
+\section{Pourquoi Falcon est la cible de SuVa}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{center}
+\begin{tabular}{lrrrll}
+\toprule
+\textbf{Schéma} & \textbf{Gas} & \textbf{Sig (bytes)} & \textbf{pk (bytes)}
+  & \textbf{NIST} & \textbf{Sécurité} \\
+\midrule
+ECDSA (actuel) & 3K & 65 & 33 & — & Cassable quantique \\
+\textbf{Falcon-512} & \textbf{350K} & \textbf{666} & \textbf{897} & FIPS 206 & Lattice (NTRU) \\
+Dilithium2 & 13.5M & 2420 & 1312 & FIPS 204 & Lattice (MLWE) \\
+SPHINCS+ & 50--500M & 7856+ & 32 & FIPS 205 & Hash-based \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Falcon est $\sim 20\times$ moins cher que Dilithium et $\sim 116\times$
+plus compact en signature.} C'est pourquoi SuVa vise Falcon comme schéma
+principal pour les transactions quotidiennes.
+
+%══════════════════════════════════════════════════════════════════════
+\section{NTRU --- La base mathématique de Falcon}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Différence fondamentale avec Dilithium}
+
+\begin{compbox}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+& \textbf{Dilithium} & \textbf{Falcon} \\
+\midrule
+Anneau & $R_q = \mathbb{Z}_q[x]/(x^n+1)$ & $R_q = \mathbb{Z}_q[x]/(x^n+1)$ \\
+Problème dur & MLWE, MSIS & NTRU, SIS \\
+Clé publique & $(rho, t_1)$ & $h = g \cdot f^{-1}$ \\
+Structure clé secrète & $(s_1, s_2)$ petits vecteurs & $(f, g)$ polynômes courts \\
+Keygen & Rapide & Lent (FFT Gram-Schmidt) \\
+Signe & Boucle de rejet & Gaussian sampling \\
+Signature & $(c, z, h)$ & $(s_1, s_2)$ court \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{compbox}
+
+\subsection{Le problème NTRU}
+
+\begin{defbox}{Problème NTRU}
+Dans $R_q = \mathbb{Z}_q[x]/(x^n + 1)$, connaissant~:
+$$h = g \cdot f^{-1} \pmod{q}$$
+où $f, g$ ont des coefficients petits (Gaussiens), retrouver $f$ ou $g$.
+
+La clé publique est $h$, la clé secrète est $(f, g)$.
+\end{defbox}
+
+\begin{importantbox}
+\textbf{Paramètres Falcon-512 (niveau NIST I)~:}
+\begin{itemize}
+  \item $n = 512$, $q = 12\,289$
+  \item $f, g$ : coefficients Gaussiens d'écart-type $\sigma \approx 1.17\sqrt{q/2n}$
+  \item Sécurité : $\approx 103$ bits (classique)
+\end{itemize}
+
+\textbf{Paramètres Falcon-1024 (niveau NIST V)~:}
+\begin{itemize}
+  \item $n = 1024$, $q = 12\,289$
+  \item Sécurité : $\approx 207$ bits (classique)
+\end{itemize}
+\end{importantbox}
+
+%══════════════════════════════════════════════════════════════════════
+\section{KeyGen Falcon --- Génération de la trappe NTRU}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Vue d'ensemble}
+
+\begin{lstlisting}[style=python]
+# KeyGen Falcon (pseudo-code)
+def falcon_keygen(n=512, q=12289):
+    # 1. Generer f, g avec des coefficients courts (Gaussiens)
+    while True:
+        f = sample_gaussian_poly(n, sigma=1.17 * (q/(2*n))**0.5)
+        g = sample_gaussian_poly(n, sigma=1.17 * (q/(2*n))**0.5)
+
+        # f doit etre inversible dans R_q
+        if not is_invertible(f, q, n):
+            continue
+
+        # 2. Calculer h = g * f^(-1) mod q
+        f_inv = poly_inverse(f, q, n)
+        h = poly_mul(g, f_inv, q, n)
+
+        # 3. Generer la trappe NTRU (pour le signing)
+        # Calculer (F, G) tels que f*G - g*F = q (equation NTRU)
+        F, G = solve_ntru(f, g, q, n)
+        # C'est la partie difficile : utilise FFT sur les entiers
+
+        if F is not None and G is not None:
+            break
+
+    pk = h          # cle publique : h (897 bytes pour Falcon-512)
+    sk = (f, g, F, G)  # cle secrete : la trappe NTRU
+    return pk, sk
+\end{lstlisting}
+
+\begin{warningbox}
+La génération de clés Falcon est \textbf{significativement plus complexe}
+que Dilithium car elle nécessite la décomposition LDL (via FFT sur les
+entiers de Gauss). C'est pourquoi on ne génère les clés qu'une fois
+et on les réutilise.
+\end{warningbox}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Sign Falcon --- Gaussian Sampling}
+%══════════════════════════════════════════════════════════════════════
+
+Falcon utilise le \textbf{Gaussian sampling} (pas de boucle de rejet
+comme Dilithium) pour produire des signatures très courtes.
+
+\subsection{Algorithme de signature}
+
+\begin{lstlisting}[style=python]
+# Sign Falcon (pseudo-code tres simplifie)
+def falcon_sign(sk, message, n=512, q=12289):
+    f, g, F, G = sk
+
+    # 1. Hacher le message -> point cible
+    salt = random_bytes(40)
+    c = hash_to_point(message, salt, n, q)
+    # c est un polynome dans R_q
+
+    # 2. Gaussian preimage sampling
+    # Trouver (s1, s2) courts tels que s1*h + s2 = c mod q
+    # avec (s1, s2) distribues gaussianement
+    # On utilise la trappe (f, g, F, G) pour echantillonner
+
+    # La trappe permet de centrer la Gaussienne autour de la
+    # "bonne" solution (la plus courte)
+    B = [[g, -f], [G, -F]]  # base NTRU
+    # Fast Fourier Sampling dans le reseau NTRU
+    s1, s2 = ffsampling_fft(c, B, n, q)
+
+    # Verifier la norme
+    sig_norm = l2_norm(s1) + l2_norm(s2)
+    # La norme doit etre <= 1.1 * beta_NTRU
+    # Si trop grande, recommencer (rare)
+
+    # Signature = (salt, s2) -- s1 peut etre retrouve de h et s2
+    return bytes(salt) + pack_int12(s2)
+\end{lstlisting}
+
+\begin{importantbox}
+\textbf{Gaussian Sampling vs Rejection Sampling~:}
+\begin{itemize}
+  \item Falcon~: la signature suit une distribution Gaussienne autour
+        de la solution optimale. Presque toujours valide du premier coup.
+  \item Dilithium~: on échantillonne uniformément et on rejette si trop grand.
+        Nécessite en moyenne 4.25 itérations.
+\end{itemize}
+\textbf{Résultat~:} Falcon produit des signatures \textbf{3--4x plus courtes}
+(666 vs 2420 bytes) et s'exécute en \textbf{1 itération}.
+\end{importantbox}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Verify Falcon --- Vérification simple}
+%══════════════════════════════════════════════════════════════════════
+
+La vérification Falcon est \textbf{beaucoup plus simple} que la signature~:
+
+\begin{lstlisting}[style=python]
+# Verify Falcon
+def falcon_verify(pk, message, signature, n=512, q=12289):
+    h = pk  # cle publique
+
+    # Decoder la signature
+    salt = signature[:40]
+    s2 = unpack_int12(signature[40:])
+
+    # Recomputer s1 : s1 = h^(-1) * (c - s2) mod q
+    c = hash_to_point(message, salt, n, q)
+    s1 = poly_mul(poly_inverse(h, q, n), c - s2, q, n)
+
+    # Verifier la norme : ||(s1, s2)||_2 <= beta
+    norm_sq = sum(x*x for x in s1) + sum(x*x for x in s2)
+    # beta^2 est fixe dans les parametres
+    return norm_sq <= BETA_SQ
+\end{lstlisting}
+
+\textbf{C'est la raison du faible coût gas~:} la vérification ne fait
+qu'une multiplication polynomiale + vérification de norme.
+
+%══════════════════════════════════════════════════════════════════════
+\section{ETHFALCON --- implémentation EVM disponible}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{importantbox}
+ZKNox a déjà implémenté Falcon pour l'EVM (ETHFALCON, disponible sur
+GitHub : \texttt{ZKNoxHQ/ETHFALCON}).
+
+Pour SuVa, la prochaine étape est~:
+\begin{enumerate}
+  \item Étudier ETHFALCON (Solidity + Python)
+  \item L'intégrer dans le smart wallet SuVa (ERC-4337)
+  \item Adapter le SDK Python pour signer avec Falcon
+  \item Générer les vecteurs de test Python → Solidity
+\end{enumerate}
+\end{importantbox}
+
+\subsection{Structure anticipée de l'intégration Falcon dans SuVa}
+
+\begin{lstlisting}[style=python]
+# Futur SDK SuVa (a construire)
+
+# Cote Python (off-chain)
+from suva_sdk import FalconWallet
+
+wallet = FalconWallet()
+pk, sk = wallet.generate_keys()     # Falcon-512 keygen
+print(f"Cle publique : {len(pk)} bytes")  # 897 bytes
+
+# Signer une transaction
+tx = {"to": "0x...", "value": 1000, "nonce": 42}
+sig = wallet.sign_transaction(sk, tx)  # Falcon sign
+print(f"Signature : {len(sig)} bytes")   # ~666 bytes
+
+# Cote Solidity (on-chain) - contracte SuVa Wallet
+# validateUserOp() appelle verify() du contrat ETHFALCON
+# ~350K gas
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Roadmap Falcon dans SuVa}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{center}
+\begin{tikzpicture}[
+  step/.style={draw=suva_blue, rounded corners, fill=blue!5,
+    minimum width=5cm, minimum height=1cm, text width=4.8cm,
+    align=left, font=\small, inner sep=6pt},
+  done/.style={step, fill=success_bg, draw=green!50!black},
+  todo/.style={step, fill=warn_bg, draw=orange!80},
+  critical/.style={step, fill=red!10, draw=red!60},
+  arrow/.style={->, thick}
+]
+  \node[done] (a) {
+    \textbf{[FAIT]} Dilithium Python\\
+    keygen + sign + verify
+  };
+  \node[done, below=0.6cm of a] (b) {
+    \textbf{[FAIT]} Dilithium Solidity (ZKNox)\\
+    vérification on-chain
+  };
+  \node[todo, below=0.6cm of b] (c) {
+    \textbf{[TODO]} Intégrer ETHFALCON\\
+    dans le smart wallet SuVa
+  };
+  \node[todo, below=0.6cm of c] (d) {
+    \textbf{[TODO]} SDK client Falcon\\
+    (Python, puis JS/TypeScript)
+  };
+  \node[critical, below=0.6cm of d] (e) {
+    \textbf{[TODO]} Vault contracts\\
+    wrapper USDT/USDC → suUSDT
+  };
+  \node[critical, below=0.6cm of e] (f) {
+    \textbf{[TODO]} Audit de sécurité\\
+    avant tout déploiement
+  };
+
+  \draw[arrow] (a) -- (b);
+  \draw[arrow] (b) -- (c);
+  \draw[arrow] (c) -- (d);
+  \draw[arrow] (d) -- (e);
+  \draw[arrow] (e) -- (f);
+\end{tikzpicture}
+\end{center}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Comparaison finale : Dilithium vs Falcon vs SPHINCS+}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+& \textbf{Dilithium/ML-DSA} & \textbf{Falcon/FN-DSA} & \textbf{SPHINCS+} \\
+\midrule
+\textbf{Sécurité} & MLWE + MSIS & NTRU + SIS & Uniquement hash \\
+\textbf{Hypothèse} & Module-LWE & NTRU & Fonctions de hachage \\
+\textbf{Quantum safe} & Oui & Oui & Oui (le plus sûr) \\
+\textbf{Pk size (L1)} & 1312 bytes & 897 bytes & 32 bytes \\
+\textbf{Sig size (L1)} & 2420 bytes & 666 bytes & 7856 bytes \\
+\textbf{Keygen speed} & Rapide & Lent & Rapide \\
+\textbf{Sign speed} & Moyen & Rapide (1 iter) & Lent \\
+\textbf{Verify speed} & Moyen & Rapide & Lent \\
+\textbf{Gas EVM} & 13.5M & \textbf{350K} & 50--500M \\
+\textbf{Rôle SuVa} & Recherche & \textbf{Production} & Fallback \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Exercices}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{exercice}{1 --- Vérifier les tailles de Falcon}
+Falcon-512 produit des signatures de $\lceil 666 \rceil$ bytes.
+\begin{enumerate}[label=\alph*)]
+  \item La signature contient un sel de 40 bytes + $s_2$ encodé sur
+        $\lceil n \log_2(2 \cdot 6146 + 1) \rceil$ bits.
+        Pour $n = 512$, calcule la taille théorique de $s_2$.
+  \item Pourquoi la signature Falcon est-elle $3.6\times$ plus petite
+        que Dilithium2 malgré que $n$ soit $2\times$ plus grand ?
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+import math
+
+# a) Taille de s2
+n = 512
+# Les coefficients de s2 sont dans [-6146, 6146] approximativement
+# encoding compact sur 12 bits par coeff (~12*512/8 = 768 bytes)
+# + sel 40 bytes + compression
+bits_s2 = n * 12  # approximation
+bytes_s2 = bits_s2 // 8
+print(f"s2 approximatif : {bytes_s2} bytes")  # ~768
+print(f"+ sel 40 bytes = {bytes_s2 + 40} bytes")
+
+# b) Falcon est plus compact car :
+# - Distribution Gaussienne -> coefficients plus petits en moyenne
+# - Pas de z (qui necessite 18 bits/coeff dans Dilithium)
+# - Pas de hint h
+# - Pas de c_tilde 32 bytes (le sel remplace)
+# Dilithium : c(32) + z(4*256*18/8=2304) + h(~84) = 2420 bytes
+# Falcon-512 : sel(40) + s2(~626) = ~666 bytes
+\end{lstlisting}
+\end{solution}
+
+\begin{exercice}{2 --- Explorer ETHFALCON}
+ETHFALCON est disponible sur \texttt{github.com/ZKNoxHQ/ETHFALCON}.
+\begin{enumerate}[label=\alph*)]
+  \item Clone le repo et explore sa structure.
+  \item Quels sont les contrats Solidity clés ?
+  \item Y a-t-il une implémentation Python de référence ?
+  \item Comment les tests sont-ils organisés ?
+  \item Quel est le gas cost mesuré par les tests ?
+\end{enumerate}
+\end{exercice}
+
+\begin{exercice}{3 --- Plan d'intégration}
+Conçois le plan d'intégration de Falcon dans SuVa~:
+\begin{enumerate}[label=\alph*)]
+  \item Quels fichiers Python du projet actuel devront être adaptés
+        pour Falcon ?
+  \item Quels contrats Solidity de ETHDILITHIUM sont réutilisables pour
+        Falcon (NTT, utils...) ?
+  \item Comment les test vectors Python → Solidity seront-ils générés
+        pour Falcon ?
+  \item Quelles modifications faudra-t-il apporter au smart wallet
+        ERC-4337 ?
+\end{enumerate}
+\end{exercice}
+
+\begin{exercice}{4 --- SPHINCS+ comme fallback}
+SPHINCS+ est le fallback "nuclear bunker" de SuVa.
+Sa sécurité repose uniquement sur les fonctions de hachage.
+\begin{enumerate}[label=\alph*)]
+  \item Pourquoi SPHINCS+ est-il le plus sûr des trois schémas ?
+  \item Pourquoi son coût gas est-il si élevé (50--500M) ?
+  \item Dans quel scénario SuVa utiliserait-il SPHINCS+ plutôt que Falcon ?
+  \item SPHINCS+ a des variantes "small" (petite signature, lent) et
+        "fast" (grande signature, rapide). Laquelle préférer pour SuVa ?
+\end{enumerate}
+\end{exercice}
+
+\end{document}

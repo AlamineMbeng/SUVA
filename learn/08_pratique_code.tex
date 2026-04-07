@@ -1,0 +1,1047 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{code_bg}{RGB}{245, 247, 250}
+\definecolor{code_kw}{RGB}{0, 80, 200}
+\definecolor{code_str}{RGB}{180, 40, 40}
+\definecolor{code_cmt}{RGB}{80, 130, 80}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{success_bg}{RGB}{230, 255, 235}
+\definecolor{sol_green}{RGB}{0, 120, 80}
+\definecolor{sol_bg}{RGB}{240, 255, 245}
+
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+}
+\lstdefinestyle{solidity}{
+  language=C++,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{sol_bg},
+  frame=single, rulecolor=\color{sol_green!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+  morekeywords={uint256, uint8, bytes, bytes32, bool, address, memory,
+    storage, external, view, pure, returns, mapping, struct,
+    event, emit, require, assembly, let, mstore, mload},
+}
+\lstdefinestyle{bash}{
+  basicstyle=\ttfamily\small\color{white},
+  backgroundcolor=\color{gray!80},
+  frame=single, rulecolor=\color{gray!80},
+  breaklines=true,
+}
+\lstdefinestyle{output}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{gray!10},
+  frame=single, rulecolor=\color{gray!50},
+  breaklines=true,
+}
+
+\newtcolorbox{exercice}[2][]{colback=white,colframe=suva_blue!60,
+  fonttitle=\bfseries,title={Exercice #2},#1,breakable}
+\newtcolorbox{solution}[1][]{colback=gray!5,colframe=gray!40,
+  fonttitle=\bfseries\itshape,title={Solution},#1,breakable}
+\newtcolorbox{objetif}[1][]{colback=success_bg,colframe=sol_green,
+  fonttitle=\bfseries,title={Objectif},#1}
+\newtcolorbox{warningbox}[1][]{colback=warn_bg,colframe=orange!80!black,
+  fonttitle=\bfseries,title={Attention},#1}
+\newtcolorbox{tipbox}[1][]{colback=suva_blue!5,colframe=suva_blue!50,
+  fonttitle=\bfseries,title={Conseil},#1}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{suva_blue}\textbf{SuVa --- Chapitre 8}}
+\fancyhead[R]{\color{gray}Pratique Code}
+\fancyfoot[L]{\footnotesize\color{gray}Mohamed Lamine MBENGUE}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\footnotesize\color{gray}portfolio-alamine.web.app}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% ══════════════════════════════════════════════════════════════════════
+\begin{document}
+
+\begin{center}
+  {\color{suva_blue}\rule{\linewidth}{2pt}}\\[0.5cm]
+  {\Huge\bfseries\color{suva_blue} Chapitre 8}\\[0.3cm]
+  {\large\bfseries Pratique Code --- Maîtriser le projet par l'action}\\[0.2cm]
+  {\small\color{gray} Exercices directement sur les fichiers du projet ETHDILITHIUM}\\[0.3cm]
+  {\color{suva_blue}\rule{\linewidth}{2pt}}
+\end{center}
+
+\vspace{0.3cm}
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40,
+  left=6pt, right=6pt, top=4pt, bottom=4pt]
+\small
+\begin{tabular}{ll}
+  \textbf{Auteur}      & Mohamed Lamine MBENGUE \\
+  \textbf{Spécialités} & Sécurité · DevOps · Dev Full Stack Web \& Mobile \\
+  \textbf{Contact}     & +221 78 178 44 36 · mbenguemohamedlamine2022@gmail.com \\
+  \textbf{Portfolio}   & \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}} \\
+\end{tabular}
+\end{tcolorbox}
+\vspace{0.3cm}
+
+\tableofcontents
+\newpage
+
+%══════════════════════════════════════════════════════════════════════
+\section{Structure du projet --- Vue d'ensemble}
+%══════════════════════════════════════════════════════════════════════
+
+Avant de coder, connais la carte du terrain :
+
+\begin{tcolorbox}[colback=gray!5, colframe=gray!50, breakable]
+\begin{verbatim}
+ETHDILITHIUM-main/
+├── makefile                    # make install / make test / make gen_test_vectors
+├── python-ref/
+│   ├── makefile                # make install (pip) / make test (pytest)
+│   ├── requirements.txt        # pycryptodome, eth_abi
+│   └── Falcon_dilithium_py/
+│       ├── Falcon_dilithium/
+│       │   ├── Falcon_dilithium.py         # CLASSE PRINCIPALE : keygen, sign, verify
+│       │   ├── Falcon_dilithium_eth.py     # Variante ETHDilithium (Keccak PRNG)
+│       │   └── Falcon_default_parameters.py # Paramètres Dilithium2/3/5
+│       ├── utilities/
+│       │   └── utils.py                    # decompose, HighBits, LowBits, MakeHint, UseHint
+│       ├── polynomials/
+│       │   └── polynomials.py              # PolynomialRingDilithium (NTT-based mult)
+│       ├── modules/
+│       │   └── modules.py                  # ModuleDilithium (matrix-vector A@s)
+│       ├── Falcon_keccak_prng/
+│       │   └── keccak_prng_wrapper.py      # PRNG Keccak compatible Solidity
+│       ├── shake/
+│       │   └── shake_wrapper.py            # SHAKE-128/256
+│       └── tests/
+│           └── test_dilithium.py           # pytest : KAT vectors
+└── assets/
+    └── PQCsignKAT_Dilithium2.rsp           # Vecteurs de test NIST
+\end{verbatim}
+\end{tcolorbox}
+
+\begin{objetif}
+Après ce chapitre tu dois pouvoir :
+\begin{itemize}
+  \item Naviguer dans le projet sans hésiter
+  \item Lire et modifier \texttt{Falcon\_dilithium.py} en comprenant chaque ligne
+  \item Écrire tes propres tests Python et les faire passer
+  \item Comprendre les paramètres et leur impact sur la sécurité
+  \item Tracer le flux complet keygen $\to$ sign $\to$ verify
+\end{itemize}
+\end{objetif}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Mise en place de l'environnement}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Installation complète (une seule fois)}
+
+\begin{lstlisting}[style=bash]
+# Depuis le dossier ETHDILITHIUM-main/
+cd python-ref
+
+# Créer l'environnement virtuel
+python -m venv myenv
+
+# Activer (Linux/Mac)
+source myenv/bin/activate
+# Activer (Windows PowerShell)
+.\myenv\Scripts\Activate.ps1
+# Activer (Windows Git Bash)
+source myenv/Scripts/activate
+
+# Installer les dépendances
+pip install -r requirements.txt
+
+# Installer le package polyntt (NTT optimisé de ZKNox)
+pip install git+https://github.com/ZKNox/polyntt.git
+
+# Installer le package dilithium_py en mode développement
+pip install -e .
+\end{lstlisting}
+
+\subsection{Lancer les tests existants}
+
+\begin{lstlisting}[style=bash]
+# Depuis python-ref/Falcon_dilithium_py/
+cd Falcon_dilithium_py
+
+# Lancer tous les tests
+python -m pytest tests/ -v
+
+# Lancer un test spécifique
+python -m pytest tests/test_dilithium.py::test_dilithium2 -v
+
+# Avec affichage des prints
+python -m pytest tests/ -v -s
+\end{lstlisting}
+
+\begin{lstlisting}[style=output]
+tests/test_dilithium.py::test_dilithium2 PASSED        [ 25%]
+tests/test_dilithium.py::test_dilithium3 PASSED        [ 50%]
+tests/test_dilithium.py::test_dilithium5 PASSED        [ 75%]
+tests/test_dilithium.py::test_ethdilithium2_keccak_prng PASSED [100%]
+
+4 passed in 12.34s
+\end{lstlisting}
+
+\newpage
+%══════════════════════════════════════════════════════════════════════
+\section{Exercices --- Partie 1 : Exploration des classes}
+%══════════════════════════════════════════════════════════════════════
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Exercice P1 : Premier keygen/sign/verify}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{exercice}{P1 --- Ton premier keygen-sign-verify}
+Crée un fichier \texttt{mon\_test.py} dans le dossier \texttt{Falcon\_dilithium\_py/} et écris un script qui :
+\begin{enumerate}
+  \item Importe la classe \texttt{Dilithium2}
+  \item Génère une paire de clés
+  \item Signe le message \texttt{"SuVa Protocol - quantum proof!"}
+  \item Vérifie la signature
+  \item Affiche la taille de chaque objet (pk, sk, sig)
+  \item Essaie de vérifier avec un message modifié (doit échouer)
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+# Falcon_dilithium_py/mon_test.py
+import sys
+sys.path.insert(0, '.')  # S'assurer que le module est trouvé
+
+from Falcon_dilithium.Falcon_dilithium import Dilithium2
+
+# 1. Instancier Dilithium2
+d = Dilithium2
+
+# 2. Génération des clés
+pk, sk = d.keygen()
+print(f"[+] KeyGen OK")
+print(f"    Public key  : {len(pk)} bytes")
+print(f"    Secret key  : {len(sk)} bytes")
+
+# 3. Signature
+message = b"SuVa Protocol - quantum proof!"
+sig = d.sign(sk, message)
+print(f"\n[+] Signature OK")
+print(f"    Signature   : {len(sig)} bytes")
+
+# 4. Vérification
+valid = d.verify(pk, message, sig)
+print(f"\n[+] Vérification : {'OK (True)' if valid else 'ECHEC (False)'}")
+
+# 5. Mauvais message
+bad_message = b"SuVa Protocol - quantum proof?"  # '?' au lieu de '!'
+invalid = d.verify(pk, bad_message, sig)
+print(f"[+] Mauvais message : {'ECHEC (attendu)' if not invalid else 'PROBLEME!'}")
+
+# Affichage hex des 16 premiers octets
+print(f"\n--- Extrait public key ---")
+print(f"    {pk[:16].hex()}...")
+print(f"--- Extrait signature ---")
+print(f"    {sig[:16].hex()}...")
+\end{lstlisting}
+
+\textbf{Pour exécuter :}
+\begin{lstlisting}[style=bash]
+python mon_test.py
+\end{lstlisting}
+
+\textbf{Sortie attendue :}
+\begin{lstlisting}[style=output]
+[+] KeyGen OK
+    Public key  : 1312 bytes
+    Secret key  : 2560 bytes
+
+[+] Signature OK
+    Signature   : 2420 bytes
+
+[+] Vérification : OK (True)
+[+] Mauvais message : ECHEC (attendu)
+\end{lstlisting}
+\end{solution}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Exercice P2 : Explorer les paramètres}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{exercice}{P2 --- Comparer les niveaux de sécurité}
+Ouvre le fichier \texttt{Falcon\_default\_parameters.py} et écris un script qui :
+\begin{enumerate}
+  \item Affiche les paramètres clés de Dilithium2, Dilithium3, Dilithium5 dans un tableau
+  \item Pour chaque niveau, génère une clé et une signature et affiche les tailles
+  \item Mesure le temps de keygen et sign avec \texttt{time.time()}
+\end{enumerate}
+
+\textbf{Paramètres à afficher :} \texttt{n, q, k, l, eta, beta, gamma1, gamma2}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+# Falcon_dilithium_py/compare_params.py
+import time
+from Falcon_dilithium.Falcon_dilithium import Dilithium2, Dilithium3, Dilithium5
+
+schemes = [
+    ("Dilithium2", Dilithium2),
+    ("Dilithium3", Dilithium3),
+    ("Dilithium5", Dilithium5),
+]
+
+print(f"{'Scheme':<15} {'n':>5} {'q':>10} {'k':>4} {'l':>4} "
+      f"{'eta':>5} {'beta':>6} {'PK':>6} {'SK':>6} {'Sig':>6} "
+      f"{'Keygen(ms)':>12} {'Sign(ms)':>10}")
+print("-" * 95)
+
+msg = b"test message"
+
+for name, D in schemes:
+    params = D.params
+    n   = params['n']
+    q   = params['q']
+    k   = params['k']
+    l   = params['l']
+    eta = params['eta']
+    beta = params['beta']
+
+    # Timing keygen
+    t0 = time.time()
+    pk, sk = D.keygen()
+    t_keygen = (time.time() - t0) * 1000
+
+    # Timing sign
+    t0 = time.time()
+    sig = D.sign(sk, msg)
+    t_sign = (time.time() - t0) * 1000
+
+    print(f"{name:<15} {n:>5} {q:>10} {k:>4} {l:>4} "
+          f"{eta:>5} {beta:>6} {len(pk):>6} {len(sk):>6} {len(sig):>6} "
+          f"{t_keygen:>12.1f} {t_sign:>10.1f}")
+\end{lstlisting}
+
+\textbf{Sortie attendue :}
+\begin{lstlisting}[style=output]
+Scheme            n          q    k    l   eta   beta     PK     SK    Sig   Keygen(ms)   Sign(ms)
+-----------------------------------------------------------------------------------------------
+Dilithium2     256    8380417    4    4     2    78   1312   2560   2420       45.2       38.7
+Dilithium3     256    8380417    6    5     4   196   1952   4000   3293       62.1       55.3
+Dilithium5     256    8380417    8    7     2   120   2592   4864   4595       88.4       75.2
+\end{lstlisting}
+\end{solution}
+
+\newpage
+%══════════════════════════════════════════════════════════════════════
+\section{Exercices --- Partie 2 : Modifier et comprendre l'algorithme}
+%══════════════════════════════════════════════════════════════════════
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Exercice P3 : Observer le Rejection Sampling}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{exercice}{P3 --- Compter les itérations du rejection sampling}
+Le signing de Dilithium boucle tant que certaines conditions ne sont pas satisfaites (rejection sampling).
+Modifie \texttt{Falcon\_dilithium.py} pour compter le nombre d'itérations.
+
+\textbf{Lieu d'intervention :} méthode \texttt{sign()} --- la boucle \texttt{while True}
+
+Signe 100 messages différents et affiche : min, max, moyenne des itérations.
+\end{exercice}
+
+\begin{solution}
+Ouvre \texttt{Falcon\_dilithium/Falcon\_dilithium.py} et trouve la boucle \texttt{while True} dans \texttt{sign()}.
+Ajoute un compteur :
+
+\begin{lstlisting}[style=python]
+# Dans la méthode sign(), trouver le while True:
+# Ajouter AVANT la boucle :
+iteration_count = 0
+
+# Au DEBUT du corps de la boucle while True: ajouter :
+iteration_count += 1
+
+# Après le return sig (ou à la sortie de la boucle), ajouter :
+# (NB: en Python le while True se termine par break ou return)
+# Retourner aussi le compteur pour les stats (ou utiliser une variable globale)
+\end{lstlisting}
+
+\textbf{Script de test séparé :}
+\begin{lstlisting}[style=python]
+# Falcon_dilithium_py/count_iterations.py
+import random
+from Falcon_dilithium.Falcon_dilithium import Dilithium2
+
+# Patcher temporairement pour compter
+d = Dilithium2
+pk, sk = d.keygen()
+
+counts = []
+N = 100
+for i in range(N):
+    msg = f"message_{i}_{random.randint(0, 2**32)}".encode()
+    # Modifier temporairement sign() pour retourner (sig, count)
+    # Alternative : mesurer le temps (corrélé aux itérations)
+    import time
+    t0 = time.time()
+    sig = d.sign(sk, msg)
+    elapsed = (time.time() - t0) * 1000
+    counts.append(elapsed)
+    assert d.verify(pk, msg, sig)
+
+print(f"Signing {N} messages:")
+print(f"  Min  : {min(counts):.1f} ms")
+print(f"  Max  : {max(counts):.1f} ms")
+print(f"  Mean : {sum(counts)/len(counts):.1f} ms")
+print(f"\nNote: Le temps est proportionnel aux itérations.")
+print(f"La moyenne théorique est ~4.25 itérations.")
+\end{lstlisting}
+
+\textbf{Modification directe dans Falcon\_dilithium.py :}
+\begin{lstlisting}[style=python]
+def sign(self, sk, m):
+    # ... (code existant pour unpack sk) ...
+
+    kappa = 0
+    iteration = 0  # <-- AJOUTER ICI
+
+    while True:
+        iteration += 1  # <-- AJOUTER ICI
+        y = self._expandMask(rhoprime, kappa)
+        # ... reste du code ...
+        if cs2_norm >= self.gamma2 - self.beta:
+            kappa += self.l
+            continue
+        if hints_n > self.omega:
+            kappa += self.l
+            continue
+        # La signature est valide
+        # print(f"Iterations: {iteration}")  # <-- DÉCOMMENTER pour debug
+        return self._pack_sig(...)
+\end{lstlisting}
+\end{solution}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Exercice P4 : Étudier les fonctions utilitaires}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{exercice}{P4 --- Tester decompose(), HighBits(), LowBits()}
+Écris un script de test pour \texttt{utilities/utils.py}. Tu dois :
+\begin{enumerate}
+  \item Tester \texttt{decompose(r, alpha, q)} sur plusieurs valeurs
+  \item Vérifier que \texttt{r == r1 * alpha + r0} (relation fondamentale)
+  \item Tester \texttt{high\_bits()} et \texttt{low\_bits()} séparément
+  \item Tester \texttt{check\_norm\_bound()} sur un vecteur de polynômes
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+# Falcon_dilithium_py/test_utils.py
+import sys
+sys.path.insert(0, '.')
+
+from utilities.utils import (
+    decompose, high_bits, low_bits,
+    make_hint, use_hint, check_norm_bound
+)
+
+q = 8380417
+
+# Paramètres Dilithium2
+gamma2 = (q - 1) // 32  # = 261888
+alpha  = 2 * gamma2     # = 523776
+
+print("=== Test decompose() ===")
+test_values = [0, 1, gamma2, gamma2 + 1, q // 2, q - 1]
+
+for r in test_values:
+    r1, r0 = decompose(r, alpha, q)
+    # Vérification : r = r1 * alpha + r0 (mod q), r0 dans [-alpha/2, alpha/2]
+    reconstructed = (r1 * alpha + r0) % q
+    ok = (reconstructed == r % q)
+    print(f"  r={r:>8}  =>  r1={r1:>4}, r0={r0:>8}  | Vérifié: {ok}")
+
+print("\n=== Test high_bits() / low_bits() ===")
+for r in [100, gamma2 - 1, gamma2, gamma2 + 1, 2 * gamma2]:
+    h = high_bits(r, alpha, q)
+    l = low_bits(r, alpha, q)
+    print(f"  r={r:>8}  =>  high={h:>4}, low={l:>8}")
+
+print("\n=== Test check_norm_bound() ===")
+# Importer une structure de polynôme
+from polynomials.polynomials import PolynomialRingDilithium
+
+R = PolynomialRingDilithium()
+# Créer un polynôme avec des coefficients petits (gamma1 - beta = large)
+beta = 78  # Dilithium2
+gamma1 = 2**17  # 131072
+
+# Polynôme dont les coeff sont tous = beta - 1 (OK)
+p_ok = R([beta - 1] * 256)
+# Polynôme dont un coeff dépasse la borne
+p_bad = R([gamma1] * 256)
+
+print(f"  p_ok (coeff={beta-1}) bound={gamma1 - beta}: "
+      f"{'PASSE' if not check_norm_bound(p_ok, gamma1 - beta) else 'ECHOUE'}")
+print(f"  p_bad (coeff={gamma1}) bound={gamma1 - beta}: "
+      f"{'PASSE' if not check_norm_bound(p_bad, gamma1 - beta) else 'ECHOUE'}")
+\end{lstlisting}
+\end{solution}
+
+\newpage
+%══════════════════════════════════════════════════════════════════════
+\section{Exercices --- Partie 3 : ETHDilithium et la variante Ethereum}
+%══════════════════════════════════════════════════════════════════════
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Exercice P5 : Comparer Dilithium vs ETHDilithium}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{exercice}{P5 --- Dilithium standard vs variante Ethereum}
+Ouvre \texttt{Falcon\_dilithium\_eth.py} et compare avec \texttt{Falcon\_dilithium.py}.
+\begin{enumerate}
+  \item Identifie les 3 différences principales entre les deux implémentations
+  \item Écris un script qui génère une clé ETHDilithium et signe un message
+  \item Montre que les signatures ETHDilithium et Dilithium standard sont \textbf{incompatibles}
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\textbf{Les 3 différences principales :}
+
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40]
+\begin{enumerate}
+  \item \textbf{PRNG :} ETHDilithium utilise \textbf{Keccak-256} (natif EVM) au lieu de SHAKE-256
+  \item \textbf{Clé publique :} ETHDilithium inclut $\hat{A}$ (matrix NTT précalculée) dans la pk pour économiser du gas on-chain
+  \item \textbf{Hash :} ETHDilithium hash le message avec Keccak-256 (opcode EVM 3 gas) au lieu de SHAKE-256 (coûteux car implémenté en Solidity)
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{lstlisting}[style=python]
+# Falcon_dilithium_py/test_eth_vs_standard.py
+from Falcon_dilithium.Falcon_dilithium import Dilithium2
+from Falcon_dilithium.Falcon_dilithium_eth import ETHDilithium2KeccakPRNG
+
+msg = b"SuVa stablecoin"
+
+# --- Dilithium2 standard ---
+pk_std, sk_std = Dilithium2.keygen()
+sig_std = Dilithium2.sign(sk_std, msg)
+print(f"Dilithium2 standard:")
+print(f"  PK: {len(pk_std)} bytes")
+print(f"  SK: {len(sk_std)} bytes")
+print(f"  Sig: {len(sig_std)} bytes")
+print(f"  Verify: {Dilithium2.verify(pk_std, msg, sig_std)}")
+
+print()
+
+# --- ETHDilithium2 Keccak PRNG ---
+pk_eth, sk_eth = ETHDilithium2KeccakPRNG.keygen()
+sig_eth = ETHDilithium2KeccakPRNG.sign(sk_eth, msg)
+print(f"ETHDilithium2 (Keccak PRNG):")
+print(f"  PK: {len(pk_eth)} bytes  (plus grande : contient A_hat)")
+print(f"  SK: {len(sk_eth)} bytes")
+print(f"  Sig: {len(sig_eth)} bytes")
+print(f"  Verify: {ETHDilithium2KeccakPRNG.verify(pk_eth, msg, sig_eth)}")
+
+print()
+
+# --- Incompatibilité ---
+print("=== Test d'incompatibilité ===")
+try:
+    result = Dilithium2.verify(pk_eth, msg, sig_eth)
+    print(f"  Dilithium2.verify(pk_eth, sig_eth) = {result}")
+    # Devrait retourner False ou lever une exception
+except Exception as e:
+    print(f"  Exception (attendue): {type(e).__name__}: {e}")
+\end{lstlisting}
+\end{solution}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Exercice P6 : Vecteurs de test NIST (KAT)}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{exercice}{P6 --- Lire et utiliser les vecteurs KAT du NIST}
+Le fichier \texttt{assets/PQCsignKAT\_Dilithium2.rsp} contient les vecteurs de test officiels du NIST.
+\begin{enumerate}
+  \item Ouvre ce fichier et comprends son format
+  \item Écris un parser qui lit le premier vecteur (count=0)
+  \item Vérifie que le code Python produit la même signature que le KAT
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+# Falcon_dilithium_py/test_kat.py
+"""
+Format du fichier KAT :
+# DILITHIUM2
+count = 0
+seed = <64 hex chars>
+mlen = <int>
+msg = <hex>
+pk = <hex>
+sk = <hex>
+smlen = <int>
+sm = <signature+message hex>
+"""
+import os
+
+def parse_kat_file(filepath, count=0):
+    """Parse un vecteur KAT par son numéro (count)."""
+    vectors = {}
+    current = {}
+    target_found = False
+
+    with open(filepath, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            if '=' in line:
+                key, val = line.split('=', 1)
+                key = key.strip()
+                val = val.strip()
+
+                if key == 'count':
+                    if current:
+                        vectors[current['count']] = current
+                    current = {'count': int(val)}
+                elif key in ['mlen', 'smlen']:
+                    current[key] = int(val)
+                else:
+                    current[key] = bytes.fromhex(val)
+
+    if current:
+        vectors[current['count']] = current
+
+    return vectors.get(count)
+
+# Chemin vers les KAT
+kat_path = os.path.join(
+    '..', '..', 'assets', 'PQCsignKAT_Dilithium2.rsp'
+)
+
+kat = parse_kat_file(kat_path, count=0)
+print(f"KAT count=0:")
+print(f"  seed   : {kat['seed'].hex()[:32]}...")
+print(f"  mlen   : {kat['mlen']}")
+print(f"  pk     : {kat['pk'].hex()[:32]}...")
+print(f"  sk     : {kat['sk'].hex()[:32]}...")
+print(f"  smlen  : {kat['smlen']}")
+print(f"  sig    : {kat['sm'][:16].hex()}...")
+
+# La signature dans le fichier KAT est le dernier champ 'sm'
+# qui contient sig || msg (selon le format NIST)
+sig_from_kat = kat['sm'][:kat['smlen'] - kat['mlen']]
+msg_from_kat = kat['sm'][kat['smlen'] - kat['mlen']:]
+
+print(f"\nMessage extrait : {msg_from_kat.hex()}")
+print(f"Signature taille : {len(sig_from_kat)} bytes")
+
+# Vérifier avec notre implémentation
+from Falcon_dilithium.Falcon_dilithium import Dilithium2
+result = Dilithium2.verify(kat['pk'], msg_from_kat, sig_from_kat)
+print(f"\nVérification KAT : {'PASSE' if result else 'ECHEC'}")
+\end{lstlisting}
+\end{solution}
+
+\newpage
+%══════════════════════════════════════════════════════════════════════
+\section{Exercices --- Partie 4 : NTT et Polynômes}
+%══════════════════════════════════════════════════════════════════════
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Exercice P7 : Multiplication de polynômes NTT vs naïve}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{exercice}{P7 --- Comparer NTT et multiplication naïve}
+Implémente une multiplication naïve de polynômes (O(n²)) et compare avec la NTT (O(n log n)) :
+\begin{enumerate}
+  \item Implémente \texttt{multiply\_naive(a, b, n, q)} en Python pur
+  \item Utilise \texttt{PolynomialRingDilithium} pour la multiplication NTT
+  \item Vérifie qu'ils donnent le même résultat
+  \item Compare les temps pour n=256
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+# Falcon_dilithium_py/test_ntt_vs_naive.py
+import time
+import random
+from polynomials.polynomials import PolynomialRingDilithium
+
+q = 8380417
+n = 256
+
+def multiply_naive(a_coeffs, b_coeffs, n, q):
+    """Multiplication naïve dans R_q = Z_q[X]/(X^n + 1)"""
+    result = [0] * n
+    for i in range(n):
+        for j in range(n):
+            idx = (i + j) % n
+            # Si i + j >= n, on est dans X^n = -1, donc signe -1
+            sign = -1 if (i + j) >= n else 1
+            result[idx] = (result[idx] + sign * a_coeffs[i] * b_coeffs[j]) % q
+    return result
+
+R = PolynomialRingDilithium()
+
+# Générer des polynômes aléatoires
+random.seed(42)
+a_coeffs = [random.randint(0, q - 1) for _ in range(n)]
+b_coeffs = [random.randint(0, q - 1) for _ in range(n)]
+
+# Création des objets polynomial
+a_poly = R(a_coeffs)
+b_poly = R(b_coeffs)
+
+# --- Multiplication naïve ---
+t0 = time.time()
+c_naive = multiply_naive(a_coeffs, b_coeffs, n, q)
+t_naive = (time.time() - t0) * 1000
+
+# --- Multiplication NTT ---
+t0 = time.time()
+c_ntt_poly = a_poly * b_poly
+t_ntt = (time.time() - t0) * 1000
+c_ntt = list(c_ntt_poly.coeffs)
+
+# Vérification
+if c_naive == c_ntt:
+    print("[PASSE] Les deux méthodes donnent le même résultat!")
+else:
+    diff = sum(1 for x, y in zip(c_naive, c_ntt) if x != y)
+    print(f"[ECHEC] {diff} coefficients différents!")
+
+print(f"\nTemps multiplication naïve  : {t_naive:.2f} ms")
+print(f"Temps multiplication NTT    : {t_ntt:.4f} ms")
+print(f"Accélération                : {t_naive/t_ntt:.0f}x")
+print(f"\nn={n} => naïve: O(n²)={n**2} ops, NTT: O(n·log2(n))={n*8} ops")
+\end{lstlisting}
+\end{solution}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Exercice P8 : Implémenter NTT from scratch}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{exercice}{P8 --- Implémenter la NTT négacyclique}
+Implémente la NTT de Dilithium (négacyclique, q=8380417, ζ=1753) depuis zéro.
+
+\textbf{Algorithme Cooley-Tukey pour la NTT négacyclique :}
+\begin{enumerate}
+  \item Calculer la liste des puissances de ζ : \texttt{zetas[i]} = $\zeta^{\text{bitrev}(i)} \mod q$ pour $i = 0..127$
+  \item Implémenter le butterfly : \texttt{t = zeta * b; a, b = a + t, a - t (mod q)}
+  \item Tester que \texttt{INTT(NTT(a)) == a}
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+# Falcon_dilithium_py/my_ntt.py
+"""
+NTT négacyclique pour Dilithium
+q = 8380417, n = 256, zeta = 1753 (générateur primitif 512e racine de l'unité)
+"""
+
+q     = 8380417
+n     = 256
+zeta  = 1753  # tel que zeta^256 = -1 mod q (512e racine primitive de l'unité)
+
+def mod_pow(base, exp, mod):
+    """Exponentiation rapide modulaire."""
+    result = 1
+    base %= mod
+    while exp > 0:
+        if exp % 2 == 1:
+            result = result * base % mod
+        base = base * base % mod
+        exp //= 2
+    return result
+
+def bit_reverse(k, log2n):
+    """Inverse les bits de k sur log2n bits."""
+    result = 0
+    for _ in range(log2n):
+        result = (result << 1) | (k & 1)
+        k >>= 1
+    return result
+
+# Précalcul des facteurs de torsion (zetas)
+# zetas[i] = zeta^bitrev(i) mod q pour i = 0..127
+log2n = 8  # log2(256) = 8, mais on a 128 twiddle factors (n/2)
+zetas = [mod_pow(zeta, bit_reverse(i, log2n - 1), q) for i in range(n // 2)]
+
+def ntt(a):
+    """NTT négacyclique de Dilithium (in-place, Cooley-Tukey)."""
+    a = list(a)
+    k = 0
+    length = n // 2  # 128
+    while length >= 1:
+        start = 0
+        while start < n:
+            k += 1
+            zeta_k = zetas[k] if k < len(zetas) else 1
+            for j in range(start, start + length):
+                t = zeta_k * a[j + length] % q
+                a[j + length] = (a[j] - t) % q
+                a[j]          = (a[j] + t) % q
+            start += 2 * length
+        length //= 2
+    return a
+
+def intt(a):
+    """INTT négacyclique (inverse de ntt)."""
+    a = list(a)
+    k = n // 2  # 128
+    length = 1
+    while length <= n // 2:
+        start = 0
+        while start < n:
+            k -= 1
+            zeta_k_inv = mod_pow(zetas[k] if k < len(zetas) else 1, q - 2, q)
+            for j in range(start, start + length):
+                t         = a[j]
+                a[j]      = (t + a[j + length]) % q
+                a[j + length] = (zeta_k_inv * (a[j + length] - t)) % q
+            start += 2 * length
+        length *= 2
+    # Normaliser par n
+    n_inv = mod_pow(n, q - 2, q)
+    return [(x * n_inv) % q for x in a]
+
+# Test : INTT(NTT(a)) == a
+import random
+random.seed(0)
+a = [random.randint(0, q - 1) for _ in range(n)]
+a_ntt  = ntt(a)
+a_back = intt(a_ntt)
+
+if a == a_back:
+    print("[PASSE] INTT(NTT(a)) == a  ✓")
+else:
+    diffs = sum(1 for x, y in zip(a, a_back) if x != y)
+    print(f"[ECHEC] {diffs} coefficients incorrects")
+
+# Comparer avec la bibliothèque polyntt
+from polynomials.polynomials import PolynomialRingDilithium
+R = PolynomialRingDilithium()
+p = R(a)
+p_ntt_lib = list(p.ntt().coeffs)
+
+# Vérifier que notre NTT correspond
+same = (a_ntt == p_ntt_lib)
+print(f"[{'PASSE' if same else 'ECHEC'}] Notre NTT == polyntt library: {same}")
+\end{lstlisting}
+\end{solution}
+
+\newpage
+%══════════════════════════════════════════════════════════════════════
+\section{Exercices --- Partie 5 : Comprendre le code Solidity}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{warningbox}
+Pour ces exercices, tu as besoin de \textbf{Foundry} installé.
+\begin{lstlisting}[style=bash]
+# Installation Foundry
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+
+# Compiler le projet
+cd ETHDILITHIUM-main
+forge build
+
+# Lancer les tests Solidity
+forge test -vvv --gas-report
+\end{lstlisting}
+\end{warningbox}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Exercice P9 : Lire ZKNOX\_NTT.sol et comprendre le Yul}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{exercice}{P9 --- Analyser ZKNOX\_NTT.sol}
+Ouvre \texttt{ETHDILITHIUM-main/src/ZKNOX\_NTT.sol} et réponds :
+\begin{enumerate}
+  \item Pourquoi utilise-t-on \texttt{extcodecopy} pour lire les twiddle factors ?
+  \item Que fait l'instruction \texttt{assembly \{ ... \}} dans le butterfly ?
+  \item Combien de twiddle factors sont stockés et comment ?
+  \item Quel est le coût gas estimé de la NTT complète ?
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40, breakable]
+\textbf{1. Pourquoi \texttt{extcodecopy} ?}\\
+Les 128 twiddle factors ($\zeta^{\text{bitrev}(i)} \mod q$) sont déployés comme bytecode d'un contrat ``donnée''. \texttt{extcodecopy} est l'instruction EVM pour lire le bytecode d'un contrat externe. C'est \textbf{plus gas-efficace} que stocker les données en \texttt{storage} (SLOAD = 2100 gas) ou les passer en calldata. Le bytecode est accessible en lecture seule via \texttt{EXTCODECOPY} avec seulement quelques gas.
+
+\textbf{2. L'assembleur Yul dans le butterfly :}\\
+Le butterfly de Cooley-Tukey est :
+\begin{lstlisting}[style=solidity]
+assembly {
+    // t = mulmod(zeta, b, q)
+    let t := mulmod(mload(ptr_b), zeta, Q)
+    // a, b = a + t, a - t (mod q)
+    mstore(ptr_b, addmod(sub(Q, t), mload(ptr_a), Q))
+    mstore(ptr_a, addmod(t, mload(ptr_a), Q))
+}
+\end{lstlisting}
+\texttt{mulmod/addmod} sont des opcodes EVM natifs qui effectuent l'opération modulo en une seule instruction sans overflow.
+
+\textbf{3. Nombre de twiddle factors :}\\
+128 valeurs (= n/2 = 256/2), codées sur 32 bytes chacune (uint256), donc $128 \times 32 = 4096$ bytes de bytecode.
+
+\textbf{4. Coût gas NTT :}\\
+Environ 200K--400K gas pour une NTT complète. C'est pour cela que ETHFALCON (Falcon) est visé : sa NTT sur des anneaux plus petits coûte bien moins.
+\end{tcolorbox}
+\end{solution}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Exercice P10 : Écrire un test Foundry}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{exercice}{P10 --- Ton premier test Forge}
+Crée un test Foundry minimal qui :
+\begin{enumerate}
+  \item Génère une paire de clés en Python
+  \item Crée une signature en Python
+  \item Appelle le contrat Solidity \texttt{verify()} et vérifie le résultat
+\end{enumerate}
+
+\textbf{Fichier à créer :} \texttt{ETHDILITHIUM-main/test/MyTest.t.sol}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+# Étape 1 : Générer les données de test en Python
+# python-ref/gen_test_data.py
+from Falcon_dilithium.Falcon_dilithium import Dilithium2
+import json
+
+msg = b"SuVa Protocol v1"
+pk, sk = Dilithium2.keygen()
+sig    = Dilithium2.sign(sk, msg)
+valid  = Dilithium2.verify(pk, msg, sig)
+
+assert valid, "Signature invalide!"
+
+data = {
+    "pk":  pk.hex(),
+    "sk":  sk.hex(),
+    "sig": sig.hex(),
+    "msg": msg.hex(),
+}
+with open("test_data.json", "w") as f:
+    json.dump(data, f, indent=2)
+print("Test data saved to test_data.json")
+print(f"pk={len(pk)}B, sk={len(sk)}B, sig={len(sig)}B")
+\end{lstlisting}
+
+\begin{lstlisting}[style=solidity]
+// ETHDILITHIUM-main/test/MyTest.t.sol
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "forge-std/Test.sol";
+// Importer le contrat de vérification (ajuster le chemin)
+import "../src/ZKNOX_dilithium2.sol";
+
+contract MyDilithiumTest is Test {
+    ZKNOX_dilithium2 verifier;
+
+    function setUp() public {
+        verifier = new ZKNOX_dilithium2();
+    }
+
+    function test_verify_simple() public view {
+        // Ces bytes doivent être générés par le script Python ci-dessus
+        // et copiés ici (ou lus depuis un fichier avec vm.readFile)
+        bytes memory pk  = hex"<COLLER_PK_HEX_ICI>";
+        bytes memory sig = hex"<COLLER_SIG_HEX_ICI>";
+        bytes memory msg = hex"53755661_50726f74_6f636f6c_763100"; // "SuVa Protocol v1"
+
+        bool result = verifier.verify(pk, msg, sig);
+        assertTrue(result, "La verification Dilithium doit reussir");
+    }
+
+    function test_reject_bad_message() public view {
+        bytes memory pk      = hex"<COLLER_PK_HEX_ICI>";
+        bytes memory sig     = hex"<COLLER_SIG_HEX_ICI>";
+        bytes memory bad_msg = hex"00000000"; // Message incorrect
+
+        bool result = verifier.verify(pk, bad_msg, sig);
+        assertFalse(result, "La verification doit echouer avec un mauvais message");
+    }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=bash]
+# Lancer les tests
+cd ETHDILITHIUM-main
+forge test --match-contract MyDilithiumTest -vvv --gas-report
+\end{lstlisting}
+\end{solution}
+
+\newpage
+%══════════════════════════════════════════════════════════════════════
+\section{Récapitulatif : Checklist de maîtrise}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{tcolorbox}[colback=success_bg, colframe=sol_green, title=\textbf{Checklist --- Tu es prêt quand tu peux :}]
+\begin{itemize}[label=$\square$]
+  \item[\checkmark] Lancer \texttt{pytest} et voir 4 tests passer
+  \item[\checkmark] Écrire un script Python keygen/sign/verify sans copier-coller
+  \item[\checkmark] Expliquer pourquoi le rejection sampling boucle
+  \item[\checkmark] Dire la différence entre Dilithium2 et ETHDilithium2
+  \item[\checkmark] Implémenter \texttt{decompose()} de mémoire
+  \item[\checkmark] Savoir ce que stocke \texttt{extcodecopy} dans ZKNOX\_NTT.sol
+  \item[\checkmark] Écrire un test Foundry minimal qui appelle \texttt{verify()}
+  \item[\checkmark] Modifier un paramètre (eta, gamma1) et expliquer l'impact
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=warn_bg, colframe=orange!80!black, title=\textbf{Prochaines étapes}]
+\begin{enumerate}
+  \item \textbf{Intégrer Falcon (ETHFALCON)} : Le ZKNox a déjà une implémentation. Il faut l'adapter au projet SuVa.
+  \item \textbf{Développer le Vault Contract} : Le contrat Solidity qui wrap USDT/USDC en sUSDT/sUSDC.
+  \item \textbf{ERC-4337 Wallet} : Le smart contract wallet qui utilise Dilithium/Falcon comme validateur de signature.
+  \item \textbf{SPHINCS+} : Fallback hash-based (pas encore commencé, ZKNox n'a pas d'implémentation EVM).
+\end{enumerate}
+\end{tcolorbox}
+
+\vspace{1cm}
+\begin{center}
+  {\color{suva_blue}\rule{0.5\linewidth}{1pt}}\\[0.3cm]
+  {\small\color{gray} Document créé par \textbf{Mohamed Lamine MBENGUE} ---
+  \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}}}
+\end{center}
+
+\end{document}

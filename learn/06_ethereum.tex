@@ -1,0 +1,682 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{code_bg}{RGB}{245, 247, 250}
+\definecolor{code_kw}{RGB}{0, 80, 200}
+\definecolor{code_str}{RGB}{180, 40, 40}
+\definecolor{code_cmt}{RGB}{80, 130, 80}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{success_bg}{RGB}{230, 255, 235}
+\definecolor{sol_green}{RGB}{0, 120, 80}
+\definecolor{sol_bg}{RGB}{240, 255, 245}
+
+\lstdefinestyle{solidity}{
+  language=C++,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{sol_bg},
+  frame=single, rulecolor=\color{sol_green!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+  morekeywords={uint256, uint8, bytes, bytes32, bool, address, memory,
+    storage, calldata, external, view, pure, returns, mapping, struct,
+    event, emit, require, revert, modifier, payable, public, private,
+    internal, virtual, override, assembly, let, mstore, mload},
+}
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+}
+\lstdefinestyle{bash}{
+  basicstyle=\ttfamily\small\color{white},
+  backgroundcolor=\color{gray!80},
+  frame=single, rulecolor=\color{gray!80},
+  breaklines=true,
+}
+\lstdefinestyle{output}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{gray!10},
+  frame=single, rulecolor=\color{gray!50},
+  breaklines=true,
+}
+
+\newtcolorbox{defbox}[2][]{colback=success_bg,colframe=green!50!black,
+  fonttitle=\bfseries,title={Définition : #2},#1}
+\newtcolorbox{exercice}[2][]{colback=white,colframe=suva_blue!60,
+  fonttitle=\bfseries,title={Exercice #2},#1,breakable}
+\newtcolorbox{solution}[1][]{colback=gray!5,colframe=gray!40,
+  fonttitle=\bfseries\itshape,title={Solution},#1,breakable}
+\newtcolorbox{importantbox}[1][]{colback=suva_blue!10,colframe=suva_blue,
+  fonttitle=\bfseries,title={Connexion avec le projet},#1}
+\newtcolorbox{warningbox}[1][]{colback=warn_bg,colframe=orange!80!black,
+  fonttitle=\bfseries,title={Attention},#1}
+\newtcolorbox{gasbox}[1][]{colback=orange!5,colframe=orange!80,
+  fonttitle=\bfseries,title={Gas cost},#1}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{suva_blue}\textbf{SuVa --- Chapitre 6}}
+\fancyhead[R]{\color{gray}Ethereum / Solidity / ERC-4337}
+\fancyfoot[L]{\footnotesize\color{gray}Mohamed Lamine MBENGUE}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\footnotesize\color{gray}portfolio-alamine.web.app}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% ══════════════════════════════════════════════════════════════════════
+\begin{document}
+
+\begin{center}
+  {\color{suva_blue}\rule{\linewidth}{2pt}}\\[0.5cm]
+  {\Huge\bfseries\color{suva_blue} Chapitre 6}\\[0.3cm]
+  {\large\bfseries Ethereum, Solidity, Gas et ERC-4337}\\[0.2cm]
+  {\small\color{gray} La partie on-chain du projet SuVa}\\[0.3cm]
+  {\color{suva_blue}\rule{\linewidth}{2pt}}
+\end{center}
+
+\vspace{0.3cm}
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40,
+  left=6pt, right=6pt, top=4pt, bottom=4pt]
+\small
+\begin{tabular}{ll}
+  \textbf{Auteur}      & Mohamed Lamine MBENGUE \\
+  \textbf{Spécialités} & Sécurité · DevOps · Dev Full Stack Web \& Mobile \\
+  \textbf{Contact}     & +221 78 178 44 36 · mbenguemohamedlamine2022@gmail.com \\
+  \textbf{Portfolio}   & \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}} \\
+\end{tabular}
+\end{tcolorbox}
+\vspace{0.3cm}
+
+\tableofcontents
+\newpage
+
+%══════════════════════════════════════════════════════════════════════
+\section{L'EVM --- Ethereum Virtual Machine}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Fonctionnement de base}
+
+L'EVM est une machine à pile (\emph{stack machine}) qui exécute le bytecode
+des smart contracts. Chaque opération (opcode) a un coût en \textbf{gas}.
+
+\begin{defbox}{Gas}
+Le \textbf{gas} est l'unité de mesure du coût de calcul sur Ethereum.
+\begin{itemize}
+  \item Chaque opcode coûte un certain nombre de gas
+  \item Le gas est payé en ETH (gas\_used $\times$ gas\_price)
+  \item La limite de gas par bloc est $\sim 30\,000\,000$ gas
+\end{itemize}
+\end{defbox}
+
+\subsection{Opcodes importants pour ce projet}
+
+\begin{center}
+\begin{tabular}{llr}
+\toprule
+\textbf{Opcode} & \textbf{Opération} & \textbf{Gas} \\
+\midrule
+\texttt{ADD} & Addition 256-bit & 3 \\
+\texttt{MUL} & Multiplication 256-bit & 5 \\
+\texttt{DIV} & Division 256-bit & 5 \\
+\texttt{ADDMOD} & (a+b) mod n & 8 \\
+\texttt{MULMOD} & (a*b) mod n & 8 \\
+\texttt{KECCAK256} & Hash Keccak-256 & 30 + 6/word \\
+\texttt{MLOAD} & Lecture mémoire & 3 \\
+\texttt{MSTORE} & Écriture mémoire & 3 \\
+\texttt{EXTCODECOPY} & Copier bytecode & 100 + copie \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{gasbox}
+Comparaison des coûts de vérification post-quantique~:
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+\textbf{Schéma} & \textbf{Gas} \\
+\midrule
+ECDSA (actuel Ethereum) & $\sim$ 3\,000 \\
+\textbf{Falcon (NIST FIPS 206)} & $\sim$ \textbf{350\,000} \\
+ETHDilithium (Keccak) & $\sim$ 6\,600\,000 \\
+Dilithium standard (SHAKE) & $\sim$ 13\,500\,000 \\
+SPHINCS+ & $\sim$ 50--500\,000\,000 \\
+Limite par bloc & 30\,000\,000 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Falcon est $\sim 20\times$ moins cher que Dilithium et tient bien dans la limite de bloc.
+\end{gasbox}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Solidity --- Bases essentielles}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Types de données utiles dans ce projet}
+
+\begin{lstlisting}[style=solidity]
+// Types de base
+uint256 a = 42;              // entier 256-bit non signe
+bytes32 h;                   // 32 bytes fixes (hash)
+bytes memory data;           // tableau de bytes dynamique
+bool ok = true;
+
+// Tableaux
+uint256[] memory arr;                 // tableau dynamique
+uint256[256] memory poly;             // polynome (256 coefficients)
+uint256[][] memory vector;            // vecteur de polynomes
+uint256[][][] memory matrix;          // matrice de polynomes
+
+// Structures (utilises pour PubKey et Signature)
+struct PubKey {
+    bytes32 rho;            // graine de la matrice A
+    bytes tr;               // hash de la cle publique
+    uint256[][] t1;         // vecteur t1 (k polynomes)
+}
+
+struct Signature {
+    bytes32[] c_tilde;      // hash du challenge (32 bytes)
+    uint256[][] z;          // vecteur z (l polynomes)
+    uint256[][] h;          // hint (k polynomes de bits)
+}
+\end{lstlisting}
+
+\subsection{Les zones mémoire}
+
+\begin{defbox}{Memory vs Storage vs Calldata}
+\begin{itemize}
+  \item \textbf{storage}~: donnees persistantes sur la blockchain (très cher)
+  \item \textbf{memory}~: donnees temporaires pendant l'execution (moderé)
+  \item \textbf{calldata}~: arguments en lecture seule d'un appel (le moins cher)
+\end{itemize}
+\end{defbox}
+
+\begin{importantbox}
+Dans les contrats Dilithium, presque tout est en \texttt{memory}
+car la vérification est stateless (pas de stockage permanent).
+Chaque appel à \texttt{verify()} recommence de zéro.
+\end{importantbox}
+
+\subsection{Fonctions et visibilité}
+
+\begin{lstlisting}[style=solidity]
+// Fonction de verification (interface externe)
+function verify(
+    PubKey memory pk,
+    bytes memory message,
+    Signature memory signature
+) external view returns (bool) {
+    // external : appelee depuis l'exterieur
+    // view     : ne modifie pas l'etat
+    // returns  : type de retour
+    ...
+}
+
+// Fonction interne (helper)
+function compute_c_ntt(
+    Signature memory sig
+) internal pure returns (uint256[] memory) {
+    // internal : uniquement depuis ce contrat
+    // pure     : pas de lecture d'etat non plus
+    ...
+}
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Yul --- EVM Assembly dans Solidity}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Pourquoi Yul dans ce projet ?}
+
+Le NTT (\texttt{ZKNOX\_NTT.sol}) est écrit entièrement en Yul pour
+maximiser l'efficacité du gas. En Solidity pur, le compilateur ajoute
+des vérifications et des copies inutiles. Yul donne un contrôle total.
+
+\subsection{Syntaxe de base Yul}
+
+\begin{lstlisting}[style=solidity]
+// Dans Solidity, on utilise assembly { ... } pour du Yul inline
+function mulmod_example(uint256 a, uint256 b, uint256 m)
+    internal pure returns (uint256 result) {
+    assembly {
+        // Variables locales
+        let x := mulmod(a, b, m)   // (a * b) mod m
+
+        // Operations sur la memoire
+        let ptr := mload(0x40)     // Lire le free memory pointer
+        mstore(ptr, x)             // Ecrire x a l'adresse ptr
+
+        // Affectation du resultat
+        result := x
+    }
+}
+
+// NTT butterfly step (simplifie)
+function butterfly(uint256 u, uint256 v, uint256 w, uint256 q)
+    internal pure returns (uint256 u_out, uint256 v_out) {
+    assembly {
+        // t = w * v mod q
+        let t := mulmod(w, v, q)
+        // u_out = (u + t) mod q
+        u_out := addmod(u, t, q)
+        // v_out = (u - t) mod q
+        v_out := addmod(u, sub(q, t), q)
+    }
+}
+\end{lstlisting}
+
+\subsection{extcodecopy --- lire les twiddle factors}
+
+\begin{lstlisting}[style=solidity]
+// Dans ZKNOX_NTT.sol
+// Les twiddle factors sont stockes comme bytecode d'un contrat
+// (deploye par ZKNOX_dilithium_deploy.sol)
+
+function load_twiddle_factors(address twiddle_contract)
+    internal view returns (uint256[] memory) {
+    assembly {
+        // Taille du bytecode (= nb_twiddles * 32 bytes)
+        let size := extcodesize(twiddle_contract)
+
+        // Allouer la memoire
+        let ptr := mload(0x40)
+        mstore(0x40, add(ptr, size))
+
+        // Copier le bytecode (qui contient les constantes)
+        extcodecopy(twiddle_contract, ptr, 0, size)
+    }
+}
+// Avantage : extcodecopy est moins cher que lire depuis storage
+// Inconvenient : les constantes doivent etre deployees d'abord
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Architecture des contrats Solidity dans le projet}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{center}
+\begin{tikzpicture}[
+  block/.style={draw=sol_green, rounded corners, fill=sol_bg,
+    minimum width=4cm, minimum height=0.8cm, text width=3.8cm,
+    align=center, font=\small},
+  arrow/.style={->, thick, sol_green!80}
+]
+  \node[block] (entry) {\texttt{ZKNOX\_dilithium.sol}\\{\tiny entry point, verify()}};
+  \node[block, below left=1cm and 0.5cm of entry]
+    (core) {\texttt{ZKNOX\_dilithium\_core.sol}\\{\tiny core\_1(), core\_2()}};
+  \node[block, below right=1cm and 0.5cm of entry]
+    (eth) {\texttt{ZKNOX\_ethdilithium.sol}\\{\tiny variant Keccak}};
+  \node[block, below=1cm of core]
+    (ntt) {\texttt{ZKNOX\_NTT.sol}\\{\tiny NTT en Yul}};
+  \node[block, below left=1cm and 0.5cm of ntt]
+    (nttdil) {\texttt{ZKNOX\_NTT\_dilithium.sol}\\{\tiny NTTFW, NTTINV}};
+  \node[block, below right=1cm and 0.5cm of ntt]
+    (utils) {\texttt{ZKNOX\_dilithium\_utils.sol}\\{\tiny constantes, structs}};
+  \node[block, below=1cm of core, xshift=3.5cm]
+    (hint) {\texttt{ZKNOX\_hint.sol}\\{\tiny useHint()}};
+  \node[block, right=1cm of entry]
+    (shake) {\texttt{ZKNOX\_shake.sol}\\{\tiny SHAKE-256 Solidity}};
+  \node[block, below=0.5cm of shake]
+    (keccak) {\texttt{ZKNOX\_keccak\_prng.sol}\\{\tiny Keccak PRNG}};
+
+  \draw[arrow] (entry) -- (core);
+  \draw[arrow] (entry) -- (eth);
+  \draw[arrow] (core) -- (ntt);
+  \draw[arrow] (ntt) -- (nttdil);
+  \draw[arrow] (ntt) -- (utils);
+  \draw[arrow] (core) -- (hint);
+  \draw[arrow] (entry) -- (shake);
+  \draw[arrow] (eth) -- (keccak);
+\end{tikzpicture}
+\end{center}
+
+\subsection{ZKNOX\_dilithium.sol --- le contrat principal}
+
+\begin{lstlisting}[style=solidity]
+// ZKNOX_dilithium.sol (simplifie)
+pragma solidity ^0.8.25;
+
+import "./ZKNOX_dilithium_core.sol";
+import "./ZKNOX_shake.sol";
+import "./ZKNOX_NTT_dilithium.sol";
+
+contract ZKNOX_dilithium is ZKNOX_dilithium_core {
+    // Adresses des contrats de twiddle factors (deployes)
+    address immutable apsirev;    // NTT forward
+    address immutable apsiInvrev; // NTT inverse
+
+    constructor(address _apsirev, address _apsiInvrev) {
+        apsirev = _apsirev;
+        apsiInvrev = _apsiInvrev;
+    }
+
+    function verify(
+        PubKey memory pk,
+        bytes memory msgs,
+        Signature memory signature
+    ) external view returns (bool) {
+        // STEP 1: Valider la structure de la signature
+        (uint256 norm_h, uint256[][] memory h, uint256[][] memory z) =
+            dilithium_core_1(signature);
+
+        if (norm_h > OMEGA) return false;
+
+        // Verifier que z est dans [-gamma_1+beta, gamma_1-beta]
+        for (uint i = 0; i < L; i++) {
+            for (uint j = 0; j < N; j++) {
+                if (z[i][j] > GAMMA_1_MINUS_BETA &&
+                    Q - z[i][j] > GAMMA_1_MINUS_BETA) {
+                    return false;
+                }
+            }
+        }
+
+        // STEP 2: Reconstruire c en domaine NTT
+        uint256[] memory c_ntt = compute_c_ntt(signature);
+
+        // STEP 3: t1 * 2^d en NTT
+        uint256[][] memory t1_new = ZKNOX_Expand_Vec(pk.t1);
+        for (uint i = 0; i < K; i++) {
+            for (uint j = 0; j < N; j++) {
+                t1_new[i][j] <<= D;  // shift par 2^d
+            }
+            t1_new[i] = ZKNOX_NTTFW(t1_new[i], apsirev);
+        }
+
+        // STEP 4: w' = UseHint(h, A*z - c*t1)
+        bytes memory w_prime = dilithium_core_2(
+            apsirev, apsiInvrev, pk, z, c_ntt, h, t1_new
+        );
+
+        // STEP 5: Verification du hash final
+        ctx_shake memory ctx;
+        ctx = shake_update(ctx, pk.tr);
+        ctx = shake_update(ctx, msgs);
+        bytes memory mu = shake_digest(ctx, 64);
+
+        ctx_shake memory ctx2;
+        ctx2 = shake_update(ctx2, mu);
+        ctx2 = shake_update(ctx2, w_prime);
+        bytes32 final_hash = bytes32(shake_digest(ctx2, 32));
+
+        for (uint i = 0; i < 32; i++) {
+            if (signature.c_tilde[i] != uint8(final_hash[i]))
+                return false;
+        }
+        return true;
+    }
+}
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{ERC-4337 --- Account Abstraction}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Pourquoi ERC-4337 ?}
+
+Ethereum valide nativement les transactions via ECDSA.
+Pour utiliser une signature post-quantique, on ne peut pas changer
+le protocole Ethereum. ERC-4337 permet de contourner ça via des
+\textbf{smart contract wallets}.
+
+\subsection{Composants ERC-4337}
+
+\begin{center}
+\begin{tikzpicture}[
+  block/.style={draw=suva_blue, rounded corners, fill=blue!5,
+    minimum width=3.5cm, minimum height=1cm, text width=3.3cm,
+    align=center, font=\small},
+  arrow/.style={->, thick, suva_blue}
+]
+  \node[block] (user) {Utilisateur\\{\tiny Génère UserOperation}};
+  \node[block, right=1.5cm of user] (mempool)
+    {UserOperation\\Mempool\\{\tiny File d'attente}};
+  \node[block, right=1.5cm of mempool]
+    (bundler) {Bundler\\{\tiny Agrège les ops}};
+  \node[block, below=1.5cm of bundler]
+    (entry) {EntryPoint\\Contract\\{\tiny Contrat central}};
+  \node[block, below=1.5cm of entry]
+    (wallet) {Smart Wallet\\(SuVa)\\{\tiny validateUserOp()}};
+  \node[block, right=1.5cm of entry]
+    (paymaster) {Paymaster\\{\tiny Paie le gas}};
+
+  \draw[arrow] (user) -- (mempool);
+  \draw[arrow] (mempool) -- (bundler);
+  \draw[arrow] (bundler) -- (entry);
+  \draw[arrow] (entry) -- (wallet);
+  \draw[arrow] (entry) -- (paymaster);
+\end{tikzpicture}
+\end{center}
+
+\subsection{Le Smart Wallet SuVa}
+
+\begin{lstlisting}[style=solidity]
+// Contrat SuVa Wallet (a construire !)
+// Ce contrat sera implemente dans le futur du projet
+
+pragma solidity ^0.8.25;
+
+import "@account-abstraction/contracts/interfaces/IAccount.sol";
+import "./ZKNOX_ethdilithium.sol";
+
+contract SuVaWallet is IAccount {
+    // Cle publique post-quantique de l'utilisateur
+    PubKey public quantum_pk;
+
+    // Verifieur ETHDilithium
+    ZKNOX_ethdilithium immutable verifier;
+
+    constructor(
+        PubKey memory _quantum_pk,
+        address _verifier
+    ) {
+        quantum_pk = _quantum_pk;
+        verifier = ZKNOX_ethdilithium(_verifier);
+    }
+
+    // Fonction appelee par EntryPoint pour valider une transaction
+    function validateUserOp(
+        UserOperation calldata userOp,
+        bytes32 userOpHash,
+        uint256 missingAccountFunds
+    ) external returns (uint256 validationData) {
+        // La signature dans userOp contient la signature post-quantique
+        Signature memory sig = abi.decode(
+            userOp.signature,
+            (Signature)
+        );
+
+        // Verifier avec ETHDilithium
+        bool valid = verifier.verify(
+            quantum_pk,
+            abi.encodePacked(userOpHash),
+            sig
+        );
+
+        // 0 = valide, 1 = invalide
+        return valid ? 0 : 1;
+    }
+}
+\end{lstlisting}
+
+\begin{importantbox}
+Le flow complet pour une transaction SuVa~:
+\begin{enumerate}
+  \item L'utilisateur génère une signature Dilithium/Falcon off-chain (Python/SDK)
+  \item La signature est encodée dans \texttt{UserOperation.signature}
+  \item Le Bundler soumet la \texttt{UserOperation} à l'EntryPoint
+  \item L'EntryPoint appelle \texttt{validateUserOp()} du Smart Wallet
+  \item Le Smart Wallet appelle \texttt{verify()} du contrat ZKNOX
+  \item Si la vérification passe, la transaction est exécutée
+\end{enumerate}
+\end{importantbox}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Foundry --- Tester les contrats}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Structure d'un test Foundry}
+
+\begin{lstlisting}[style=solidity]
+// test/ZKNOX_dilithium.t.sol (genere par Python)
+pragma solidity ^0.8.25;
+
+import "forge-std/Test.sol";
+import "../src/ZKNOX_dilithium.sol";
+
+contract TestDilithium is Test {
+    ZKNOX_dilithium verifier;
+
+    // Donnees de test (generees par generate_dilithium_test_vectors.py)
+    bytes constant PUBLIC_KEY = hex"abc123..."; // 1312 bytes
+    bytes constant MESSAGE = "We are ZKNox.";
+    bytes constant SIGNATURE = hex"def456..."; // 2420 bytes
+
+    function setUp() public {
+        // Deployer le contrat (et les twiddle factors)
+        // ...
+        verifier = new ZKNOX_dilithium(...);
+    }
+
+    function test_verify_valid_signature() public {
+        // Decoder les donnees
+        PubKey memory pk = abi.decode(PUBLIC_KEY, (PubKey));
+        Signature memory sig = abi.decode(SIGNATURE, (Signature));
+
+        // Verifier
+        bool result = verifier.verify(pk, MESSAGE, sig);
+        assertTrue(result, "La signature valide doit passer");
+    }
+
+    function test_verify_wrong_message() public {
+        PubKey memory pk = abi.decode(PUBLIC_KEY, (PubKey));
+        Signature memory sig = abi.decode(SIGNATURE, (Signature));
+
+        bool result = verifier.verify(pk, "Wrong message", sig);
+        assertFalse(result, "Mauvais message doit echouer");
+    }
+
+    function test_gas_cost() public {
+        // Foundry mesure automatiquement le gas si on utilise
+        // vm.startSnapshotGas / vm.stopSnapshotGas
+        uint256 gasBefore = gasleft();
+        // ... (verification)
+        uint256 gasUsed = gasBefore - gasleft();
+        emit log_uint(gasUsed);  // ~6.6M pour ETHDilithium
+    }
+}
+\end{lstlisting}
+
+\subsection{Commandes Foundry essentielles}
+
+\begin{lstlisting}[style=bash]
+# Compiler les contrats
+forge build
+
+# Lancer tous les tests
+forge test -vv
+
+# Tester seulement un contrat specifique
+forge test --match-contract TestDilithium -vv
+
+# Tester une seule fonction
+forge test --match-test test_verify_valid_signature -vvv
+
+# Rapport gas detaille
+forge test --gas-report
+
+# Profil lite (plus rapide)
+FOUNDRY_PROFILE=lite forge test -vv
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Exercices}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{exercice}{1 --- Lecture de contrat Solidity}
+Ouvre \texttt{src/ZKNOX\_dilithium\_utils.sol}.
+\begin{enumerate}[label=\alph*)]
+  \item Identifie toutes les constantes Dilithium définies.
+        Vérifie qu'elles correspondent aux valeurs du Chapitre 5.
+  \item Quelle est la structure \texttt{PubKey} ? Quels champs contient-elle ?
+  \item Quelle est la structure \texttt{Signature} ? Quels champs contient-elle ?
+  \item Trouve la fonction \texttt{VECMULMOD} --- que fait-elle ?
+\end{enumerate}
+\end{exercice}
+
+\begin{exercice}{2 --- Coûts gas}
+\begin{enumerate}[label=\alph*)]
+  \item Calcule le coût en ETH d'une vérification ETHDilithium (6.6M gas)
+        si le gas price est 20 Gwei et 1 ETH = 3000\$.
+  \item Même calcul pour Falcon (350K gas).
+  \item Sur un L2 comme Arbitrum (gas 10x moins cher), quel serait le coût ?
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+# Parametres
+gas_ethdilithium = 6_600_000
+gas_falcon = 350_000
+gas_price_gwei = 20
+eth_usd = 3000
+
+# ETHDilithium
+cost_eth = gas_ethdilithium * gas_price_gwei * 1e-9  # ETH
+cost_usd = cost_eth * eth_usd
+print(f"ETHDilithium : {cost_eth:.4f} ETH = ${cost_usd:.2f}")
+# ~ 0.132 ETH = $396
+
+# Falcon
+cost_eth_f = gas_falcon * gas_price_gwei * 1e-9
+cost_usd_f = cost_eth_f * eth_usd
+print(f"Falcon : {cost_eth_f:.4f} ETH = ${cost_usd_f:.2f}")
+# ~ 0.007 ETH = $21
+
+# L2 (10x moins cher)
+print(f"Falcon L2 : ${cost_usd_f / 10:.2f}")
+# ~ $2.10
+\end{lstlisting}
+\end{solution}
+
+\begin{exercice}{3 --- ERC-4337}
+\begin{enumerate}[label=\alph*)]
+  \item Quel est le rôle du \texttt{Bundler} dans ERC-4337 ?
+  \item Pourquoi le Smart Wallet paie-t-il le gas (via le Paymaster)
+        plutôt que l'utilisateur directement ?
+  \item Pour SuVa, quel est l'avantage de ERC-4337 vs modifier le
+        protocole Ethereum directement ?
+\end{enumerate}
+\end{exercice}
+
+\begin{exercice}{4 --- Installer et compiler le projet}
+\begin{enumerate}[label=\alph*)]
+  \item Installe Foundry et compile les contrats : \texttt{forge build}.
+  \item Y a-t-il des erreurs de compilation ? Si oui, lesquelles ?
+  \item Lance \texttt{FOUNDRY\_PROFILE=lite forge test -vv} et observe la sortie.
+\end{enumerate}
+\end{exercice}
+
+\end{document}

@@ -1,0 +1,497 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{code_bg}{RGB}{245, 247, 250}
+\definecolor{code_kw}{RGB}{0, 80, 200}
+\definecolor{code_str}{RGB}{180, 40, 40}
+\definecolor{code_cmt}{RGB}{80, 130, 80}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{success_bg}{RGB}{230, 255, 235}
+
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+}
+\lstdefinestyle{output}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{gray!10},
+  frame=single, rulecolor=\color{gray!50},
+  breaklines=true,
+}
+
+\newtcolorbox{defbox}[2][]{colback=success_bg,colframe=green!50!black,
+  fonttitle=\bfseries,title={Définition : #2},#1}
+\newtcolorbox{theorembox}[2][]{colback=blue!5,colframe=suva_blue,
+  fonttitle=\bfseries,title={Théorème : #2},#1}
+\newtcolorbox{exercice}[2][]{colback=white,colframe=suva_blue!60,
+  fonttitle=\bfseries,title={Exercice #2},#1,breakable}
+\newtcolorbox{solution}[1][]{colback=gray!5,colframe=gray!40,
+  fonttitle=\bfseries\itshape,title={Solution},#1,breakable}
+\newtcolorbox{importantbox}[1][]{colback=suva_blue!10,colframe=suva_blue,
+  fonttitle=\bfseries,title={Connexion avec le projet},#1}
+\newtcolorbox{warningbox}[1][]{colback=warn_bg,colframe=orange!80!black,
+  fonttitle=\bfseries,title={Attention},#1}
+
+\newcommand{\Zq}{\mathbb{Z}_q}
+\newcommand{\Rq}{R_q}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{suva_blue}\textbf{SuVa --- Chapitre 5}}
+\fancyhead[R]{\color{gray}Dilithium Complet}
+\fancyfoot[L]{\footnotesize\color{gray}Mohamed Lamine MBENGUE}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\footnotesize\color{gray}portfolio-alamine.web.app}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% ══════════════════════════════════════════════════════════════════════
+\begin{document}
+
+\begin{center}
+  {\color{suva_blue}\rule{\linewidth}{2pt}}\\[0.5cm]
+  {\Huge\bfseries\color{suva_blue} Chapitre 5}\\[0.3cm]
+  {\large\bfseries Dilithium / ML-DSA --- Le schéma de signature complet}\\[0.2cm]
+  {\small\color{gray} Keygen, Sign, Verify : code source et mathématiques détaillés}\\[0.3cm]
+  {\color{suva_blue}\rule{\linewidth}{2pt}}
+\end{center}
+
+\vspace{0.3cm}
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40,
+  left=6pt, right=6pt, top=4pt, bottom=4pt]
+\small
+\begin{tabular}{ll}
+  \textbf{Auteur}      & Mohamed Lamine MBENGUE \\
+  \textbf{Spécialités} & Sécurité · DevOps · Dev Full Stack Web \& Mobile \\
+  \textbf{Contact}     & +221 78 178 44 36 · mbenguemohamedlamine2022@gmail.com \\
+  \textbf{Portfolio}   & \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}} \\
+\end{tabular}
+\end{tcolorbox}
+\vspace{0.3cm}
+
+\tableofcontents
+\newpage
+
+%══════════════════════════════════════════════════════════════════════
+\section{Vue d'ensemble du schéma Dilithium}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Paramètres Dilithium2 (niveau utilisé dans SuVa)}
+
+\begin{center}
+\begin{tabular}{clp{7cm}}
+\toprule
+\textbf{Param.} & \textbf{Valeur} & \textbf{Rôle} \\
+\midrule
+$n$    & 256 & Degré des polynômes \\
+$q$    & 8\,380\,417 & Module premier \\
+$k$    & 4 & Lignes de la matrice $A$ \\
+$l$    & 4 & Colonnes de la matrice $A$ \\
+$\eta$ & 2 & Borne des coefficients secrets ($s_1, s_2$) \\
+$\tau$ & 39 & Nb de $\pm 1$ dans le challenge $c$ \\
+$\gamma_1$ & $2^{17} = 131\,072$ & Plage de masquage de $z$ \\
+$\gamma_2$ & $(q-1)/88 = 95\,232$ & Plage de rounding \\
+$d$    & 13 & Bits droppés de la clé publique \\
+$\omega$ & 80 & Max de 1s dans le hint $h$ \\
+$\beta$ & 78 & Borne de rejet ($= \tau \times \eta$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Les trois algorithmes}
+
+\begin{center}
+\begin{tikzpicture}[
+  block/.style={draw=suva_blue, rounded corners, fill=blue!5,
+    minimum width=5cm, minimum height=1.2cm,
+    text width=4.8cm, align=center},
+  arrow/.style={->, thick, suva_blue},
+  label/.style={font=\small, color=gray}
+]
+  \node[block] (kg) {
+    \textbf{KeyGen} (off-chain, une fois)\\
+    \footnotesize $\zeta \to (A, s_1, s_2) \to t = As_1+s_2$\\
+    \footnotesize \texttt{pk = (rho, t1), sk = (rho, K, tr, s1, s2, t0)}
+  };
+  \node[block, below=1.5cm of kg] (sg) {
+    \textbf{Sign} (off-chain, par message)\\
+    \footnotesize Boucle de rejet jusqu'à trouver $(z, h)$ valide\\
+    \footnotesize \texttt{sig = (c\_tilde, z, h)}
+  };
+  \node[block, below=1.5cm of sg] (vf) {
+    \textbf{Verify} (on-chain Solidity)\\
+    \footnotesize Recalcule $w' = Az - ct_1 \cdot 2^d$\\
+    \footnotesize Compare $\tilde{c} \stackrel{?}{=} H(\mu \| w')$
+  };
+  \draw[arrow] (kg) -- node[label, right] {sk → Sign} (sg);
+  \draw[arrow] (sg) -- node[label, right] {(pk, sig, msg)} (vf);
+  \node[right=2cm of kg, font=\scriptsize, align=left, color=gray] {
+    Fichier :\\
+    \texttt{Falcon\_dilithium.py}
+  };
+  \node[right=2cm of vf, font=\scriptsize, align=left, color=gray] {
+    Fichier :\\
+    \texttt{ZKNOX\_dilithium.sol}
+  };
+\end{tikzpicture}
+\end{center}
+
+%══════════════════════════════════════════════════════════════════════
+\section{KeyGen --- Génération de clés en détail}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Algorithme}
+
+\begin{lstlisting}[style=python]
+# Extrait de Falcon_dilithium/Falcon_dilithium.py - methode keygen()
+
+def keygen(self, _xof=None, _xof2=None):
+    # 1. Graine principale : 32 bytes aleatoires
+    zeta = self.random_bytes(32)
+
+    # 2. Expander : SHAKE256(zeta) -> 128 bytes
+    #    Divise en rho (32), rho_prime (64), K (32)
+    seed_bytes = self._h(zeta, 128)
+    rho        = seed_bytes[:32]   # seed pour matrice publique A
+    rho_prime  = seed_bytes[32:96] # seed pour vecteurs secrets s1, s2
+    K          = seed_bytes[96:]   # seed pour la signature (nonce)
+
+    # 3. Generer la matrice publique A in R_q^{k x l}
+    # A est generee par rejection sampling depuis SHAKE128(rho)
+    # IMPORTANTE : A est dans le domaine NTT deja (A_hat)
+    A_hat = self._expand_matrix_from_seed(rho)
+    # A_hat est k x l = 4x4 matrices de polynomes
+
+    # 4. Generer les vecteurs secrets
+    # s1 in R_q^l : coefficients dans [-eta, eta]
+    # s2 in R_q^k : coefficients dans [-eta, eta]
+    s1, s2 = self._expand_vector_from_seed(rho_prime)
+    # Pour Dilithium2 (eta=2) : coefficients dans {-2,-1,0,1,2}
+
+    # 5. Calculer t = A * s1 + s2
+    t = (A_hat @ s1.to_ntt()).from_ntt() + s2
+    # Decomposition : t = t1 * 2^d + t0
+    t1, t0 = t.power_2_round(self.d)
+
+    # 6. Construire les cles
+    pk = self._pack_pk(rho, t1)    # 1312 bytes
+    tr = self._h(pk, 32)           # Hash de la cle publique
+    sk = self._pack_sk(rho, K, tr, s1, s2, t0)  # 2528 bytes
+
+    return pk, sk
+\end{lstlisting}
+
+\subsection{Tailles}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Composant} & \textbf{Taille} & \textbf{Contenu} \\
+\midrule
+$\rho$ & 32 bytes & Graine pour générer $A$ \\
+$t_1$ & 1280 bytes & $k \times n \times 10$ bits $= 4 \times 256 \times 10 / 8$ \\
+\textbf{Total pk} & \textbf{1312 bytes} & \\
+\midrule
+$\rho$ & 32 bytes & \\
+$K$ & 32 bytes & \\
+$\text{tr}$ & 32 bytes & Hash de pk \\
+$s_1$ & 384 bytes & $l \times n \times (2\eta+1)$-bits codage \\
+$s_2$ & 384 bytes & $k \times n \times (2\eta+1)$-bits codage \\
+$t_0$ & 1664 bytes & $k \times n \times 13$ bits \\
+\textbf{Total sk} & \textbf{2528 bytes} & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Sign --- La boucle de rejet}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{warningbox}
+La boucle de rejet est le cœur de Dilithium.
+En moyenne, \textbf{4.25 itérations} sont nécessaires pour Dilithium2.
+\end{warningbox}
+
+\begin{lstlisting}[style=python]
+# Extrait simplifie de sign()
+
+def sign(self, sk_bytes, m, _xof=None, _xof2=None):
+    rho, K, tr, s1, s2, t0 = self._unpack_sk(sk_bytes)
+    A_hat = self._expand_matrix_from_seed(rho)
+
+    # Message representative : mu = SHAKE256(tr || m, 64 bytes)
+    mu = self._h(tr + m, 64)
+
+    # rho_prime pour le masque y
+    rho_prime = self._h(K + mu, 64)
+
+    # Precomputer en NTT (important pour la performance)
+    s1 = s1.to_ntt()
+    s2 = s2.to_ntt()
+    t0 = t0.to_ntt()
+
+    alpha = 2 * self.gamma_2
+    kappa = 0  # nonce incremente a chaque iteration
+
+    while True:  # Boucle de rejet
+        # Etape 1 : Tirer le masque y
+        # y in R_q^l avec ||y||_inf <= gamma_1
+        y = self._expand_mask_vector(rho_prime, kappa)
+        kappa += self.l
+
+        # Etape 2 : Calculer w = A*y dans R_q^k
+        w = (A_hat @ y.to_ntt()).from_ntt()
+
+        # Etape 3 : Decomposer w en w1 (haute) et w0 (basse)
+        w1, w0 = w.decompose(alpha)
+
+        # Etape 4 : Hacher pour obtenir le challenge
+        # c_tilde = H(mu || w1_packed)
+        c_tilde = self._h(mu + w1.bit_pack_w(self.gamma_2), 32)
+        c = self.R.sample_in_ball(c_tilde, self.tau).to_ntt()
+
+        # Etape 5 : z = y + c*s1
+        z = y + (s1.scale(c)).from_ntt()
+
+        # REJET 1 : z trop grand -> fuit info sur s1
+        if z.check_norm_bound(self.gamma_1 - self.beta):
+            continue  # Recommencer
+
+        # Etape 6 : Calculer les termes de correction
+        w0_minus_cs2 = w0 - s2.scale(c).from_ntt()
+
+        # REJET 2 : w0 - cs2 trop grand
+        if w0_minus_cs2.check_norm_bound(self.gamma_2 - self.beta):
+            continue
+
+        c_t0 = t0.scale(c).from_ntt()
+
+        # REJET 3 : c*t0 trop grand
+        if c_t0.check_norm_bound(self.gamma_2):
+            continue
+
+        # Etape 7 : Construire le hint
+        h = (w0_minus_cs2 + c_t0).make_hint_optimised(w1, alpha)
+
+        # REJET 4 : trop de 1s dans h (trop grande correction)
+        if h.sum_hint() > self.omega:
+            continue
+
+        # Succes ! Empaqueter la signature
+        return self._pack_sig(c_tilde, z, h)
+        # Signature = (c_tilde, z, h) = (32, ~1152, ~100) bytes
+\end{lstlisting}
+
+\subsection{Pourquoi le rejet protège la clé secrète ?}
+
+\begin{theorembox}{Rejet pour la confidentialité}
+Si on publiait $z = y + cs_1$ sans restriction, un attaquant qui observe
+plusieurs signatures pourrait faire de l'analyse statistique~:
+
+$z = y + cs_1 \Rightarrow z - y = cs_1$
+
+Si la distribution de $z$ dépend de $s_1$, la clé secrète fuit.
+
+\textbf{Le rejet uniformise~:} En rejetant les $z$ trop grands (proches
+de la borne), on s'assure que la distribution de $z$ est essentiellement
+\textbf{uniforme} sur $[-\gamma_1+\beta, \gamma_1-\beta]$ et n'informe
+pas sur $s_1$.
+\end{theorembox}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Verify --- Vérification complète}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{lstlisting}[style=python]
+# Extrait simplifie de verify()
+
+def verify(self, pk_bytes, m, sig_bytes, _xof=None):
+    # Decompresser
+    rho, t1 = self._unpack_pk(pk_bytes)
+    c_tilde, z, h = self._unpack_sig(sig_bytes)
+
+    # Verifications basiques
+    if h.sum_hint() > self.omega:
+        return False
+    if z.check_norm_bound(self.gamma_1 - self.beta):
+        return False
+
+    # Regenerer A (depuis la graine rho)
+    A_hat = self._expand_matrix_from_seed(rho)
+
+    # Recalculer mu
+    tr = self._h(pk_bytes, 32)
+    mu = self._h(tr + m, 64)
+
+    # Reconstruire c depuis c_tilde
+    c = self.R.sample_in_ball(c_tilde, self.tau).to_ntt()
+
+    # Calculer Az - c*t1*2^d
+    # t1 * 2^d reconstruit le vecteur t1 * 2^d dans Z_q
+    z_ntt = z.to_ntt()
+    t1_scaled = t1.scale(1 << self.d).to_ntt()
+    Az_minus_ct1 = ((A_hat @ z_ntt) - t1_scaled.scale(c)).from_ntt()
+    # Note : (A*z - c*t1*2^d) ≈ A*y (si z = y + c*s1 et t1*2^d ≈ t-t0)
+
+    # Utiliser le hint pour recuperer w1'
+    w_prime = h.use_hint(Az_minus_ct1, 2 * self.gamma_2)
+
+    # Verification finale
+    c_tilde_check = self._h(mu + w_prime.bit_pack_w(self.gamma_2), 32)
+    return c_tilde == c_tilde_check
+\end{lstlisting}
+
+\subsection{Preuve de correction (intuition)}
+
+Lors de la signature on a~:
+$$z = y + cs_1, \quad t = As_1 + s_2, \quad t = t_1 \cdot 2^d + t_0$$
+
+Lors de la vérification~:
+\begin{align*}
+Az - ct_1 \cdot 2^d
+&= A(y + cs_1) - ct_1 \cdot 2^d \\
+&= Ay + cAs_1 - ct_1 \cdot 2^d \\
+&= Ay + c(t - s_2) - c(t - t_0) \\
+&= Ay - cs_2 + ct_0 \\
+&\approx Ay \quad \text{(si } \|cs_2\|_\infty, \|ct_0\|_\infty < \gamma_2\text{)}
+\end{align*}
+
+Le hint corrige la petite différence entre $Ay$ et $Az - ct_1 \cdot 2^d$
+pour retrouver $w_1 = \text{HighBits}(Ay)$.
+
+%══════════════════════════════════════════════════════════════════════
+\section{ETHDilithium --- les deux changements clés}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Changement 1 : SHAKE → Keccak256}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+& \textbf{Dilithium standard} & \textbf{ETHDilithium} \\
+\midrule
+Hash function & SHAKE-128/256 & Keccak-256 \\
+Implémentation Solidity & 269 lignes & opcode natif (3 gaz) \\
+Coût on-chain & $\sim 50\%$ du gas total & $\sim 5\%$ \\
+Conformité NIST & Oui (FIPS 204) & Non \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Changement 2 : Clé publique étendue}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+& \textbf{Dilithium} & \textbf{ETHDilithium} \\
+\midrule
+Clé publique & $(\rho, t_1)$ & $(\hat{A}, t_1)$ \\
+Taille pk & 1312 bytes & $\sim 4096 + 1280$ bytes \\
+Coût keygen & Normal & On précalcule $\hat{A}$ \\
+Coût verify & Doit régénérer $\hat{A}$ & $\hat{A}$ déjà là \\
+Économie gas & --- & $\sim -50\%$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{lstlisting}[style=python]
+# Extrait de Falcon_dilithium_eth.py
+
+def keygen(self, _xof=None, _xof2=None):
+    # ... (pareil jusqu'a t1, t0)
+
+    # DIFFERENCE : stocker A_hat dans la cle publique
+    # Au lieu de (rho, t1), on stocke (A_hat, t1_new)
+    pk_new = self._pack_pk_new(A_hat, t1)
+    # pk_new est plus grande (toute la matrice A)
+    # mais la verification n'a plus besoin de regenerer A
+
+    # t1_new : deja en NTT form dans la pk
+    # Pour que la verification puisse directement utiliser
+    # t1 * 2^d sans recalculer le NTT
+    return pk_new, sk
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Exercices}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{exercice}{1 --- Tracer le flow complet}
+Trace sur papier le flow complet de Dilithium en annotant chaque étape
+avec le fichier/fonction correspondant dans le projet~:
+
+\begin{enumerate}[label=\alph*)]
+  \item KeyGen~: de \texttt{random\_bytes(32)} jusqu'à \texttt{pack\_pk}
+  \item Sign~: de \texttt{\_unpack\_sk} jusqu'à \texttt{return \_pack\_sig}
+  \item Verify~: de \texttt{\_unpack\_pk} jusqu'au \texttt{return True/False}
+\end{enumerate}
+\end{exercice}
+
+\begin{exercice}{2 --- Pourquoi le nonce kappa}
+Dans \texttt{sign()}, \texttt{kappa} est incrémenté de $l$ à chaque itération.
+\begin{enumerate}[label=\alph*)]
+  \item Pourquoi ne pas utiliser \texttt{os.urandom()} pour le masque $y$ ?
+  \item Que se passerait-il si deux signatures utilisaient le même $y$ ?
+  \item Comment \texttt{kappa} garantit-il que $y$ est différent à chaque itération ?
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+# b) Si y est reutilise pour deux messages m1, m2 :
+# sig1 = (c1, z1=y+c1*s1, h1)
+# sig2 = (c2, z2=y+c2*s1, h2)
+# Alors : z1 - z2 = (c1 - c2) * s1
+# Si c1 != c2, on peut isoler s1 ! -> CATASTROPHIQUE
+
+# c) kappa est incremente : rho_prime || kappa
+# -> deux iterations differentes -> y differents
+# Le PRNG est deterministe depuis (rho_prime, kappa)
+# -> securite ET determinisme (utile pour les KAT)
+\end{lstlisting}
+\end{solution}
+
+\begin{exercice}{3 --- Sécurité du hint}
+Le hint $h$ peut contenir au plus $\omega = 80$ valeurs 1.
+\begin{enumerate}[label=\alph*)]
+  \item Combien de bits d'information le hint encode-t-il au maximum ?
+        ($k \times n$ bits potentiels, mais $\leq \omega$ sont 1)
+  \item Pourquoi la limite $\omega$ est-elle nécessaire pour la sécurité ?
+  \item Que se passe-t-il si un attaquant peut forcer $\|h\|_1 > \omega$ ?
+\end{enumerate}
+\end{exercice}
+
+\begin{exercice}{4 --- ETHDilithium vs Dilithium en Python}
+\begin{enumerate}[label=\alph*)]
+  \item Ouvre \texttt{example.py} et \texttt{example\_zk.py}.
+  \item Lance les deux exemples et observe la sortie.
+  \item Mesure et compare les temps d'exécution de ETHDilithium2 vs Dilithium2
+        pour keygen, sign et verify.
+  \item Pourquoi ETHDilithium est plus lent en Python mais plus rapide on-chain ?
+\end{enumerate}
+\end{exercice}
+
+\end{document}

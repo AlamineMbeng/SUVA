@@ -1,0 +1,387 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{code_bg}{RGB}{245, 247, 250}
+\definecolor{code_kw}{RGB}{0, 80, 200}
+\definecolor{code_str}{RGB}{180, 40, 40}
+\definecolor{code_cmt}{RGB}{80, 130, 80}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{success_bg}{RGB}{230, 255, 235}
+
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+}
+
+\newtcolorbox{defbox}[2][]{colback=success_bg,colframe=green!50!black,
+  fonttitle=\bfseries,title={Définition : #2},#1}
+\newtcolorbox{theorembox}[2][]{colback=blue!5,colframe=suva_blue,
+  fonttitle=\bfseries,title={Théorème : #2},#1}
+\newtcolorbox{exercice}[2][]{colback=white,colframe=suva_blue!60,
+  fonttitle=\bfseries,title={Exercice #2},#1,breakable}
+\newtcolorbox{solution}[1][]{colback=gray!5,colframe=gray!40,
+  fonttitle=\bfseries\itshape,title={Solution},#1,breakable}
+\newtcolorbox{importantbox}[1][]{colback=suva_blue!10,colframe=suva_blue,
+  fonttitle=\bfseries,title={Connexion avec le projet},#1}
+\newtcolorbox{warningbox}[1][]{colback=warn_bg,colframe=orange!80!black,
+  fonttitle=\bfseries,title={Attention},#1}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{suva_blue}\textbf{SuVa --- Chapitre 4}}
+\fancyhead[R]{\color{gray}Réseaux de Treillis}
+\fancyfoot[L]{\footnotesize\color{gray}Mohamed Lamine MBENGUE}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\footnotesize\color{gray}portfolio-alamine.web.app}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% ══════════════════════════════════════════════════════════════════════
+\begin{document}
+
+\begin{center}
+  {\color{suva_blue}\rule{\linewidth}{2pt}}\\[0.5cm]
+  {\Huge\bfseries\color{suva_blue} Chapitre 4}\\[0.3cm]
+  {\large\bfseries Réseaux de Treillis et Cryptographie Post-Quantique}\\[0.2cm]
+  {\small\color{gray} La sécurité de Dilithium repose sur des problèmes difficiles sur les réseaux}\\[0.3cm]
+  {\color{suva_blue}\rule{\linewidth}{2pt}}
+\end{center}
+
+\vspace{0.3cm}
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40,
+  left=6pt, right=6pt, top=4pt, bottom=4pt]
+\small
+\begin{tabular}{ll}
+  \textbf{Auteur}      & Mohamed Lamine MBENGUE \\
+  \textbf{Spécialités} & Sécurité · DevOps · Dev Full Stack Web \& Mobile \\
+  \textbf{Contact}     & +221 78 178 44 36 · mbenguemohamedlamine2022@gmail.com \\
+  \textbf{Portfolio}   & \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}} \\
+\end{tabular}
+\end{tcolorbox}
+\vspace{0.3cm}
+
+\tableofcontents
+\newpage
+
+%══════════════════════════════════════════════════════════════════════
+\section{Pourquoi la crypto actuelle sera cassée par les ordinateurs quantiques}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{ECDSA et la vulnérabilité quantique}
+
+Ethereum utilise \textbf{ECDSA} (Elliptic Curve Digital Signature Algorithm).
+Sa sécurité repose sur la difficulté du \textbf{problème du logarithme
+discret sur les courbes elliptiques}~:
+
+\begin{center}
+Connaissant $P$ (point) et $Q = k \cdot P$, trouver $k$.
+\end{center}
+
+\textbf{L'algorithme de Shor} (1994) résout ce problème en temps polynomial
+sur un ordinateur quantique. Conséquence~:
+\begin{itemize}
+  \item Un QC suffisant peut retrouver la clé privée depuis la clé publique
+  \item Toutes les transactions Ethereum deviendraient forgeable
+  \item $\sim$\$200 milliards de stablecoins exposés
+\end{itemize}
+
+\subsection{Pourquoi les réseaux résistent au quantique}
+
+Les meilleurs algorithmes quantiques connus (Grover, Shor) n'offrent pas
+d'avantage polynomial pour les problèmes sur les réseaux.
+
+L'algorithme de Shor \textbf{ne fonctionne pas} sur les problèmes LWE/SIS.
+
+%══════════════════════════════════════════════════════════════════════
+\section{Qu'est-ce qu'un réseau de treillis (lattice) ?}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{defbox}{Réseau de treillis}
+Un réseau $\Lambda$ de rang $n$ est l'ensemble des combinaisons
+\textbf{entières} de $n$ vecteurs linéairement indépendants $b_1, \ldots, b_n$~:
+$$\Lambda = \left\{ \sum_{i=1}^n a_i b_i \mid a_i \in \mathbb{Z} \right\}$$
+La matrice $B = [b_1 | \cdots | b_n]$ est appelée \textbf{base} du réseau.
+\end{defbox}
+
+\textbf{Visualisation 2D~:}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.8]
+  % Points du reseau
+  \foreach \i in {-2,-1,0,1,2} {
+    \foreach \j in {-2,-1,0,1,2} {
+      \fill (\i*2 + \j*0.5, \j*1.5) circle (2pt);
+    }
+  }
+  % Base vectors
+  \draw[->, thick, suva_blue] (0,0) -- (2,0) node[right] {$b_1$};
+  \draw[->, thick, red] (0,0) -- (0.5,1.5) node[above] {$b_2$};
+  % Axes
+  \draw[gray, ->] (-4,0) -- (5.5,0);
+  \draw[gray, ->] (0,-3) -- (0,4);
+\end{tikzpicture}
+\end{center}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Problèmes difficiles sur les réseaux}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{SVP --- Shortest Vector Problem}
+
+\begin{defbox}{SVP}
+\textbf{Problème du vecteur le plus court~:}
+Trouver le vecteur non-nul le plus court dans un réseau $\Lambda$.
+$$\lambda_1(\Lambda) = \min_{v \in \Lambda \setminus \{0\}} \|v\|$$
+\end{defbox}
+
+SVP est NP-difficile dans le cas général. Les meilleurs algorithmes
+(BKZ, LLL) ont une complexité exponentielle.
+
+\subsection{LWE --- Learning With Errors}
+
+\begin{defbox}{LWE}
+\textbf{Problème LWE~:} Connaissant les couples $(a_i, b_i)$ où~:
+$$b_i = \langle a_i, s \rangle + e_i \pmod{q}$$
+avec $s$ le \textbf{secret}, $a_i$ aléatoires uniformes, et $e_i$ un
+\textbf{bruit} petit, retrouver $s$.
+\end{defbox}
+
+\begin{importantbox}
+\textbf{Analogie~:} Imagine qu'on te donne 100 équations du type~:
+$$a_1 x_1 + a_2 x_2 + \cdots + a_n x_n + e \equiv b \pmod{q}$$
+Chaque équation a une petite erreur $e$. Sans les erreurs, le système
+est facilement résoluble (Gauss). \textbf{Avec les erreurs}, même avec
+des millions d'équations, retrouver $(x_1, \ldots, x_n)$ est
+computationnellement infaisable.
+\end{importantbox}
+
+\subsection{MLWE --- Module Learning With Errors}
+
+\begin{defbox}{MLWE}
+Version modulaire de LWE~: le secret $s$ et le bruit $e$ sont des
+\textbf{vecteurs de polynômes} dans $R_q^l$, et $A$ est une matrice
+$k \times l$ de polynômes dans $R_q$.
+
+$$t = A s_1 + s_2 \pmod{q}$$
+
+où $s_1 \in R_q^l$ et $s_2 \in R_q^k$ ont des coefficients petits
+(bornés par $\eta$).
+\end{defbox}
+
+\begin{importantbox}
+Dans Dilithium~:
+\begin{itemize}
+  \item $A \in R_q^{4 \times 4}$ est publique (générée de $\rho$)
+  \item $s_1 \in R_q^4$ a des coefficients dans $[-\eta, \eta] = [-2, 2]$ (secret)
+  \item $s_2 \in R_q^4$ a des coefficients dans $[-\eta, \eta] = [-2, 2]$ (secret)
+  \item $t = As_1 + s_2$ est publique (dans la clé publique)
+\end{itemize}
+\textbf{Sécurité~:} Étant donné $(A, t)$, retrouver $(s_1, s_2)$ est MLWE.
+\end{importantbox}
+
+\subsection{MSIS --- Module Short Integer Solution}
+
+\begin{defbox}{MSIS}
+\textbf{Module Short Integer Solution~:}
+Étant donné $A \in R_q^{k \times l}$, trouver un vecteur court non-nul
+$z \in R_q^l$ tel que~:
+$$Az \equiv 0 \pmod{q}$$
+\end{defbox}
+
+\begin{importantbox}
+\textbf{Lien avec Dilithium~:} L'unforgeability (impossibilité de forger
+une signature) repose sur MSIS. Un attaquant qui forge une signature
+produit essentiellement un court vecteur $z$ tel que $Az \approx ct_1 \cdot 2^d$.
+Cela serait une solution au problème MSIS.
+\end{importantbox}
+
+%══════════════════════════════════════════════════════════════════════
+\section{L'attaque BKZ --- comment mesurer la sécurité}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{defbox}{Algorithme BKZ}
+BKZ (Block Korkine-Zolotarev) est le meilleur algorithme pratique
+pour réduire une base de réseau (trouver de courts vecteurs).
+Il paramétrisé par un \textbf{block size} $\beta$~:
+
+\begin{itemize}
+  \item Plus $\beta$ est grand, plus le résultat est bon
+  \item Mais le temps d'exécution est $\sim 2^{0.292\beta}$ (classique)
+  \item Et $\sim 2^{0.265\beta}$ (quantique, algorithme de Grover)
+\end{itemize}
+
+La sécurité en bits est $\approx 0.292\beta$.
+\end{defbox}
+
+\subsection{Estimation de sécurité pour Dilithium2}
+
+Les scripts dans \texttt{security-estimates-simon/} calculent le
+$\beta$ nécessaire pour casser le schéma~:
+
+\begin{lstlisting}[style=python]
+# Simplifie depuis Falcon_MLWE_security.py
+def estimate_mlwe_security(n, q, k, l, eta):
+    """
+    Estime la securite de l'instance MLWE.
+    Trouve le block-size BKZ minimal pour casser le schema.
+    """
+    # Dimension du reseau : (k+l)*n
+    lattice_dim = (k + l) * n
+
+    # Cherche le beta optimal
+    for beta in range(50, 1000):
+        # Longueur du vecteur cible (approximation)
+        # Pour trouver s1, s2 avec coefficients <= eta
+        target_norm = eta * (lattice_dim ** 0.5)
+
+        # Longueur minimale que BKZ peut trouver (Hermite factor)
+        hermite_factor = (
+            (beta / (2 * 3.14159 * 2.71828)) **
+            (1 / (2 * beta)) *
+            (q ** (k * n / lattice_dim))
+        )
+        expected_norm = hermite_factor ** lattice_dim
+
+        if expected_norm <= target_norm:
+            # Ce beta suffit pour l'attaque
+            security_classical = 0.292 * beta
+            security_quantum = 0.265 * beta
+            return beta, security_classical, security_quantum
+
+    return None
+
+# Dilithium2
+q = 8_380_417
+n = 256; k = 4; l = 4; eta = 2
+beta, sec_c, sec_q = estimate_mlwe_security(n, q, k, l, eta)
+print(f"Block size BKZ : {beta}")
+print(f"Securite classique : {sec_c:.0f} bits")
+print(f"Securite quantique : {sec_q:.0f} bits")
+# Attendu : ~426 bits, ~124 bits classique, ~112 bits quantique
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{SelfTargetMSIS --- sécurité de la signature}
+%══════════════════════════════════════════════════════════════════════
+
+La sécurité de Dilithium repose sur un problème encore plus fort~:
+le \textbf{SelfTargetMSIS}. Forger une signature sans la clé secrète
+revient à trouver un vecteur court $(z, c)$ tel que~:
+$$Az - ct_1 \cdot 2^d \approx 0 \pmod{q}$$
+avec $\|z\|_\infty < \gamma_1 - \beta$ et $c$ un polynôme sparse.
+
+C'est encore plus difficile que MSIS car le target $ct_1 \cdot 2^d$ dépend
+du message à signer.
+
+%══════════════════════════════════════════════════════════════════════
+\section{Exercices}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{exercice}{1 --- LWE jouet}
+Soit $q = 101$, $n = 3$, secret $s = (2, 7, 1)$, bruit max $|e| \leq 1$.
+
+On te donne ces échantillons LWE~:
+\begin{align*}
+  (a_1, b_1) &= ((3, 1, 4), 3 \cdot 2 + 1 \cdot 7 + 4 \cdot 1 + e_1)\\
+  (a_2, b_2) &= ((1, 5, 9), 1 \cdot 2 + 5 \cdot 7 + 9 \cdot 1 + e_2)
+\end{align*}
+
+\begin{enumerate}[label=\alph*)]
+  \item Calcule les $b_i$ exacts (sans erreur) en arithmétique $\mathbb{Z}_{101}$.
+  \item Ajoute un bruit $e_1 = 1$, $e_2 = -1$ et calcule les $b_i$ bruitées.
+  \item Si tu as accès à plein d'échantillons propres (sans bruit), peux-tu
+        récupérer $s$ facilement ? (Indice~: Gauss)
+  \item Avec le bruit, pourquoi est-ce difficile ?
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+q = 101
+s = [2, 7, 1]
+
+a1, a2 = [3, 1, 4], [1, 5, 9]
+
+# a) Sans bruit
+b1_exact = sum(a*si for a, si in zip(a1, s)) % q
+b2_exact = sum(a*si for a, si in zip(a2, s)) % q
+print(f"b1 exact = {b1_exact}")   # (6+7+4) = 17
+print(f"b2 exact = {b2_exact}")   # (2+35+9) = 46
+
+# b) Avec bruit
+b1_noisy = (b1_exact + 1) % q
+b2_noisy = (b2_exact - 1) % q
+print(f"b1 bruite = {b1_noisy}")   # 18
+print(f"b2 bruite = {b2_noisy}")   # 45
+
+# c) Sans bruit : on peut faire Gauss.
+# Avec seulement 3 variables et 3 equations propres :
+# 3x + y + 4z = 17
+# x + 5y + 9z = 46
+# ... -> solution unique = (2, 7, 1)
+
+# d) Avec bruit : b = As + e.
+# On ne sait pas quels echantillons ont quel bruit.
+# Gauss donne une solution fausse.
+# Les meilleurs algorithmes prennent un temps exponentiel.
+\end{lstlisting}
+\end{solution}
+
+\begin{exercice}{2 --- MLWE dans Dilithium}
+Dans Dilithium2 ($k=l=4$, $n=256$, $q=8\,380\,417$, $\eta=2$)~:
+\begin{enumerate}[label=\alph*)]
+  \item Quelle est la dimension totale du réseau utilisé pour l'attaque ?
+  \item Si on augmentait $\eta$ de 2 à 4, que se passe-t-il pour la sécurité ?
+  \item Si on augmentait $q$ (corps plus grand), que se passe-t-il ?
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+# a) Dimension du reseau
+n, k, l = 256, 4, 4
+dim = (k + l) * n
+print(f"Dimension : {dim}")  # 2048
+
+# b) eta plus grand => vecteur secret plus long => plus facile a trouver
+# => securite DIMINUE si on augmente eta
+# C'est pourquoi Dilithium3 augmente k, l plutot qu'eta.
+
+# c) q plus grand => le reseau est "plus facile" a reduire proportionnellement
+# => securite DIMINUE si on augmente q avec les memes k, l.
+# C'est le probleme du ZK-Dilithium avec BabyBear (q=2^31-1) :
+# plus grand q => il faut augmenter k, l pour compenser.
+\end{lstlisting}
+\end{solution}
+
+\begin{exercice}{3 --- Explorer les scripts de sécurité}
+Ouvre \texttt{security-estimates-simon/Falcon\_Dilithium.py}.
+\begin{enumerate}[label=\alph*)]
+  \item Quelle est la sécurité estimée pour Dilithium2 en bits (classique et quantique) ?
+  \item Comment la sécurité est-elle estimée (quelle méthode, quel modèle) ?
+  \item Quelle différence entre attaque MLWE et MSIS dans le contexte de Dilithium ?
+\end{enumerate}
+\end{exercice}
+
+\end{document}

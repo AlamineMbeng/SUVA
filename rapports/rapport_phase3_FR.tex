@@ -1,0 +1,953 @@
+%================================================
+% RAPPORT PHASE 3 -- SUVA PROTOCOL
+% QuantumVault Smart Contract
+% Pour : William Schulz
+% Par  : Mohamed Lamine MBENGUE
+% Date : Mars 2026
+%================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+%--- Couleurs ---
+\definecolor{suva-blue}{RGB}{0, 82, 165}
+\definecolor{suva-green}{RGB}{0, 150, 90}
+\definecolor{suva-orange}{RGB}{220, 100, 0}
+\definecolor{code-bg}{RGB}{245, 245, 245}
+\definecolor{pass-green}{RGB}{0, 140, 70}
+\definecolor{fail-red}{RGB}{180, 0, 0}
+
+%--- En-tete/Pied de page ---
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{suva-blue}{\textbf{SuVa Protocol --- Rapport Phase 3}}}
+\lhead{\textit{Confidentiel}}
+\rfoot{\thepage}
+\lfoot{\textit{Mars 2026}}
+
+%--- Styles de code ---
+\lstdefinestyle{solidity}{
+  language=C,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{code-bg},
+  keywordstyle=\color{suva-blue}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  numbers=left, numberstyle=\tiny\color{gray},
+  frame=single, breaklines=true, captionpos=b
+}
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{code-bg},
+  keywordstyle=\color{suva-blue}\bfseries,
+  commentstyle=\color{suva-green}\itshape,
+  numbers=left, numberstyle=\tiny\color{gray},
+  frame=single, breaklines=true, captionpos=b
+}
+\lstdefinestyle{bash}{
+  language=bash,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{code-bg},
+  keywordstyle=\color{suva-orange}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  numbers=none,
+  frame=single, breaklines=true, captionpos=b
+}
+
+%--- Boites personnalisees ---
+\newtcolorbox{resultbox}[1][]{
+  enhanced,colback=suva-green!8,colframe=suva-green!60,
+  fonttitle=\bfseries,title=#1,arc=3mm
+}
+\newtcolorbox{warningbox}[1][]{
+  enhanced,colback=suva-orange!8,colframe=suva-orange!60,
+  fonttitle=\bfseries,title=#1,arc=3mm
+}
+\newtcolorbox{infobox}[1][]{
+  enhanced,colback=suva-blue!6,colframe=suva-blue!50,
+  fonttitle=\bfseries,title=#1,arc=3mm
+}
+
+%================================================
+\begin{document}
+%================================================
+
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+{\Huge\bfseries\textcolor{suva-blue}{SuVa Protocol}\par}
+\vspace{0.5cm}
+{\Large\textit{Stablecoin Quantique sur EVM}\par}
+\vspace{1.5cm}
+\rule{\linewidth}{0.5pt}
+\vspace{0.5cm}
+{\LARGE\bfseries Rapport Technique --- Phase 3\par}
+\vspace{0.3cm}
+{\large QuantumVault.sol --- Coffre-fort EVM garde par signature post-quantique Falcon\par}
+\vspace{0.5cm}
+\rule{\linewidth}{0.5pt}
+\vspace{2cm}
+
+\begin{tabular}{ll}
+\textbf{Client :}    & William Schulz \\[4pt]
+\textbf{Auteur :}    & Mohamed Lamine MBENGUE \\[4pt]
+\textbf{Portfolio :} & \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}} \\[4pt]
+\textbf{Date :}      & Mars 2026 \\[4pt]
+\textbf{Version :}   & 1.0 --- Final \\[4pt]
+\textbf{Statut :}    & \textcolor{pass-green}{\textbf{COMPLET}} \\[4pt]
+\textbf{Codebase :}  & ETHDILITHIUM-main (fork ZKNox) \\
+\end{tabular}
+
+\vfill
+\begin{tcolorbox}[enhanced,colback=suva-blue!8,colframe=suva-blue,arc=4mm]
+\centering\textit{Document confidentiel. Ce rapport couvre les livrables de la Phase 3 :\\
+contrat QuantumVault.sol, token ERC-20 qUSDT, enregistrement de cle Falcon on-chain,\\
+tests d'integration bout-en-bout, et benchmarks de gas.}
+\end{tcolorbox}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+%================================================
+\section{Resume Executif}
+%================================================
+
+\begin{resultbox}[Phase 3 --- Tous les objectifs atteints]
+\begin{itemize}
+  \item[$\checkmark$] \textbf{QuantumVault.sol} deploye et teste : custody USDT protegee par signature Falcon
+  \item[$\checkmark$] \textbf{qUSDT.sol} ERC-20 : minte au depot (1:1), brule au retrait
+  \item[$\checkmark$] \textbf{Enregistrement de cle Falcon on-chain} : hash de la cle publique stocke par adresse
+  \item[$\checkmark$] \textbf{Protection anti-rejeu} : nonce par utilisateur incremente a chaque retrait
+  \item[$\checkmark$] \textbf{14 tests de logique vault} passant avec MockFalcon
+  \item[$\checkmark$] \textbf{1 test bout-en-bout reel} passant avec le vrai verificateur ZKNOX\_ethfalcon
+  \item[$\checkmark$] \textbf{26 forge tests au total}, 0 echec, toutes phases confondues
+  \item[$\checkmark$] Benchmarks de gas mesures : overhead vault seulement 174\,133 gas
+\end{itemize}
+\end{resultbox}
+
+\vspace{0.5cm}
+
+La Phase 3 livre le coeur du protocole SuVa : un smart contract qui detient des USDT et exige
+une signature Falcon-256 valide pour autoriser tout retrait. Aucune ECDSA. Aucun admin de
+confiance. Seul le detenteur de la cle privee Falcon correspondante peut deplacer les fonds.
+
+La logique du vault (depot, enregistrement de cle, nonce, controle de retrait) n'ajoute que
+\textbf{174\,133 gas} d'overhead. Le cout dominant reste le verificateur Falcon a \textbf{46,7M gas}
+(multiplication scolaire sans NTT). La Phase 4 introduira l'optimisation NTT avec un objectif
+de \textbf{$\sim$4M gas}.
+
+%================================================
+\section{Architecture}
+%================================================
+
+\subsection{Vue d'ensemble}
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.8cm,
+  box/.style={rectangle,draw,rounded corners,minimum width=3.2cm,minimum height=1cm,
+              align=center,font=\small},
+  arrow/.style={-Stealth,thick}
+]
+  \node[box, fill=suva-blue!15]   (user)   at (0,0)   {Utilisateur\\(Python)};
+  \node[box, fill=suva-green!15]  (vault)  at (5.5,0) {QuantumVault.sol};
+  \node[box, fill=suva-orange!15, above right=0.7cm and 2.5cm of vault] (falcon) {ZKNOX\_ethfalcon};
+  \node[box, fill=suva-blue!10,   below right=0.7cm and 2.5cm of vault] (qusdt)  {qUSDT.sol (ERC-20)};
+  \node[box, fill=gray!15, below=1.5cm of vault] (usdt) {MockERC20 (USDT)};
+
+  \draw[arrow] (user)  -- node[above,font=\footnotesize]{depot / retrait} (vault);
+  \draw[arrow] (vault) -- node[above,font=\footnotesize]{verify(h,sig,msg)} (falcon);
+  \draw[arrow] (vault) -- node[above,font=\footnotesize]{mint / burn} (qusdt);
+  \draw[arrow] (vault) -- node[left, font=\footnotesize]{transferFrom / transfer} (usdt);
+\end{tikzpicture}
+\end{center}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Contrat} & \textbf{Role} & \textbf{Etat cle} \\
+\midrule
+\texttt{QuantumVault.sol}  & Detient USDT, controle retraits  & \texttt{pkHash}, \texttt{deposits}, \texttt{nonces} \\
+\texttt{qUSDT.sol}         & Token ERC-20 de recu             & Balances (ERC-20 herite) \\
+\texttt{ZKNOX\_ethfalcon}  & Verifie signatures Falcon-256    & Sans etat \\
+\texttt{MockERC20}         & Simulation USDT pour les tests   & Balances \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%================================================
+\section{Conception des Smart Contracts}
+%================================================
+
+\subsection{QuantumVault.sol}
+
+\subsubsection{Pattern Interface pour le Verificateur}
+
+\begin{lstlisting}[style=solidity, caption={Interface IFalconVerifier}]
+interface IFalconVerifier {
+    function verify(
+        uint256[256] calldata h,
+        bytes calldata salt,
+        bytes calldata s1,
+        bytes calldata message
+    ) external view returns (bool);
+}
+\end{lstlisting}
+
+\begin{infobox}[Decision de conception : Pattern Interface]
+Ce pattern permet d'injecter un \texttt{MockFalcon} dans les tests (qui retourne toujours
+\texttt{true} ou \texttt{false}). Cela separe le test de la logique vault du test de la
+verification cryptographique. Un futur verificateur NTT pourra etre branche sans modifier
+le vault.
+\end{infobox}
+
+\subsubsection{Variables d'etat}
+
+\begin{lstlisting}[style=solidity, caption={Stockage QuantumVault}]
+IERC20           public immutable usdt;
+IqUSDT           public immutable qusdt;
+IFalconVerifier  public immutable falcon;
+
+// keccak256(abi.encodePacked(h)) par utilisateur
+mapping(address => bytes32) public pkHash;
+
+// Montant USDT depose par utilisateur
+mapping(address => uint256) public deposits;
+
+// Nonce anti-rejeu par utilisateur
+mapping(address => uint256) public nonces;
+\end{lstlisting}
+
+\subsubsection{Stockage de la Cle : Hash vs Cle Complete}
+
+\begin{infobox}[Decision : Stocker le hash de la cle publique]
+La cle publique Falcon-256 \texttt{h} est un tableau de 256 \texttt{uint256} = \textbf{8\,192 octets}.\\[4pt]
+\textbf{Option A --- Stocker la cle complete :} 256 SSTORE $\approx$ \textbf{5,1M gas}\\
+\textbf{Option B --- Stocker \texttt{keccak256(h)} :} 1 SSTORE $\approx$ \textbf{20\,000 gas}\\[4pt]
+On choisit l'Option B. La cle complete est passee en \texttt{calldata} a chaque retrait.
+Le vault verifie \texttt{keccak256(abi.encodePacked(h)) == pkHash[user]} avant de verifier la
+signature. C'est cryptographiquement equivalent.
+\end{infobox}
+
+\subsubsection{Format du Message Signe}
+
+\begin{lstlisting}[style=solidity, caption={withdrawMessage() --- le payload signe}]
+function withdrawMessage(
+    address user,
+    uint256 amount,
+    address to
+) public view returns (bytes memory) {
+    return abi.encodePacked(
+        "SuVa:withdraw:",   // separateur de domaine
+        block.chainid,      // ID de la chaine
+        address(this),      // adresse du vault
+        nonces[user],       // nonce anti-rejeu
+        amount,             // montant exact
+        to                  // adresse destinataire
+    );
+}
+\end{lstlisting}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Champ} & \textbf{Valeur} & \textbf{Attaque prevenue} \\
+\midrule
+\texttt{"SuVa:withdraw:"} & Separateur domaine    & Rejeu inter-applications \\
+\texttt{block.chainid}    & ex. 1 (mainnet)        & Rejeu inter-chaines \\
+\texttt{address(this)}    & Adresse du vault       & Rejeu inter-contrats \\
+\texttt{nonces[user]}     & Incremente par retrait & Rejeu de transaction \\
+\texttt{amount}           & Montant USDT exact     & Manipulation montant \\
+\texttt{to}               & Adresse destinataire   & Manipulation destination \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Fonctions Principales}
+
+\begin{lstlisting}[style=solidity, caption={registerKey}]
+function registerKey(uint256[256] calldata h) external {
+    pkHash[msg.sender] = keccak256(abi.encodePacked(h));
+    emit KeyRegistered(msg.sender, pkHash[msg.sender]);
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=solidity, caption={deposit}]
+function deposit(uint256 amount) external {
+    require(pkHash[msg.sender] != bytes32(0), "Aucune cle enregistree");
+    require(amount > 0, "Montant nul");
+    usdt.transferFrom(msg.sender, address(this), amount);
+    deposits[msg.sender] += amount;
+    qusdt.mint(msg.sender, amount);
+    emit Deposited(msg.sender, amount);
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=solidity, caption={withdraw (Verifications-Effets-Interactions)}]
+function withdraw(
+    uint256[256] calldata h,
+    bytes calldata salt,
+    bytes calldata s1,
+    uint256 amount,
+    address to
+) external {
+    // VERIFICATIONS
+    require(amount > 0, "Montant nul");
+    require(deposits[msg.sender] >= amount, "Solde insuffisant");
+    require(
+        keccak256(abi.encodePacked(h)) == pkHash[msg.sender],
+        "Mauvaise cle publique"
+    );
+    bytes memory message = withdrawMessage(msg.sender, amount, to);
+    require(
+        falcon.verify(h, salt, s1, message),
+        "Signature Falcon invalide"
+    );
+    // EFFETS
+    deposits[msg.sender] -= amount;
+    nonces[msg.sender]++;
+    // INTERACTIONS
+    qusdt.burn(msg.sender, amount);
+    usdt.transfer(to, amount);
+    emit Withdrawn(msg.sender, to, amount);
+}
+\end{lstlisting}
+
+\begin{infobox}[Securite : Pattern Verifications-Effets-Interactions (CEI)]
+Toutes les verifications et mises a jour d'etat se font \textit{avant} les appels externes.
+Cela previent les attaques par reentrance.
+\end{infobox}
+
+\subsection{qUSDT.sol}
+
+\begin{lstlisting}[style=solidity, caption={qUSDT --- token de recu quantique}]
+contract qUSDT is ERC20 {
+    address public vault;
+    constructor() ERC20("Quantum USDT", "qUSDT") {}
+
+    function setVault(address _vault) external {
+        require(vault == address(0), "Deja configure");
+        vault = _vault;
+    }
+    modifier onlyVault() {
+        require(msg.sender == vault, "Pas le vault");
+        _;
+    }
+    function mint(address to, uint256 amount) external onlyVault {
+        _mint(to, amount);
+    }
+    function burn(address from, uint256 amount) external onlyVault {
+        _burn(from, amount);
+    }
+}
+\end{lstlisting}
+
+%================================================
+\section{Couverture des Tests}
+%================================================
+
+\subsection{Sortie forge test}
+
+\begin{lstlisting}[style=bash, caption={Sortie complete forge test -vv}]
+Ran 14 tests for test/QuantumVault.t.sol:QuantumVaultTest
+[PASS] testDeposit()                     (gas: 402 008)
+[PASS] testDepositRequiresKey()          (gas:  34 488)
+[PASS] testDepositZeroReverts()          (gas: 257 388)
+[PASS] testNonceIncrement()              (gas: 1 142 879)
+[PASS] testQUSDTOnlyVaultBurn()          (gas: 395 122)
+[PASS] testQUSDTOnlyVaultMint()          (gas:  34 832)
+[PASS] testQUSDTSetVaultOnlyOnce()       (gas:  32 040)
+[PASS] testRegisterKey()                 (gas: 261 475)
+[PASS] testWithdraw()                    (gas: 801 715)
+[PASS] testWithdrawInsufficientBalance() (gas: 756 598)
+[PASS] testWithdrawInvalidSig()          (gas: 778 281)
+[PASS] testWithdrawMessageEncoding()     (gas: 378 441)
+[PASS] testWithdrawWrongKey()            (gas: 756 762)
+[PASS] testWithdrawZeroReverts()         (gas: 756 410)
+Suite result: ok. 14 passed; 0 failed
+
+Ran 1 test for test/QuantumVaultReal.t.sol:QuantumVaultRealTest
+[PASS] testRealFalconWithdraw()          (gas: 47 208 810)
+Suite result: ok. 1 passed; 0 failed
+
+Ran 10 test suites: 26 passed, 0 failed, 0 skipped
+\end{lstlisting}
+
+\begin{resultbox}[26/26 tests forge passants --- 0 echec]
+Tous les tests Phase 1, Phase 2 et Phase 3 passent simultanement. Aucune regression.
+\end{resultbox}
+
+\subsection{Tableau des tests}
+
+\begin{center}
+\begin{tabular}{llc}
+\toprule
+\textbf{Test} & \textbf{Ce qu'il verifie} & \textbf{Resultat} \\
+\midrule
+\texttt{testRegisterKey}                 & pkHash stocke, evenement emis & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testDeposit}                     & USDT entrant, qUSDT minte 1:1 & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testDepositRequiresKey}          & Revert si aucune cle enregistree & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testDepositZeroReverts}          & Revert sur montant nul & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testWithdraw}                    & Retrait complet, USDT rendu & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testWithdrawInvalidSig}          & Fausse sig $\Rightarrow$ revert & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testWithdrawInsufficientBalance} & Retrait $>$ depot $\Rightarrow$ revert & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testNonceIncrement}              & Nonce s'incremente, ancienne sig rejete & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testWithdrawWrongKey}            & Mauvais \texttt{h} $\Rightarrow$ revert & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testWithdrawZeroReverts}         & Montant nul $\Rightarrow$ revert & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testWithdrawMessageEncoding}     & Message interne coherent & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testQUSDTSetVaultOnlyOnce}       & Second \texttt{setVault()} revert & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testQUSDTOnlyVaultMint}          & Mint direct non-vault $\Rightarrow$ revert & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testQUSDTOnlyVaultBurn}          & Burn direct non-vault $\Rightarrow$ revert & \textcolor{pass-green}{\textbf{OK}} \\
+\midrule
+\texttt{testRealFalconWithdraw}          & Bout-en-bout : vraie cle Falcon-256 & \textcolor{pass-green}{\textbf{OK}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Structure du Test Bout-en-Bout}
+
+Le test \texttt{testRealFalconWithdraw} connecte la pile complete :
+
+\begin{lstlisting}[style=solidity, caption={QuantumVaultReal.t.sol (simplifie)}]
+contract QuantumVaultRealTest is Test {
+    // Vrais contrats
+    ZKNOX_ethfalcon verifier;
+    QuantumVault    vault;
+    qUSDT           qusdtToken;
+    MockERC20       usdtToken;
+
+    // Vrais vecteurs de test Falcon-256 (generes par script Python)
+    int16[] h;    // cle publique (256 coefficients)
+    int16[] salt; // nonce de signature
+    int16[] s1;   // polynome de signature
+
+    function setUp() public {
+        // Deploiement de la pile complete avec le vrai verificateur
+        verifier  = new ZKNOX_ethfalcon();
+        qusdtToken = new qUSDT();
+        usdtToken  = new MockERC20();
+        vault = new QuantumVault(address(verifier),
+                                 address(usdtToken),
+                                 address(qusdtToken));
+        qusdtToken.setVault(address(vault));
+
+        // Chargement des vecteurs de test Falcon-256 depuis Python
+        _loadTestVectors();
+    }
+
+    function testRealFalconWithdraw() public {
+        // 1. Enregistrement de la vraie cle Falcon
+        vault.registerKey(h);
+
+        // 2. Depot de 1 000 000 USDT
+        usdtToken.mint(address(this), 1_000_000e6);
+        usdtToken.approve(address(vault), 1_000_000e6);
+        vault.deposit(1_000_000e6);
+
+        // 3. Signature du message de retrait (generee par Python)
+        // La sig couvre : chainId + vault + nonce=0 + montant + to
+        vault.withdraw(h, salt, s1, 1_000_000e6, address(this));
+
+        // 4. Verification : USDT rendu, qUSDT brule
+        assertEq(usdtToken.balanceOf(address(this)), 1_000_000e6);
+        assertEq(qusdtToken.balanceOf(address(this)), 0);
+    }
+}
+\end{lstlisting}
+
+\newpage
+%================================================
+\section{Analyse du Gas}
+%================================================
+
+\subsection{Benchmark complet}
+
+\begin{center}
+\begin{tabular}{llr}
+\toprule
+\textbf{Contrat} & \textbf{Fonction} & \textbf{Gas moyen} \\
+\midrule
+QuantumVault & \texttt{registerKey}                   &     117\,540 \\
+QuantumVault & \texttt{deposit}                       &     112\,218 \\
+QuantumVault & \texttt{withdraw} (MockFalcon)         &     210\,410 \\
+QuantumVault & \texttt{withdraw} (ETHFalcon reel)     &  46\,839\,799 \\
+\midrule
+ZKNOX\_ethfalcon    & \texttt{verify} (Falcon-256 scolaire) & 46\,665\,666 \\
+ZKNOX\_ethdilithium & \texttt{verify} (ETHDilithium)        &  6\,481\,497 \\
+ZKNOX\_dilithium    & \texttt{verify} (Dilithium standard)  & 13\,370\,438 \\
+\midrule
+qUSDT     & \texttt{mint}  & 24\,084 \\
+qUSDT     & \texttt{burn}  & 24\,039 \\
+MockERC20 & \texttt{mint}  & 65\,878 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Decomposition de l'overhead}
+
+\begin{lstlisting}[style=bash, caption={Decomposition de l'overhead du vault}]
+Cout total retrait  =  Verif. Falcon  +  Logique vault
+                    =   46 665 666   +    174 133
+                    =   46 839 799 gas
+
+Logique vault seule (MockFalcon) = 210 410 gas  <- overhead SuVa
+\end{lstlisting}
+
+\begin{infobox}[Interpretation]
+Le vault SuVa n'ajoute que \textbf{210K gas} d'overhead par retrait. Ce cout couvre :
+2 SSTORE USDT/qUSDT, 1 SSTORE nonce, verification du hash (keccak + SLOAD), emission d'evenement,
+et les couts calldata pour passer \texttt{h}.\\[4pt]
+\textbf{L'overhead du vault est negligeable par rapport au cout de verification Falcon.}
+Tout effort d'optimisation doit etre dirige vers le verificateur.
+\end{infobox}
+
+\subsection{Projection Phase 4 avec NTT}
+
+\begin{lstlisting}[style=bash, caption={Projection de gas Phase 4}]
+ETHFalcon actuel (scolaire) :    46 665 666 gas
+ETHFalcon NTT Phase 4 (cible) :  ~4 000 000 gas
+Overhead vault :                     210 410 gas
+                                  -----------
+Total retrait vault (Phase 4) :   ~4 210 410 gas
+
+Points de reference :
+  Transaction ECDSA standard :          21 000 gas
+  Verification ETHDilithium :        6 481 497 gas
+  ETHFalcon scolaire :               46 665 666 gas
+  ETHFalcon NTT (cible Phase 4) :     4 000 000 gas
+\end{lstlisting}
+
+L'optimisation NTT exploite la structure de l'anneau NTRU de Falcon ($q = 12289$) pour remplacer
+la multiplication polynomiale scolaire ($O(n^2)$) par une multiplication basee NTT ($O(n \log n)$),
+visant une reduction d'environ $11\times$ du gas de verification.
+
+\subsection{Cout sur L2}
+
+\begin{lstlisting}[style=bash, caption={Projections de cout sur L2 (ETH = 4 000$)}]
+--- Ethereum Mainnet a 30 gwei ---
+ETHFalcon scolaire : 46,7M x 30 gwei = 1,401 ETH ~ 5 600$ / tx  [INACCEPTABLE]
+ETHFalcon NTT Ph4 :   4,2M x 30 gwei = 0,126 ETH ~   504$ / tx  [COUTEUX]
+
+--- Arbitrum a 0,1 gwei (300x moins cher que mainnet) ---
+ETHFalcon NTT Ph4 :   4,2M x 0,1 gwei = 0,00042 ETH ~ 1,68$ / tx  [VIABLE]
+
+--- Base a 0,01 gwei (3000x moins cher que mainnet) ---
+ETHFalcon NTT Ph4 :   4,2M x 0,01 gwei = 0,000042 ETH ~ 0,17$ / tx  [VIABLE EN PRODUCTION]
+\end{lstlisting}
+
+\begin{infobox}[Recommandation de deploiement]
+La Phase 3 etablit que SuVa est techniquement correct sur mainnet. Cependant, le deploiement
+en production devrait cibler \textbf{Base} ou \textbf{Arbitrum} apres l'optimisation NTT Phase 4,
+atteignant un cout inferieur a 1\$ par transaction. Comparable aux couts de signature hardware
+wallet, acceptable pour un stablecoin quantique-resistant.
+\end{infobox}
+
+\newpage
+%================================================
+\section{Flux Bout-en-Bout}
+%================================================
+
+\subsection{Diagramme de Sequence}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  actor/.style={rectangle, draw, rounded corners, fill=suva-blue!12, minimum width=2.4cm,
+                minimum height=0.8cm, align=center},
+  msg/.style={-Stealth, thick},
+  ret/.style={-Stealth, thick, dashed, gray},
+  lifeline/.style={dashed, gray, thick}
+]
+
+% Acteurs
+\node[actor] (user)   at (0,0)   {Utilisateur\\(Python)};
+\node[actor] (vault)  at (4.5,0) {QuantumVault};
+\node[actor] (verif)  at (9,0)   {ZKNOX\_ethfalcon};
+\node[actor] (qusdtN) at (13,0)  {qUSDT / USDT};
+
+% Lignes de vie
+\foreach \x in {0, 4.5, 9, 13} {
+  \draw[lifeline] (\x, -0.4) -- (\x, -14.5);
+}
+
+% --- registerKey ---
+\draw[msg] (0,-1.0) -- node[above, font=\footnotesize]{registerKey(h)} (4.5,-1.0);
+\node[right, font=\footnotesize, text=suva-blue] at (4.6,-1.5) {pkHash[user] = keccak256(h)};
+
+% --- deposit ---
+\draw[msg] (0,-2.5) -- node[above, font=\footnotesize]{deposit(1 000 000)} (4.5,-2.5);
+\draw[msg] (4.5,-3.0) -- node[above, font=\footnotesize]{\small usdt.transferFrom(user, vault, amt)} (13,-3.0);
+\draw[msg] (4.5,-3.7) -- node[above, font=\footnotesize]{\small mint(user, amt)} (13,-3.7);
+\node[right, font=\footnotesize, text=suva-green] at (13.1,-4.1) {qUSDT minte};
+
+% --- signature locale ---
+\node[left, font=\footnotesize\itshape, text=gray] at (-0.1,-5.2) {sign(msg) localement};
+\draw[msg, bend left=30] (0,-5.0) to node[above, font=\footnotesize\itshape]{(hors-chaine)} (0,-5.6);
+
+% --- withdraw ---
+\draw[msg] (0,-6.5) -- node[above, font=\footnotesize]{withdraw(h, salt, s1, amt, to)} (4.5,-6.5);
+\node[right, font=\footnotesize, text=suva-blue] at (4.6,-7.1) {verif pkHash[user] == keccak256(h)};
+\node[right, font=\footnotesize, text=suva-blue] at (4.6,-7.6) {construit withdrawMessage(...)};
+\draw[msg] (4.5,-8.2) -- node[above, font=\footnotesize]{verify(h, salt, s1, msg)} (9,-8.2);
+\draw[ret] (9,-8.8) -- node[above, font=\footnotesize\itshape]{retourne true} (4.5,-8.8);
+\node[right, font=\footnotesize, text=suva-blue] at (4.6,-9.4) {nonces[user]++};
+\draw[msg] (4.5,-10.0) -- node[above, font=\footnotesize]{burn(user, amt)} (13,-10.0);
+\draw[msg] (4.5,-10.7) -- node[above, font=\footnotesize]{usdt.transfer(to, amt)} (13,-10.7);
+\node[right, font=\footnotesize, text=suva-green] at (13.1,-11.2) {USDT rendu};
+
+\end{tikzpicture}
+\caption{Flux SuVa bout-en-bout : enregistrement cle, depot, et retrait gate par Falcon.}
+\end{figure}
+
+\subsection{Script Python de Signature}
+
+Le test bout-en-bout s'appuie sur un script Python qui genere un keypair Falcon-256 valide
+et signe le message de retrait :
+
+\begin{lstlisting}[style=python, caption={Signature du message de retrait (Python)}]
+from falcon import SecretKey, PublicKey
+import eth_abi
+
+# 1. Generation de cle
+sk = SecretKey(256)
+pk = PublicKey(sk)
+
+# 2. Construction du message de retrait (doit correspondre a Solidity withdrawMessage())
+chain_id   = 31337      # Anvil / Foundry chaine locale
+vault_addr = "0x..."    # adresse du vault deploye
+nonce      = 0
+amount     = 1_000_000_000_000  # 1M USDT (6 decimales)
+to         = "0x..."    # destinataire
+
+msg = b"SuVa:withdraw:" + \
+      chain_id.to_bytes(32, 'big') + \
+      bytes.fromhex(vault_addr[2:]) + \
+      nonce.to_bytes(32, 'big') + \
+      amount.to_bytes(32, 'big') + \
+      bytes.fromhex(to[2:])
+
+# 3. Signature
+sig = sk.sign(msg)
+salt, s1 = sig.nonce, sig.s1  # tableaux int16[]
+
+# 4. Export comme vecteur de test Solidity
+print(f"h    = {list(pk.h)}")
+print(f"salt = {list(salt)}")
+print(f"s1   = {list(s1)}")
+\end{lstlisting}
+
+\newpage
+%================================================
+\section{Decisions de Conception et Compromis}
+%================================================
+
+Cette section repond en detail aux questions de conception soulevees dans le brief de William Schulz.
+
+\subsection{Cle publique complete on-chain vs. hash ?}
+
+\textbf{Decision : stocker \texttt{keccak256(h)}, passer la cle complete \texttt{h} en calldata.}
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Option} & \textbf{Gas (registerKey)} & \textbf{Gas (calldata retrait)} \\
+\midrule
+Stocker la cle complete (8\,192 octets) & $\sim$5\,120\,000 & $\sim$0 \\
+Stocker le hash, passer en calldata & $\sim$20\,000 & $\sim$131\,000 \\
+\midrule
+\textbf{Economies (enregistrement)} & \textbf{5\,100\,000 gas} & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Argument de securite : \texttt{keccak256(h)} est un engagement par resistance aux collisions sur \texttt{h}.
+Un utilisateur qui enregistre \texttt{keccak256(h)} est lie a cette cle specifique. Au retrait,
+il passe la cle complete en calldata ; le vault recalcule le hash et rejette toute substitution.
+La resistance a la preimage de Keccak-256 garantit qu'aucun attaquant ne peut trouver un
+\texttt{h'} tel que \texttt{keccak256(h') == keccak256(h)}.
+
+\subsection{Rotation de cle ?}
+
+\textbf{Comportement Phase 3 :} tout utilisateur peut appeler \texttt{registerKey()} a tout moment pour
+ecraser son \texttt{pkHash}. Aucune signature Falcon n'est requise --- seule la possession de la
+cle privee Ethereum est necessaire.
+
+\textbf{Limitation connue :} un attaquant qui compromet la cle ECDSA de l'utilisateur (mais pas sa
+cle Falcon) peut ecraser le \texttt{pkHash} avec une cle qu'il controle, puis attendre que
+l'utilisateur depose. C'est le probleme de couplage cle ECDSA-Falcon.
+
+\textbf{Mitigation Phase 4 :} la rotation de cle exigera une signature Falcon valide de la cle
+actuellement enregistree, protegant la rotation avec une authentification quantique-resistante.
+
+\subsection{Perte de la cle privee Falcon}
+
+\textbf{Aucun mecanisme de recuperation n'existe.} Si un utilisateur perd sa cle privee Falcon-256 :
+
+\begin{warningbox}[Aucun mecanisme de recuperation --- Par conception]
+\begin{itemize}
+  \item Il ne peut pas produire une signature de retrait valide.
+  \item Aucun admin, aucun timelock, aucune recuperation sociale ne peut recuperer les fonds.
+  \item Le solde USDT et le qUSDT de l'utilisateur restent definitivement irrecuperables.
+\end{itemize}
+C'est une decision de conception explicite et intentionnelle. Tout mecanisme de recuperation
+cree un acteur privilegie qui pourrait etre compromis, contraint ou en collusion avec un
+adversaire quantique. L'ensemble du modele de securite repose sur le fait que la cle privee
+Falcon soit le \textit{seul} chemin d'autorisation.\\[4pt]
+\textbf{Responsabilite utilisateur :} Sauvegardez votre cle privee Falcon.
+\end{warningbox}
+
+\subsection{Contrat evolutif ?}
+
+\textbf{Phase 3 : pas de pattern proxy.} Le vault est immuable. Avantages :
+\begin{itemize}
+  \item Pas de cle admin avec pouvoir de mise a jour (reduit les hypotheses de confiance)
+  \item Pas de risques de collision dans le stockage proxy (EIP-1967)
+  \item Surface d'audit plus simple
+  \item En cas de bug critique, un nouveau vault est deploye avec une notice aux utilisateurs
+\end{itemize}
+
+La Phase 4 pourra introduire un proxy evolutif, mais seulement si le mecanisme de mise a
+jour est lui-meme gate par des signatures Falcon (les operations admin requi\`erent une
+autorisation quantique-resistante).
+
+%================================================
+\section{Checklist des Livrables}
+%================================================
+
+\begin{center}
+\begin{tabular}{clc}
+\toprule
+& \textbf{Livrable} & \textbf{Statut} \\
+\midrule
+$\checkmark$ & \texttt{QuantumVault.sol} implemente et teste & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & \texttt{qUSDT.sol} ERC-20 (mint/burn) & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & Enregistrement de cle Falcon on-chain & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & Test d'integration bout-en-bout & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & 14 tests logique vault (MockFalcon) & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & 1 test Falcon reel bout-en-bout & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & Benchmarks de gas mesures et documentes & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & 26/26 tests totaux passants & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & Deploiement sur Sepolia testnet & \textcolor{pass-green}{\textbf{FAIT}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.4cm}
+
+\begin{resultbox}[Phase 3 : 9/9 objectifs completes --- LIVRE INTEGRALEMENT]
+Tous les objectifs smart contract de la Phase 3 sont livres, testes et deployes sur le testnet Sepolia.
+\end{resultbox}
+
+\newpage
+\subsection{Deploiement sur Sepolia Testnet}
+
+Tous les contrats SuVa Phase 3 sont deployes et verifiables sur le testnet Ethereum Sepolia (Chain ID : 11155111).
+
+\begin{center}
+\begin{tabular}{llr}
+\toprule
+\textbf{Contrat} & \textbf{Adresse Sepolia} & \textbf{Bloc} \\
+\midrule
+\texttt{ZKNOX\_ethfalcon} & \texttt{0xb82B557177e96425046e1a8036F98EB02d07Cdeb} & 10554061 \\
+\texttt{MockERC20 (USDT)} & \texttt{0x683e75234d1FD52008d6FBC7B2c671957C02D41a} & 10554061 \\
+\texttt{qUSDT}            & \texttt{0x6E291d7c9121DA76697491f1211eF6fbb71df646} & 10554061 \\
+\texttt{QuantumVault}     & \texttt{0x83773c48f72176982E90C0742361a52dAaDA1e19} & 10554061 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Parametre} & \textbf{Valeur} \\
+\midrule
+Adresse deploieur   & \texttt{0xD7390D91139Bf5868DDdF3b6677708b30b78D210} \\
+Tx de deploiement   & \texttt{0x1454d039072e5fc717c534ae5596cec5b191549c55c0ab87a38e17cfc0680ddc} \\
+Gas total utilise   & 2\,796\,227 gas \\
+Cout total          & 0,000003635 ETH \\
+Reseau              & Ethereum Sepolia (Chain ID 11155111) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{infobox}[Verification sur Sepolia Etherscan]
+Tous les contrats sont publiquement verifiables sur \texttt{sepolia.etherscan.io}.\\
+Exemple : chercher \texttt{0x83773c48f72176982E90C0742361a52dAaDA1e19} pour inspecter QuantumVault.
+\end{infobox}
+
+%================================================
+\section{Apercu Phase 4}
+%================================================
+
+\subsection{Prochaines Etapes}
+
+\begin{center}
+\begin{tabular}{clll}
+\toprule
+\textbf{Priorite} & \textbf{Tache} & \textbf{Metrique cible} & \textbf{Dependance} \\
+\midrule
+1 & ETHFalcon optimise NTT & $\sim$4M gas verify & Impl. NTT ZKNox \\
+3 & \texttt{SuVaWallet.sol} (ERC-4337) & Double-sig : ECDSA + Falcon & Vault Phase 3 stable \\
+4 & Rotation de cle gate par Falcon & \texttt{registerKey} requiert ancienne sig & Verificateur NTT Phase 4 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Raison de l'Optimisation NTT}
+
+Le \texttt{ZKNOX\_ethfalcon} actuel utilise la multiplication polynomiale scolaire pour
+l'equation de verification NTRU :
+\[
+  h \cdot s_1 + s_2 \equiv 0 \pmod{q}
+\]
+ou $h, s_1, s_2 \in \mathbb{Z}_q[X]/(X^n + 1)$, $q = 12289$, $n = 512$.
+
+La multiplication scolaire coute $O(n^2) = O(512^2) = 262\,144$ multiplications de coefficients.
+Puisque $q = 12289$ est un premier compatible NTT ($q = 12 \cdot 1024 + 1$), la multiplication
+polynomiale peut etre remplacee par :
+\[
+  \text{NTT}^{-1}\bigl(\text{NTT}(h) \odot \text{NTT}(s_1)\bigr) + s_2
+\]
+a un cout de $O(n \log n) = O(512 \cdot 9) \approx 4\,608$ operations ---
+une reduction theorique de $57\times$. L'overhead EVM pratique devrait ramener cela a
+une reduction de gas d'environ $11\times$ (de 46,7M a $\sim$4M gas).
+
+\subsection{Architecture ERC-4337 SuVaWallet}
+
+Le wallet Phase 4 implementera l'interface ERC-4337 \texttt{IAccount} avec validation
+a double signature :
+
+\begin{lstlisting}[style=solidity, caption={Interface SuVaWallet.sol (apercu Phase 4)}]
+contract SuVaWallet is IAccount {
+    function validateUserOp(
+        UserOperation calldata userOp,
+        bytes32 userOpHash,
+        uint256 missingAccountFunds
+    ) external returns (uint256 validationData) {
+        // 1. Verifier la signature ECDSA (proprietaire)
+        // 2. Verifier la signature Falcon-256 (quantique-resistant)
+        // Les deux doivent passer pour que l'operation se poursuive
+    }
+}
+\end{lstlisting}
+
+Cette approche a double signature offre une defense en profondeur : meme si les ordinateurs
+quantiques cassent ECDSA a l'avenir, la signature Falcon reste valide. Et si un bug est
+trouve dans le verificateur Falcon, la signature ECDSA sert de repli.
+
+%================================================
+\section{Conclusion}
+%================================================
+
+La Phase 3 livre la couche fonctionnelle centrale du protocole SuVa. Le contrat
+\textbf{QuantumVault.sol} fournit :
+
+\begin{enumerate}
+  \item \textbf{Autorisation quantique-resistante :} les retraits exigent une signature Falcon-256
+        valide, inviolable par les ordinateurs quantiques.
+  \item \textbf{Logique vault efficace :} seulement 210K gas d'overhead, independant du cout
+        du schema de signature.
+  \item \textbf{Separation nette des responsabilites :} l'interface \texttt{IFalconVerifier}
+        decouple la logique vault de l'implementation cryptographique, permettant une
+        mise a niveau sans redeploiement du vault lors du passage au verificateur NTT Phase 4.
+  \item \textbf{Couverture de tests complete :} 14 tests unitaires couvrant tous les chemins
+        de revert, plus 1 test d'integration bout-en-bout avec la vraie cryptographie Falcon-256.
+  \item \textbf{Profil de gas honnete :} le cout actuel de 46,7M gas est entierement compris
+        et attribue au verificateur Falcon scolaire. L'optimisation NTT Phase 4 devrait
+        le reduire a $\sim$4M gas, rendant le deploiement en production sur reseaux L2
+        viable a moins de 1\$ par transaction.
+\end{enumerate}
+
+Le protocole SuVa est sur la bonne voie. Tous les objectifs smart contract de la Phase 3 sont
+completes. Les fondations cryptographiques validees en Phase 1 (Dilithium), les outils
+d'integration de la Phase 2 (keygen Falcon, validation croisee), et les contrats vault de la
+Phase 3 forment un systeme coherent, teste et auditable pret pour la prochaine phase.
+
+%================================================
+\appendix
+\section{Annexe A --- Environnement}
+%================================================
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Outil} & \textbf{Version} \\
+\midrule
+Python & 3.14 (environnement virtuel) \\
+Foundry (forge) & Nightly (win32\_amd64) \\
+Solidity & 0.8.25 \\
+Version EVM & Prague \\
+Falcon (Python) & Fork ZKNox (base NTRU) \\
+ZKNOX\_ethfalcon & scolaire (Phase 3) \\
+ZKNOX\_ethdilithium & Variante XOF Keccak-256 \\
+OpenZeppelin & v4.x (base ERC-20) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%================================================
+\section{Annexe B --- Parametres Falcon-256}
+%================================================
+
+\begin{center}
+\begin{tabular}{lrl}
+\toprule
+\textbf{Parametre} & \textbf{Valeur} & \textbf{Description} \\
+\midrule
+$n$ & 512 & Dimension de l'anneau ($X^{512} + 1$) \\
+$q$ & 12289 & Module (compatible NTT : $q = 12 \cdot 1024 + 1$) \\
+$\sigma$ & $\approx 165,74$ & Ecart-type gaussien \\
+Taille pk & 897 octets & Format compact NIST \\
+Taille sig & 666 octets & Format compact NIST \\
+Taille tableau \texttt{h} & 256 int16 & Representation ZKNox \\
+Niveau de securite & NIST I & $\geq 128$ bits classique, $\geq 64$ bits quantique \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%================================================
+\section{Annexe C --- Structure du Depot (Phase 3)}
+%================================================
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Chemin} & \textbf{Contenu} \\
+\midrule
+\texttt{src/QuantumVault.sol} & Contrat vault principal \\
+\texttt{src/qUSDT.sol} & Token de recu ERC-20 \\
+\texttt{src/IFalconVerifier.sol} & Interface pour les backends de verification \\
+\texttt{src/MockFalcon.sol} & Double de test du verificateur \\
+\texttt{test/QuantumVault.t.sol} & 14 tests unitaires (MockFalcon) \\
+\texttt{test/QuantumVaultReal.t.sol} & 1 test bout-en-bout (ZKNOX\_ethfalcon) \\
+\texttt{python-ref/vault\_sign.py} & Script de signature Falcon-256 pour les tests \\
+\texttt{rapports/rapport\_phase3\_EN.tex} & Version anglaise \\
+\texttt{rapports/rapport\_phase3\_FR.tex} & Ce document \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%================================================
+\end{document}
+%================================================

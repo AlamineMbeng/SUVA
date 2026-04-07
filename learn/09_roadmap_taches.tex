@@ -1,0 +1,936 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, decorations.pathreplacing}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{colortbl}
+
+% Couleurs
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{done_green}{RGB}{34, 139, 34}
+\definecolor{done_bg}{RGB}{230, 255, 230}
+\definecolor{inprog_orange}{RGB}{200, 100, 0}
+\definecolor{inprog_bg}{RGB}{255, 245, 220}
+\definecolor{todo_red}{RGB}{180, 30, 30}
+\definecolor{todo_bg}{RGB}{255, 235, 235}
+\definecolor{critical_bg}{RGB}{255, 200, 200}
+\definecolor{phase_blue}{RGB}{200, 220, 255}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+
+% Boîtes
+\newtcolorbox{done}[2][]{colback=done_bg,colframe=done_green,
+  fonttitle=\bfseries\color{done_green},title={\checkmark\ #2},#1,breakable}
+\newtcolorbox{inprog}[2][]{colback=inprog_bg,colframe=inprog_orange,
+  fonttitle=\bfseries\color{inprog_orange},title={$\triangleright$\ #2},#1,breakable}
+\newtcolorbox{todo}[2][]{colback=todo_bg,colframe=todo_red,
+  fonttitle=\bfseries\color{todo_red},title={$\square$\ #2},#1,breakable}
+\newtcolorbox{critical}[2][]{colback=critical_bg,colframe=todo_red!80!black,
+  fonttitle=\bfseries,title={!! #2 !!},#1,breakable}
+\newtcolorbox{notebox}[1][]{colback=suva_blue!5,colframe=suva_blue!50,
+  fonttitle=\bfseries,title={Note},#1}
+
+% Commandes de statut
+\newcommand{\statdone}{\textcolor{done_green}{\bfseries FAIT}}
+\newcommand{\statprog}{\textcolor{inprog_orange}{\bfseries EN COURS}}
+\newcommand{\stattodo}{\textcolor{todo_red}{\bfseries À FAIRE}}
+\newcommand{\statna}{\textcolor{gray}{\bfseries N/A}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{suva_blue}\textbf{SuVa --- Roadmap}}
+\fancyhead[R]{\color{gray}État d'avancement du projet}
+\fancyfoot[L]{\footnotesize\color{gray}Mohamed Lamine MBENGUE}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\footnotesize\color{gray}portfolio-alamine.web.app}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% ══════════════════════════════════════════════════════════════════════
+\begin{document}
+
+\begin{center}
+  {\color{suva_blue}\rule{\linewidth}{2pt}}\\[0.5cm]
+  {\Huge\bfseries\color{suva_blue} Projet SuVa}\\[0.3cm]
+  {\large\bfseries État d'avancement \& Feuille de route}\\[0.2cm]
+  {\small\color{gray} Stablecoin quantique-résistant sur EVM --- Mars 2026}\\[0.3cm]
+  {\color{suva_blue}\rule{\linewidth}{2pt}}
+\end{center}
+
+\vspace{0.3cm}
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40,
+  left=6pt, right=6pt, top=4pt, bottom=4pt]
+\small
+\begin{tabular}{ll}
+  \textbf{Auteur}      & Mohamed Lamine MBENGUE \\
+  \textbf{Spécialités} & Sécurité · DevOps · Dev Full Stack Web \& Mobile \\
+  \textbf{Contact}     & +221 78 178 44 36 · mbenguemohamedlamine2022@gmail.com \\
+  \textbf{Portfolio}   & \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}} \\
+\end{tabular}
+\end{tcolorbox}
+\vspace{0.3cm}
+
+\tableofcontents
+\newpage
+
+%══════════════════════════════════════════════════════════════════════
+\section{Lexique --- Définitions des termes clés}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{tcolorbox}[colback=suva_blue!4, colframe=suva_blue!60,
+  title=\textbf{Comment utiliser ce lexique},
+  fonttitle=\bfseries, breakable]
+Ce document utilise beaucoup de termes techniques propres à la blockchain et à la cryptographie.
+Ce lexique les explique simplement, \textbf{sans prérequis}. Consulte-le à chaque fois qu'un
+terme te semble flou.
+\end{tcolorbox}
+
+\vspace{0.4cm}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Termes Blockchain de base}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{tcolorbox}[colback=gray!4, colframe=gray!50, breakable]
+
+\textbf{Blockchain} (chaîne de blocs)\\
+\hspace*{1em} Une base de données \textit{partagée entre des milliers d'ordinateurs dans le monde},
+où chaque donnée ajoutée est \textbf{permanente et publiquement vérifiable}. Personne ne peut
+modifier ou supprimer ce qui a été écrit. C'est comme un registre public et inviolable.
+\textit{Exemples : Ethereum, Bitcoin.}
+
+\vspace{0.4cm}
+
+\textbf{Ethereum}\\
+\hspace*{1em} La blockchain la plus utilisée pour les applications (DeFi, NFT, etc.). Elle permet
+d'exécuter du code (les \textit{smart contracts}) directement sur la chaîne.
+
+\vspace{0.4cm}
+
+\textbf{EVM} (Ethereum Virtual Machine --- Machine Virtuelle Ethereum)\\
+\hspace*{1em} Le ``moteur'' qui exécute le code des smart contracts sur Ethereum. Tous les
+ordinateurs participants font tourner ce même moteur, ce qui garantit que tout le monde obtient
+le même résultat.
+
+\vspace{0.4cm}
+
+\textbf{Mainnet} (Réseau principal)\\
+\hspace*{1em} La vraie blockchain Ethereum, avec de l'argent réel. Opposé au \textit{testnet}
+(réseau de test) où l'on utilise de l'argent fictif pour tester le code sans risque.
+
+\vspace{0.4cm}
+
+\textbf{Testnet} (Réseau de test)\\
+\hspace*{1em} Une copie de la blockchain Ethereum utilisée uniquement pour tester. Les tokens
+n'ont aucune valeur réelle. \textit{Exemples : Sepolia, Holesky.}
+
+\vspace{0.4cm}
+
+\textbf{Layer 2 (L2)} (Couche 2)\\
+\hspace*{1em} Une blockchain construite \textit{par-dessus} Ethereum pour aller plus vite et moins
+cher. Les L2 regroupent des milliers de transactions et les soumettent en une seule fois à
+Ethereum. \textit{Exemples : Polygon, Arbitrum, Optimism.}
+
+\end{tcolorbox}
+
+\vspace{0.4cm}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Termes financiers et tokens}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{tcolorbox}[colback=gray!4, colframe=gray!50, breakable]
+
+\textbf{Stablecoin} (monnaie stable)\\
+\hspace*{1em} Une cryptomonnaie dont la valeur est maintenue \textbf{fixe} (ex. : toujours 1 dollar).
+Contrairement au Bitcoin dont le prix fluctue, un stablecoin est stable. C'est pratique pour
+stocker ou transférer de la valeur sans risque de volatilité.\\
+\hspace*{1em} \textit{Exemples : USDT (Tether), USDC (USD Coin) --- tous les deux valent ~1\$.}
+
+\vspace{0.4cm}
+
+\textbf{USDT / USDC}\\
+\hspace*{1em} Les deux stablecoins les plus populaires, chacun valant environ 1 dollar américain.
+\textbf{USDT} est émis par Tether, \textbf{USDC} par Circle. SuVa veut les ``wrapper'' (envelopper)
+pour les rendre quantique-résistants.
+
+\vspace{0.4cm}
+
+\textbf{sUSDT / sUSDC} (le ``s'' = ``SuVa-secured'')\\
+\hspace*{1em} Les versions sécurisées créées par SuVa. Quand tu déposes 100 USDT dans le vault SuVa,
+tu reçois 100 sUSDT. Le sUSDT est garanti 1:1 par l'USDT d'origine, mais protégé par une
+signature post-quantique.
+
+\vspace{0.4cm}
+
+\textbf{Token}\\
+\hspace*{1em} Un actif numérique sur une blockchain. Un token peut représenter de l'argent,
+un droit de vote, un accès à un service, etc. USDT et sUSDT sont des tokens.
+
+\vspace{0.4cm}
+
+\textbf{ERC-20}\\
+\hspace*{1em} Le \textit{standard} (ensemble de règles) le plus courant pour créer des tokens sur
+Ethereum. Tous les tokens ERC-20 fonctionnent de la même façon :
+\texttt{transfer()}, \texttt{approve()}, \texttt{balanceOf()}... Cela permet aux wallets et
+applications de les utiliser sans avoir à adapter leur code.
+
+\end{tcolorbox}
+
+\vspace{0.4cm}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Termes de programmation blockchain}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{tcolorbox}[colback=gray!4, colframe=gray!50, breakable]
+
+\textbf{Smart Contract} (Contrat Intelligent)\\
+\hspace*{1em} Un programme qui s'exécute \textbf{automatiquement} sur la blockchain, sans
+intermédiaire. Une fois déployé, son code est public et immuable. Il exécute des règles
+prédéfinies : ``\textit{si X envoie 100 USDT, alors créditer X de 100 sUSDT}''.
+
+\vspace{0.4cm}
+
+\textbf{Solidity}\\
+\hspace*{1em} Le langage de programmation utilisé pour écrire des smart contracts sur Ethereum.
+Ressemble un peu à JavaScript/C++. C'est ce qui est dans les fichiers \texttt{.sol} du projet.
+
+\vspace{0.4cm}
+
+\textbf{Yul}\\
+\hspace*{1em} Un langage d'assembleur de bas niveau pour l'EVM, utilisé dans les parties critiques
+des contrats pour \textbf{réduire le coût gas}. C'est l'équivalent de l'assembleur x86 mais pour
+Ethereum. C'est difficile à lire mais très efficace.
+
+\vspace{0.4cm}
+
+\textbf{Vault} (Coffre-fort)\\
+\hspace*{1em} Dans le contexte SuVa, le vault est le smart contract qui \textbf{garde les USDT}
+déposés par les utilisateurs. Il les libère uniquement si la signature post-quantique est valide.
+C'est le c\oe{}ur financier du protocole.
+
+\vspace{0.4cm}
+
+\textbf{Gas}\\
+\hspace*{1em} L'\textbf{unité de mesure du coût} d'exécution d'une opération sur Ethereum.
+Chaque instruction EVM a un coût en gas. Le gas se paie en ETH (l'ether, la monnaie native
+d'Ethereum). Plus une opération est complexe, plus elle coûte de gas.\\
+\hspace*{1em} \textit{Repères : une addition = 3 gas, un accès mémoire = 3 gas, une vérification
+ECDSA = 3000 gas, une vérification Dilithium = 6 à 13 millions de gas (!)}.
+
+\vspace{0.4cm}
+
+\textbf{On-chain / Off-chain}\\
+\hspace*{1em} \textbf{On-chain} = exécuté sur la blockchain, visible de tous, coûte du gas.\\
+\hspace*{1em} \textbf{Off-chain} = exécuté localement sur ton ordinateur, gratuit, privé.\\
+\hspace*{1em} Dans SuVa : la génération de clés et la signature se font off-chain (Python),
+la vérification se fait on-chain (Solidity).
+
+\vspace{0.4cm}
+
+\textbf{Déploiement} (deploy)\\
+\hspace*{1em} L'action de publier un smart contract sur la blockchain pour la première fois.
+Une fois déployé, le contrat reçoit une adresse unique et son code est immuable.
+
+\vspace{0.4cm}
+
+\textbf{Nonce}\\
+\hspace*{1em} Un numéro qui \textbf{augmente à chaque transaction} d'un compte. Il empêche
+de réutiliser deux fois la même transaction (attaque par rejeu). Si le nonce est 5, la
+prochaine transaction doit avoir le nonce 6.
+
+\vspace{0.4cm}
+
+\textbf{Replay Attack} (Attaque par rejeu)\\
+\hspace*{1em} Une attaque où un malfaiteur copie une transaction légitime et la ``rejoue'' pour
+voler des fonds. Le nonce l'empêche : une transaction avec un nonce déjà utilisé est rejetée.
+
+\end{tcolorbox}
+
+\vspace{0.4cm}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Termes wallet et identité}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{tcolorbox}[colback=gray!4, colframe=gray!50, breakable]
+
+\textbf{Wallet} (Portefeuille numérique)\\
+\hspace*{1em} Un logiciel qui gère tes clés cryptographiques et te permet d'interagir avec
+la blockchain. Il ne ``stocke'' pas vraiment les tokens (ils sont sur la chaîne), il stocke
+la \textbf{clé privée} qui prouve que tu es bien le propriétaire.
+\textit{Exemples : MetaMask, Ledger, Trust Wallet.}
+
+\vspace{0.4cm}
+
+\textbf{ERC-4337} (Account Abstraction --- Abstraction de compte)\\
+\hspace*{1em} Un standard Ethereum qui permet de remplacer le mécanisme de signature habituel
+(ECDSA) par \textbf{n'importe quelle logique de validation personnalisée} --- notamment une
+signature post-quantique. Au lieu d'un compte contrôlé par une clé ECDSA, l'utilisateur a
+un \textit{smart contract wallet} qui valide les signatures avec Dilithium ou Falcon.
+
+\vspace{0.4cm}
+
+\textbf{ECDSA} (Elliptic Curve Digital Signature Algorithm)\\
+\hspace*{1em} L'algorithme de signature utilisé par Ethereum aujourd'hui pour prouver qu'une
+transaction est bien autorisée par le propriétaire du compte. \textbf{Vulnérable aux ordinateurs
+quantiques} (algorithme de Shor). SuVa vise à le remplacer par Dilithium ou Falcon.
+
+\vspace{0.4cm}
+
+\textbf{Clé privée (sk) / Clé publique (pk)}\\
+\hspace*{1em} La \textbf{clé privée} est secrète : elle te permet de signer des transactions.
+Ne jamais la partager. La \textbf{clé publique} est partageable : elle permet à n'importe qui
+de \textit{vérifier} ta signature sans connaître ta clé privée.
+
+\vspace{0.4cm}
+
+\textbf{Bundler}\\
+\hspace*{1em} Dans ERC-4337, un bundler est un service qui \textbf{collecte les opérations des
+utilisateurs} et les regroupe en une seule transaction Ethereum pour économiser du gas. C'est
+l'équivalent d'un taxi collectif pour les transactions.
+
+\vspace{0.4cm}
+
+\textbf{Paymaster}\\
+\hspace*{1em} Dans ERC-4337, un contrat optionnel qui \textbf{paie le gas à la place de
+l'utilisateur}. Cela permet par exemple de payer les frais de transaction en sUSDT plutôt
+qu'en ETH.
+
+\vspace{0.4cm}
+
+\textbf{Multi-sig} (Multi-signatures)\\
+\hspace*{1em} Un wallet qui \textbf{requiert plusieurs signatures} pour valider une transaction.
+Par exemple : ``3 personnes parmi 5 doivent signer''. Utile pour la gouvernance ou la
+récupération de compte en cas de perte de clé.
+
+\end{tcolorbox}
+
+\vspace{0.4cm}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Termes de sécurité et cryptographie}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{tcolorbox}[colback=gray!4, colframe=gray!50, breakable]
+
+\textbf{Signature numérique}\\
+\hspace*{1em} L'équivalent numérique d'une signature manuscrite. Elle prouve que le détenteur de
+la clé privée a bien approuvé un message ou une transaction. Elle est \textbf{vérifiable par
+n'importe qui} avec la clé publique correspondante.
+
+\vspace{0.4cm}
+
+\textbf{Post-quantique (PQ)}\\
+\hspace*{1em} Qualifie des algorithmes cryptographiques \textbf{résistants aux ordinateurs
+quantiques}. Un ordinateur quantique suffisamment puissant pourrait casser ECDSA (la signature
+d'Ethereum). Les algorithmes PQ (Dilithium, Falcon, SPHINCS+) sont basés sur des problèmes
+mathématiques que même les ordinateurs quantiques ne savent pas résoudre efficacement.
+
+\vspace{0.4cm}
+
+\textbf{Ordinateur quantique}\\
+\hspace*{1em} Un ordinateur utilisant les lois de la physique quantique pour effectuer certains
+calculs \textbf{exponentiellement plus vite} qu'un ordinateur classique. Il ne cassera pas tout
+(les bases de données, le chiffrement symétrique restent sûrs), mais il peut casser ECDSA et RSA.
+Les experts estiment qu'un tel ordinateur pourrait exister dans 10 à 20 ans.
+
+\vspace{0.4cm}
+
+\textbf{Hash} (Empreinte numérique / Hachage)\\
+\hspace*{1em} Une fonction qui transforme une donnée de taille quelconque en une empreinte de
+taille fixe. C'est à sens unique : on ne peut pas retrouver la donnée d'origine à partir du hash.
+\textit{Exemple : SHA-256, Keccak-256 (utilisé par Ethereum).}
+
+\vspace{0.4cm}
+
+\textbf{NIST} (National Institute of Standards and Technology)\\
+\hspace*{1em} L'agence américaine qui définit les \textbf{standards cryptographiques} utilisés
+mondialement. En 2024, le NIST a officiellement standardisé Dilithium (FIPS 204) et Falcon
+(FIPS 206) comme signatures post-quantiques.
+
+\vspace{0.4cm}
+
+\textbf{FIPS 204 / FIPS 206}\\
+\hspace*{1em} Les numéros de standards officiels du NIST. \textbf{FIPS 204} = Dilithium (ML-DSA).
+\textbf{FIPS 206} = Falcon (FN-DSA). Ces standards garantissent que les implémentations sont
+correctes et interopérables.
+
+\vspace{0.4cm}
+
+\textbf{Audit de sécurité}\\
+\hspace*{1em} Une \textbf{vérification indépendante} du code par des experts externes qui cherchent
+des failles de sécurité. Dans la blockchain, un audit est obligatoire avant de déployer un contrat
+qui gère de l'argent réel. Un audit peut coûter de 50 000\$ à 500 000\$.
+
+\vspace{0.4cm}
+
+\textbf{Bug Bounty} (Prime aux bugs)\\
+\hspace*{1em} Un programme public où l'équipe offre des \textbf{récompenses financières} à
+quiconque trouve et signale une faille de sécurité. C'est une façon de mobiliser la communauté
+pour tester le code en échange d'argent.
+
+\vspace{0.4cm}
+
+\textbf{zkSNARK / Preuve ZK} (Zero-Knowledge Proof)\\
+\hspace*{1em} Une technique cryptographique qui permet de \textbf{prouver qu'on connaît quelque
+chose sans le révéler}. Par exemple : prouver qu'une signature est valide sans exécuter la
+vérification on-chain (trop chère). Très complexe à implémenter.
+
+\end{tcolorbox}
+
+\vspace{0.4cm}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Termes de développement logiciel}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{tcolorbox}[colback=gray!4, colframe=gray!50, breakable]
+
+\textbf{SDK} (Software Development Kit --- Kit de Développement)\\
+\hspace*{1em} Un ensemble d'outils, de bibliothèques et de documentation qui permet à
+d'autres développeurs d'\textbf{intégrer facilement} une technologie dans leurs applications
+sans avoir à tout réécrire de zéro.
+
+\vspace{0.4cm}
+
+\textbf{DApp} (Decentralized Application --- Application Décentralisée)\\
+\hspace*{1em} Une application dont le backend (la logique serveur) tourne sur la blockchain
+plutôt que sur un serveur centralisé. La partie frontend (interface web) reste classique.
+
+\vspace{0.4cm}
+
+\textbf{Proxy Pattern / Upgradeable Contract}\\
+\hspace*{1em} Une technique qui permet de \textbf{mettre à jour le code} d'un smart contract
+après déploiement (normalement impossible). Le ``proxy'' est un contrat fixe qui redirige
+les appels vers un ``implementation'' contract qui peut être remplacé.
+Avantage : corriger des bugs. Risque : introduit une centralisation.
+
+\vspace{0.4cm}
+
+\textbf{KAT} (Known Answer Tests --- Tests à réponse connue)\\
+\hspace*{1em} Des fichiers de test fournis par le NIST contenant des \textbf{entrées et sorties
+officielles} précalculées. Si notre code Python produit exactement les mêmes sorties, on est
+sûr que l'implémentation est correcte.
+
+\vspace{0.4cm}
+
+\textbf{RPC / RPC URL}\\
+\hspace*{1em} RPC (Remote Procedure Call) : le protocole utilisé pour \textbf{parler à un
+noeud Ethereum}. Une RPC URL est l'adresse du serveur qui donne accès à la blockchain.
+\textit{Exemples de fournisseurs : Infura, Alchemy, QuickNode.}
+
+\vspace{0.4cm}
+
+\textbf{Wrapper} (envelopper)\\
+\hspace*{1em} Dans le contexte SuVa, wrapping = déposer un token existant (USDT) dans un
+contrat et recevoir en échange un token ``enveloppé'' (sUSDT) qui représente l'original mais
+avec des fonctionnalités supplémentaires. C'est réversible : on peut toujours ``unwrapper''
+pour récupérer l'original.
+
+\end{tcolorbox}
+
+\newpage
+%══════════════════════════════════════════════════════════════════════
+\section{Vision du projet SuVa}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{tcolorbox}[colback=suva_blue!8, colframe=suva_blue, title=\textbf{Qu'est-ce que SuVa ?}]
+\textbf{SuVa (Super Value) Protocol} est un stablecoin \textbf{quantique-résistant} pour blockchains EVM.
+Il permet de :
+\begin{enumerate}
+  \item \textbf{Wrapper} des stablecoins existants (USDT, USDC) en versions sécurisées post-quantiques
+  \item Utiliser des \textbf{signatures de Dilithium ou Falcon} (NIST FIPS 204/206) à la place d'ECDSA
+  \item Protéger les fonds contre les futures attaques d'ordinateurs quantiques
+\end{enumerate}
+
+\textbf{Architecture cible :}
+\begin{itemize}
+  \item \textbf{Off-chain (Python)} : Génération de clés, signature des transactions
+  \item \textbf{On-chain (Solidity/EVM)} : Vérification des signatures, gestion du vault
+  \item \textbf{Interface utilisateur} : SDK, wallet ERC-4337
+\end{itemize}
+\end{tcolorbox}
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.5cm,
+  box/.style={draw, rounded corners, minimum width=3cm, minimum height=0.8cm, align=center, font=\small},
+  arrow/.style={-Stealth, thick, suva_blue},
+]
+  \node[box, fill=done_bg, draw=done_green] (python) {Python off-chain\\(keygen, sign)};
+  \node[box, fill=suva_blue!10, draw=suva_blue, right=2.5cm of python] (solidity) {Solidity on-chain\\(verify, vault)};
+  \node[box, fill=phase_blue, draw=suva_blue!60, above right=0.5cm and 1cm of python] (sdk) {SDK / ERC-4337\\Wallet};
+  \node[box, fill=done_bg, draw=done_green, below=1.2cm of python] (ntt) {NTT, polynômes\\(fait en Solidity)};
+  \node[box, fill=inprog_bg, draw=inprog_orange, below=1.2cm of solidity] (falcon) {Falcon / ETHFALCON\\(intégration)};
+
+  \draw[arrow] (python) -- (solidity) node[midway, above, font=\tiny] {signature hex};
+  \draw[arrow] (sdk) -- (python);
+  \draw[arrow] (sdk) -- (solidity);
+  \draw[arrow] (ntt) -- (solidity);
+  \draw[arrow] (falcon) -- (solidity);
+\end{tikzpicture}
+\end{center}
+
+\newpage
+%══════════════════════════════════════════════════════════════════════
+\section{Tableau de bord global}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|>{\bfseries}p{5.5cm}|c|p{6cm}|}
+\hline
+\rowcolor{suva_blue!20}
+\textbf{Composant} & \textbf{Statut} & \textbf{Remarque} \\
+\hline
+Primitives arithmétiques (NTT) & \statdone & Solidity + Python validés par KAT NIST \\
+\hline
+Dilithium2/3/5 Python (keygen, sign, verify) & \statdone & Tests KAT passent \\
+\hline
+Dilithium2 Solidity (verify) & \statdone & ZKNOX\_dilithium2.sol opérationnel \\
+\hline
+ETHDilithium (variante Keccak) Python & \statdone & Optimisé pour EVM \\
+\hline
+ETHDilithium Solidity (verify) & \statdone & Tests croisés Python$\leftrightarrow$Solidity \\
+\hline
+\rowcolor{inprog_bg}
+Intégration ETHFALCON (Falcon) & \stattodo & ZKNox a le code, pas encore intégré dans SuVa \\
+\hline
+\rowcolor{todo_bg}
+Vault Contract (wrap USDT$\to$sUSDT) & \stattodo & Pas encore commencé \\
+\hline
+\rowcolor{todo_bg}
+ERC-4337 Account Abstraction Wallet & \stattodo & Pas encore commencé \\
+\hline
+\rowcolor{todo_bg}
+SDK Python/JS pour développeurs & \stattodo & Pas encore commencé \\
+\hline
+\rowcolor{todo_bg}
+SPHINCS+ Solidity (fallback) & \stattodo & Très complexe, 50--500M gas \\
+\hline
+\rowcolor{todo_bg}
+Audit de sécurité & \stattodo & Dernière étape \\
+\hline
+\rowcolor{todo_bg}
+Déploiement mainnet & \stattodo & Post-audit \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{0.5cm}
+\begin{center}
+\begin{tikzpicture}
+  % Barre de progression globale
+  \def\totaltasks{12}
+  \def\donetasks{5}
+  \def\barwidth{12}
+
+  \fill[done_bg, draw=done_green, rounded corners] (0,0) rectangle (\barwidth * \donetasks / \totaltasks, 0.6);
+  \fill[gray!20, draw=gray!40, rounded corners] (\barwidth * \donetasks / \totaltasks, 0) rectangle (\barwidth, 0.6);
+  \node[font=\bfseries\small] at (\barwidth/2, 0.3) {\donetasks/\totaltasks\ composants terminés (41\%)};
+\end{tikzpicture}
+\end{center}
+
+\newpage
+%══════════════════════════════════════════════════════════════════════
+\section{Ce qui est FAIT --- Détail}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{done}{Couche arithmétique --- NTT et polynômes}
+\textbf{Fichiers concernés :}
+\begin{itemize}
+  \item \texttt{python-ref/Falcon\_dilithium\_py/polynomials/polynomials.py} --- Anneaux polynomiaux $R_q$
+  \item \texttt{python-ref/Falcon\_dilithium\_py/modules/modules.py} --- Modules $M_{k \times l}$
+  \item \texttt{python-ref/Falcon\_dilithium\_py/utilities/utils.py} --- decompose, HighBits, LowBits, MakeHint, UseHint, check\_norm\_bound
+  \item \texttt{src/ZKNOX\_NTT.sol} --- NTT en Solidity + Yul avec twiddle factors en bytecode
+  \item \texttt{src/ZKNOX\_keccak\_prng.sol} --- PRNG Keccak compatible Python$\leftrightarrow$Solidity
+
+\end{itemize}
+\textbf{Tests :} 4 tests KAT NIST passent. La NTT Python et Solidity donnent des résultats identiques.\\
+\textbf{Qualité :} Production-ready pour cette couche.
+\end{done}
+
+\begin{done}{Dilithium2/3/5 Python (off-chain)}
+\textbf{Fichier principal :} \texttt{Falcon\_dilithium\_py/Falcon\_dilithium/Falcon\_dilithium.py}
+
+\textbf{Ce que fait le code :}
+\begin{enumerate}
+  \item \texttt{keygen()} : génère $(pk, sk)$ à partir d'un seed aléatoire (SHAKE-256 PRNG)
+  \item \texttt{sign(sk, message)} : signe avec rejection sampling ($\approx 4.25$ itérations)
+  \item \texttt{verify(pk, message, sig)} : vérifie la signature
+\end{enumerate}
+
+\textbf{Vecteurs de test :} fichiers \texttt{PQCsignKAT\_Dilithium2/3/5.rsp} (NIST official KAT)\\
+\textbf{Tailles :} pk=1312B, sk=2560B, sig=2420B (Dilithium2)
+\end{done}
+
+\begin{done}{ETHDilithium Python (variante Ethereum)}
+\textbf{Fichier :} \texttt{Falcon\_dilithium\_eth.py}
+
+\textbf{Différences avec Dilithium standard :}
+\begin{itemize}
+  \item PRNG \textbf{Keccak-256} à la place de SHAKE-256 (natif EVM, 3 gas vs $\sim$50\% du gas total)
+  \item La clé publique inclut $\hat{A}$ (matrice précalculée en NTT) pour économiser le gas on-chain
+  \item Hash du message avec Keccak-256
+\end{itemize}
+\textbf{Résultat :} $\sim$6.6M gas (vs $\sim$13.5M gas pour Dilithium2 standard)
+\end{done}
+
+\begin{done}{Dilithium Solidity --- Vérificateur on-chain}
+\textbf{Contrats principaux :}
+\begin{itemize}
+  \item \texttt{src/ZKNOX\_dilithium2.sol} --- \texttt{verify(bytes pk, bytes msg, bytes sig) returns (bool)}
+  \item \texttt{src/ZKNOX\_NTT.sol} --- NTT optimisée Yul pour la vérification
+  \item \texttt{src/ZKNOX\_keccak\_prng.sol} --- ExpandA, ExpandMask en Keccak
+\end{itemize}
+\textbf{Architecture de vérification :}
+\begin{enumerate}
+  \item Unpack de la signature (z, h, c\_tilde)
+  \item Recompute $\hat{A}$ depuis seed ou depuis pk (ETHDilithium)
+  \item Calcul $w' = Az - ct_1 \cdot 2^d$
+  \item UseHint pour retrouver $r_1$
+  \item Hash et comparaison avec $\tilde{c}$
+\end{enumerate}
+\textbf{Coût gas :} $\sim$13.5M gas (Dilithium2) / $\sim$6.6M gas (ETHDilithium2)
+\end{done}
+
+\newpage
+%══════════════════════════════════════════════════════════════════════
+\section{Ce qui RESTE À FAIRE --- Tâches prioritaires}
+%══════════════════════════════════════════════════════════════════════
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Priorité CRITIQUE : Intégration Falcon / ETHFALCON}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{critical}{Falcon --- La cible production de SuVa}
+\textbf{Pourquoi c'est critique :}\\
+Dilithium coûte $\sim$6--13M gas par vérification. C'est \textbf{100x trop cher} pour un usage en production. Falcon (NIST FIPS 206) coûte seulement $\sim$\textbf{350K gas}.
+
+\textbf{Ce qui existe déjà (ZKNox) :}
+\begin{itemize}
+  \item \texttt{ETHFALCON} : implémentation Falcon pour EVM par ZKNox
+  \item Repo GitHub : \texttt{github.com/ZKNox/ETHFALCON}
+\end{itemize}
+
+\textbf{Ce qui reste à faire pour SuVa :}
+\begin{enumerate}
+  \item \textbf{Étudier ETHFALCON} : comprendre les contrats Solidity de vérification
+  \item \textbf{Adapter ETHFALCON} au contexte SuVa (interface vault, ERC-4337)
+  \item \textbf{Python off-chain} : implémenter ou adapter le signing Falcon en Python
+  \item \textbf{Tests croisés} : vecteurs Python $\to$ Solidity qui passent
+  \item \textbf{Intégrer dans le vault} : le vault accepte les signatures Falcon
+\end{enumerate}
+
+\textbf{Comparaison Falcon vs Dilithium :}
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Schéma} & \textbf{Gas verify} & \textbf{Sig taille} & \textbf{PK taille} & \textbf{Sécurité}\\
+\midrule
+Dilithium2      & $\sim$13.5M & 2420 B & 1312 B & 128 bits classique \\
+ETHDilithium2   & $\sim$6.6M  & 2420 B & >1312 B & 128 bits classique \\
+\rowcolor{done_bg}
+Falcon-512      & $\sim$350K  &  666 B &  897 B & 128 bits classique \\
+SPHINCS+        & 50--500M    & 8--50 KB & 32 B & 128 bits (hash)\\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{critical}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Priorité HAUTE : Vault Contract}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{todo}{Vault Contract --- Wrapping de stablecoins}
+\textbf{Rôle :} Contrat Solidity qui verrouille des USDT/USDC et émet des sUSDT/sUSDC.
+
+\textbf{Fonctionnalités requises :}
+\begin{enumerate}
+  \item \texttt{deposit(amount, pk\_pq)} : dépose USDT, stocke la clé publique PQ
+  \item \texttt{withdraw(amount, sig\_pq, msg)} : retire USDT après vérification de la signature PQ
+  \item \texttt{transfer(to, amount, sig\_pq, msg)} : transfert sUSDT après vérification PQ
+  \item Gestion des nonces pour éviter les replay attacks
+  \item Interface avec les contrats de vérification Dilithium/Falcon
+\end{enumerate}
+
+\textbf{Questions ouvertes :}
+\begin{itemize}
+  \item Quel standard ERC pour sUSDT ? ERC-20 avec custom transfer ? ERC-4337 ?
+  \item Comment gérer la mise à jour des clés PQ (rotation de clés) ?
+  \item Comment gérer le cas où l'utilisateur perd sa clé PQ ?
+\end{itemize}
+
+\textbf{Estimation effort :} 2--4 semaines de développement + tests
+\end{todo}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Priorité HAUTE : ERC-4337 Account Abstraction}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{todo}{ERC-4337 --- Wallet quantique-résistant}
+\textbf{Rôle :} Remplacer ECDSA par Dilithium/Falcon dans les smart contract wallets.
+
+\textbf{Fonctionnement ERC-4337 :}
+\begin{enumerate}
+  \item L'utilisateur soumet une \texttt{UserOperation} (au lieu d'une transaction ECDSA)
+  \item Un \texttt{Bundler} la regroupe avec d'autres et l'envoie au \texttt{EntryPoint} contract
+  \item L'\texttt{EntryPoint} appelle \texttt{validateUserOp()} sur le wallet de l'utilisateur
+  \item Le wallet appelle le vérificateur Dilithium/Falcon pour valider la signature PQ
+\end{enumerate}
+
+\textbf{Fichiers à créer :}
+\begin{itemize}
+  \item \texttt{src/SuVaWallet.sol} : smart contract wallet ERC-4337 avec PQ validation
+  \item \texttt{src/SuVaPaymaster.sol} (optionnel) : pour payer le gas en sUSDT
+  \item \texttt{python-ref/wallet\_sdk.py} : SDK pour créer des UserOperations
+\end{itemize}
+
+\textbf{Défi technique :} Le gas de validation (Dilithium = 6.6M gas) est 100x le coût ECDSA (ecrecover = 3000 gas). C'est pour cela que Falcon ($\sim$350K gas) est essentiel.
+\end{todo}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Priorité MOYENNE : SDK}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{todo}{SDK --- Interface pour les développeurs}
+\textbf{Composants :}
+\begin{enumerate}
+  \item \textbf{Python SDK} : wrapper de haut niveau pour keygen, sign, broadcast transaction
+  \item \textbf{JavaScript/TypeScript SDK} : pour les DApps web
+  \item \textbf{Documentation API} : guide d'intégration pour d'autres projets
+\end{enumerate}
+
+\textbf{Fonctions clés du SDK :}
+\begin{itemize}
+  \item \texttt{generate\_keypair(scheme='falcon512')} $\to$ (pk, sk)
+  \item \texttt{sign\_transaction(sk, tx\_data)} $\to$ signature
+  \item \texttt{create\_user\_operation(pk, sk, tx\_data)} $\to$ UserOp (ERC-4337)
+  \item \texttt{broadcast(user\_op, rpc\_url)} $\to$ tx\_hash
+\end{itemize}
+\end{todo}
+
+%──────────────────────────────────────────────────────────────────────
+\subsection{Priorité BASSE : SPHINCS+ (fallback)}
+%──────────────────────────────────────────────────────────────────────
+
+\begin{todo}{SPHINCS+ --- Le ``bunker nucléaire''}
+\textbf{Rôle :} Schéma de signature basé uniquement sur des fonctions de hachage (pas de réseaux de treillis).
+Si une attaque contre Falcon/Dilithium était découverte, SPHINCS+ reste sûr.
+
+\textbf{Problème majeur :} 50 à 500 millions de gas par vérification sur EVM. Pratiquement inutilisable.
+
+\textbf{Options possibles :}
+\begin{itemize}
+  \item Vérification off-chain avec preuve ZK (zkSNARK) soumise on-chain --- très complexe
+  \item Layer 2 spécialisé avec SPHINCS+ natif --- architecture différente
+  \item Utilisation uniquement pour les opérations non-urgentes (governance, key rotation)
+\end{itemize}
+
+\textbf{Décision :} Repousser jusqu'après Falcon. ZKNox n'a pas d'implémentation EVM de SPHINCS+.
+\end{todo}
+
+\newpage
+%══════════════════════════════════════════════════════════════════════
+\section{Feuille de route --- Planning estimé}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{center}
+\begin{tikzpicture}[
+  x=1.4cm, y=1.2cm,
+  phase/.style={draw, rounded corners, minimum height=0.7cm, align=center, font=\small\bfseries},
+  done_style/.style={phase, fill=done_bg, draw=done_green},
+  inprog_style/.style={phase, fill=inprog_bg, draw=inprog_orange},
+  todo_style/.style={phase, fill=todo_bg, draw=todo_red!60},
+  label_style/.style={font=\footnotesize\bfseries, align=center},
+]
+  % Axe du temps
+  \draw[-Stealth, thick, suva_blue] (0, 0) -- (9.5, 0) node[right] {\small Temps};
+
+  % Phases
+  \node[done_style, minimum width=3.5cm] at (1.7, 1.5) {Phase 1\\Primitives + Dilithium};
+  \node[inprog_style, minimum width=2cm] at (4.5, 1.5) {Phase 2\\Falcon};
+  \node[todo_style, minimum width=2.5cm] at (6.7, 1.5) {Phase 3\\Vault + 4337};
+  \node[todo_style, minimum width=2cm] at (8.8, 1.5) {Phase 4\\SDK + Audit};
+
+  % Marqueurs
+  \foreach \x/\label in {0/Déc 2024, 3.5/Mars 2026, 5.5/Mai 2026, 8/Juil 2026, 9.5/Oct 2026} {
+    \draw (\x, -0.15) -- (\x, 0.15);
+    \node[below, font=\tiny, rotate=20] at (\x, -0.2) {\label};
+  }
+
+  % Statuts
+  \node[done_style, font=\tiny, minimum width=1.5cm] at (1.7, 0.5) {TERMINÉ};
+  \node[inprog_style, font=\tiny, minimum width=1cm] at (4.5, 0.5) {ACTUEL};
+  \node[todo_style, font=\tiny, minimum width=1.5cm] at (6.7, 0.5) {À FAIRE};
+  \node[todo_style, font=\tiny, minimum width=1cm] at (8.8, 0.5) {À FAIRE};
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.5cm}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|c|p{4cm}|p{7cm}|c|}
+\hline
+\rowcolor{suva_blue!20}
+\textbf{Phase} & \textbf{Nom} & \textbf{Livrables} & \textbf{Durée} \\
+\hline
+\rowcolor{done_bg}
+1 & \textbf{Fondations} (FAIT) &
+NTT Solidity, Dilithium Python, Vérificateur Solidity, Tests KAT &
+$\sim$3 mois \\
+\hline
+\rowcolor{inprog_bg}
+2 & \textbf{Falcon} (PRIORITÉ) &
+Étude ETHFALCON, Python off-chain, Tests croisés, Intégration &
+8--10 sem. \\
+\hline
+\rowcolor{todo_bg}
+3a & \textbf{Vault Contract} &
+Dépôt USDT$\to$sUSDT, Retrait, Transfer avec sig PQ, Nonces &
+4--6 sem. \\
+\hline
+\rowcolor{todo_bg}
+3b & \textbf{ERC-4337 Wallet} &
+Smart wallet, validateUserOp, Bundler, Paymaster (optionnel) &
+4--6 sem. \\
+\hline
+\rowcolor{todo_bg}
+4a & \textbf{SDK} &
+Python SDK, JS/TS SDK, Documentation, Exemples d'intégration &
+3--4 sem. \\
+\hline
+\rowcolor{todo_bg}
+4b & \textbf{Audit + Mainnet} &
+Audit de sécurité externe, Bug bounty, Déploiement Ethereum mainnet &
+$\sim$2 mois \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage
+%══════════════════════════════════════════════════════════════════════
+\section{Tâches immédiates pour Mohamed Lamine MBENGUE}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue, title=\textbf{Prochaines actions concrètes (semaines 1--2)}]
+\begin{enumerate}[leftmargin=*]
+  \item[\textbf{J1}] \textbf{Installer l'environnement et faire passer les tests}
+    \begin{itemize}
+      \item Créer le venv Python, installer les dépendances
+      \item Lancer \texttt{pytest tests/ -v} $\to$ 4 tests VERTS
+      \item Installer Foundry et faire \texttt{forge build}
+    \end{itemize}
+
+  \item[\textbf{J2--J3}] \textbf{Maîtriser le code Dilithium}
+    \begin{itemize}
+      \item Lire et annoter \texttt{Falcon\_dilithium.py} ligne par ligne
+      \item Faire tous les exercices du Chapitre 8 (ce document)
+      \item Comprendre \texttt{ZKNOX\_dilithium2.sol} et son architecture
+    \end{itemize}
+
+  \item[\textbf{J4--J5}] \textbf{Explorer ETHFALCON (ZKNox)}
+    \begin{itemize}
+      \item Cloner \texttt{github.com/ZKNox/ETHFALCON}
+      \item Lire le README et les contrats Solidity
+      \item Identifier ce qui est réutilisable pour SuVa
+    \end{itemize}
+
+  \item[\textbf{Semaine 2}] \textbf{Préparer les questions pour le client}
+    \begin{itemize}
+      \item Architecture Vault : ERC-20 standard ou ERC-4337 d'emblée ?
+      \item Priorité : Falcon seul, ou Dilithium + Falcon en parallèle ?
+      \item Cible réseau : Ethereum mainnet, ou d'abord un L2 (Polygon, Arbitrum) ?
+      \item Gestion de la perte de clé : quel mécanisme de récupération ?
+      \item Budget gas acceptable en production : < 500K gas ? < 1M gas ?
+    \end{itemize}
+\end{enumerate}
+\end{tcolorbox}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Questions à poser au client}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{tcolorbox}[colback=warn_bg, colframe=orange!80!black,
+  title=\textbf{Questions techniques prioritaires}, breakable]
+
+\textbf{Sur l'architecture :}
+\begin{enumerate}
+  \item L'approche retenue est-elle Falcon uniquement, ou Dilithium (dev/test) + Falcon (prod) ?
+  \item Le vault doit-il être upgradeable (proxy pattern) ou immutable ?
+  \item Quelle est la cible réseau principale ? Ethereum mainnet ? Un L2 ?
+
+\end{enumerate}
+
+\textbf{Sur Falcon / ETHFALCON :}
+\begin{enumerate}[resume]
+  \item Avez-vous déjà contacté ZKNox pour l'intégration d'ETHFALCON ?
+  \item Y a-t-il des modifications prévues à ETHFALCON ou on l'utilise tel quel ?
+  \item Comment gérer la génération de clé Falcon (qui requiert un sampling gaussien discret) ?
+\end{enumerate}
+
+\textbf{Sur l'usage et l'UX :}
+\begin{enumerate}[resume]
+  \item Quel est le scénario d'usage principal : wallets hardware, mobile, ou serveurs ?
+  \item Comment l'utilisateur stocke-t-il sa clé secrète Falcon/Dilithium ?
+  \item Quelle est la stratégie si un utilisateur perd sa clé privée PQ ?
+\end{enumerate}
+
+\textbf{Sur le budget et les délais :}
+\begin{enumerate}[resume]
+  \item Quel est le budget gas maximum acceptable par transaction ?
+  \item Y a-t-il une date cible pour un déploiement testnet ? Mainnet ?
+  \item Un audit de sécurité externe est-il prévu, et par qui ?
+\end{enumerate}
+\end{tcolorbox}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Risques et points de vigilance}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|p{4.5cm}|c|c|p{5cm}|}
+\hline
+\rowcolor{suva_blue!20}
+\textbf{Risque} & \textbf{Probabilité} & \textbf{Impact} & \textbf{Mitigation} \\
+\hline
+ETHFALCON instable ou non audité & Moyen & Critique & Contribuer à l'audit, tests exhaustifs \\
+\hline
+Gas Falcon > 350K en pratique & Faible & Haut & Profiler avec forge --gas-report \\
+\hline
+Perte de clé PQ par utilisateur & Haut & Critique & Mécanisme de récupération sociale ou multi-sig \\
+\hline
+Évolution du standard FIPS 204/206 & Faible & Moyen & Suivre les errata NIST \\
+\hline
+Attack on Falcon sampling (Gaussian) & Très faible & Critique & Utiliser l'implémentation de référence \\
+\hline
+Pas de support EIP pour les ops PQ & Moyen & Moyen & ERC-4337 contourne ce problème \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{1cm}
+\begin{center}
+  {\color{suva_blue}\rule{0.5\linewidth}{1pt}}\\[0.3cm]
+  {\small\color{gray} Document de suivi de projet créé par \textbf{Mohamed Lamine MBENGUE} ---
+  Mars 2026 ---
+  \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}}}
+\end{center}
+
+\end{document}

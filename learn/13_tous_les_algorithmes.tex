@@ -1,0 +1,841 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2cm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, matrix}
+\usepackage{colortbl}
+\usepackage{array}
+\usepackage{longtable}
+
+% ── Couleurs ──────────────────────────────────────────────────────────
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{code_bg}{RGB}{245, 247, 250}
+\definecolor{code_kw}{RGB}{0, 80, 200}
+\definecolor{code_str}{RGB}{180, 40, 40}
+\definecolor{code_cmt}{RGB}{80, 130, 80}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{success_bg}{RGB}{230, 255, 235}
+\definecolor{danger_red}{RGB}{180, 30, 30}
+\definecolor{sol_green}{RGB}{0, 120, 80}
+\definecolor{block_bg}{RGB}{235, 240, 255}
+\definecolor{purple_pq}{RGB}{100, 30, 140}
+\definecolor{orange_warn}{RGB}{200, 100, 0}
+\definecolor{gray_classic}{RGB}{80, 80, 80}
+
+% ── Styles listings ───────────────────────────────────────────────────
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+}
+\lstdefinestyle{bash}{
+  basicstyle=\ttfamily\small\color{white},
+  backgroundcolor=\color{gray!80},
+  frame=single, breaklines=true,
+}
+
+% ── En-tête / pied de page ────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{suva_blue}\bfseries Tous les Algorithmes Cryptographiques}
+\fancyhead[R]{\color{gray}\small Leçon 13}
+\fancyfoot[L]{\footnotesize\color{gray}Mohamed Lamine MBENGUE}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\footnotesize\color{gray}portfolio-alamine.web.app}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% ── Environnements ────────────────────────────────────────────────────
+\newtcolorbox{algobox}[2]{
+  colback=#2!5, colframe=#2!70,
+  title={\bfseries #1}, fonttitle=\color{white}, breakable}
+\newtcolorbox{attention}{
+  colback=warn_bg, colframe=orange_warn,
+  title={\bfseries Attention}, fonttitle=\color{orange_warn!80!black}, breakable}
+\newtcolorbox{danger}{
+  colback=danger_red!5, colframe=danger_red,
+  title={\bfseries Vulnérable}, fonttitle=\color{white}, breakable}
+\newtcolorbox{pratique}[1]{
+  colback=block_bg, colframe=suva_blue!80,
+  title={\bfseries Code : #1}, fonttitle=\color{white}, breakable}
+
+% ═════════════════════════════════════════════════════════════════════
+\begin{document}
+% ═════════════════════════════════════════════════════════════════════
+
+\begin{center}
+  {\color{suva_blue}\rule{\textwidth}{2pt}}\\[0.4cm]
+  {\Huge\bfseries\color{suva_blue} Tous les Algorithmes Cryptographiques}\\[0.2cm]
+  {\large\color{gray} Classiques · Quantiques · Post-Quantiques --- Référence complète}\\[0.4cm]
+  {\color{suva_blue}\rule{\textwidth}{0.5pt}}
+\end{center}
+
+\tableofcontents
+\newpage
+
+% ═════════════════════════════════════════════════════════════════════
+\section*{Carte globale --- Tous les algorithmes en un coup d'œil}
+% ═════════════════════════════════════════════════════════════════════
+
+\begin{center}
+\begin{tikzpicture}[
+  cat/.style={draw, rounded corners, fill=#1, align=center, font=\bfseries\small,
+              minimum width=3.5cm, minimum height=1cm},
+  algo/.style={draw, rounded corners, fill=#1!15, align=center, font=\small,
+               minimum width=3cm, minimum height=0.8cm},
+  arrow/.style={-Stealth, thick}
+]
+  % Catégories principales
+  \node[cat=gray_classic!30] (sym) at (0, 0) {Symétrique};
+  \node[cat=suva_blue!30] (asym) at (5, 0) {Asymétrique\\Classique};
+  \node[cat=danger_red!30] (qalgo) at (10, 0) {Algorithmes\\Quantiques};
+  \node[cat=purple_pq!30] (pq) at (5, -5) {Post-Quantique\\(PQC)};
+  \node[cat=sol_green!30] (hash) at (0, -5) {Hachage};
+
+  % Symétrique
+  \node[algo=gray_classic] at (0,-1.4) {AES-128/256};
+  \node[algo=gray_classic] at (0,-2.3) {ChaCha20};
+  \node[algo=gray_classic] at (0,-3.2) {3DES};
+
+  % Asymétrique
+  \node[algo=suva_blue] at (5,-1.4) {RSA};
+  \node[algo=suva_blue] at (5,-2.3) {ECDSA / ECDH};
+  \node[algo=suva_blue] at (5,-3.2) {DH / EdDSA};
+
+  % Quantique (menaces)
+  \node[algo=danger_red] at (10,-1.4) {Shor};
+  \node[algo=danger_red] at (10,-2.3) {Grover};
+  \node[algo=danger_red] at (10,-3.2) {HHL};
+
+  % Hachage
+  \node[algo=sol_green] at (0,-6.4) {SHA-2 (256/512)};
+  \node[algo=sol_green] at (0,-7.3) {SHA-3 / Keccak};
+  \node[algo=sol_green] at (0,-8.2) {BLAKE2/3};
+
+  % PQC
+  \node[algo=purple_pq] at (3.5,-6.4) {Dilithium (FIPS 204)};
+  \node[algo=purple_pq] at (3.5,-7.3) {Falcon (FIPS 206)};
+  \node[algo=purple_pq] at (3.5,-8.2) {SPHINCS+ (FIPS 205)};
+  \node[algo=purple_pq] at (7,-6.4) {Kyber (FIPS 203)};
+  \node[algo=purple_pq] at (7,-7.3) {NTRU};
+  \node[algo=purple_pq] at (7,-8.2) {McEliece};
+
+  % Flèche "casse"
+  \draw[-Stealth, very thick, danger_red, dashed] (qalgo) -- (asym)
+    node[midway, above, font=\small\bfseries, color=danger_red] {casse !};
+  \draw[-Stealth, thick, sol_green] (pq) -- (3.5,-4.5)
+    node[midway, right, font=\small, color=sol_green] {remplace};
+\end{tikzpicture}
+\end{center}
+
+\newpage
+
+% ═════════════════════════════════════════════════════════════════════
+\section{Cryptographie Symétrique}
+% ═════════════════════════════════════════════════════════════════════
+
+La même clé sert à chiffrer et déchiffrer. Rapide, efficace. Le problème : comment
+partager la clé de façon sécurisée ?
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{AES --- Advanced Encryption Standard}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{AES (Rijndael) --- 2001, NIST}{gray_classic}
+\textbf{Type :} Chiffrement par bloc symétrique\\
+\textbf{Clés :} AES-128, AES-192, AES-256\\
+\textbf{Bloc :} 128 bits\\
+\textbf{Structure :} Réseau de substitution-permutation, 10/12/14 tours\\
+\textbf{Sécurité quantique :} Grover réduit à 64/96/128 bits → AES-256 reste sûr
+\end{algobox}
+
+\textbf{Idée :} Le message est vu comme une matrice 4×4 d'octets. À chaque tour :
+\begin{enumerate}
+  \item \texttt{SubBytes} : substitution octet par octet (S-box)
+  \item \texttt{ShiftRows} : décalage des lignes
+  \item \texttt{MixColumns} : mélange des colonnes (multiplication dans GF($2^8$))
+  \item \texttt{AddRoundKey} : XOR avec la clé de tour
+\end{enumerate}
+
+\begin{pratique}{AES en Python}
+\begin{lstlisting}[style=python]
+from Crypto.Cipher import AES
+import os
+
+key = os.urandom(32)          # AES-256 : 32 octets
+iv  = os.urandom(16)          # Vecteur d'initialisation
+
+cipher = AES.new(key, AES.MODE_GCM, nonce=iv)
+ciphertext, tag = cipher.encrypt_and_digest(b"Message secret SuVa")
+
+# Dechiffrer
+cipher2 = AES.new(key, AES.MODE_GCM, nonce=iv)
+plaintext = cipher2.decrypt_and_verify(ciphertext, tag)
+print(plaintext)  # b"Message secret SuVa"
+\end{lstlisting}
+\end{pratique}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{ChaCha20-Poly1305}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{ChaCha20-Poly1305 --- 2008, Bernstein}{gray_classic}
+\textbf{Type :} Chiffrement par flot + MAC\\
+\textbf{Clé :} 256 bits\\
+\textbf{Avantage :} Plus rapide qu'AES sur matériel sans accélération hardware\\
+\textbf{Utilisé dans :} TLS 1.3, WireGuard, Signal
+\end{algobox}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Comparaison Symétrique}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lllll}
+  \toprule
+  \textbf{Algo} & \textbf{Clé} & \textbf{Vitesse} & \textbf{Post-QC} & \textbf{Usage} \\
+  \midrule
+  AES-128 & 128 bits & Très rapide (HW) & Non (Grover) & Général \\
+  AES-256 & 256 bits & Rapide & Oui & Recommandé \\
+  ChaCha20 & 256 bits & Très rapide (SW) & Oui & Mobile, embarqué \\
+  3DES & 168 bits & Lent & Non & Obsolète \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ═════════════════════════════════════════════════════════════════════
+\section{Fonctions de Hachage}
+% ═════════════════════════════════════════════════════════════════════
+
+Une fonction de hachage prend une entrée de taille quelconque et produit une sortie
+de taille fixe (l'empreinte). Elle doit être à sens unique et résistante aux collisions.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{SHA-2}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{SHA-2 --- 2001, NSA/NIST}{sol_green}
+\textbf{Variantes :} SHA-224, SHA-256, SHA-384, SHA-512\\
+\textbf{Structure :} Fonction de compression Merkle-Damgård\\
+\textbf{SHA-256 :} 64 tours, mots de 32 bits\\
+\textbf{Utilisé dans :} Bitcoin (PoW), TLS, certificats X.509, signatures numériques\\
+\textbf{Post-QC :} Grover → sécurité réduite de moitié → SHA-256 donne 128 bits PQ
+\end{algobox}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{SHA-3 / Keccak}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{SHA-3 (Keccak) --- 2015, NIST}{sol_green}
+\textbf{Variantes :} SHA3-224/256/384/512, SHAKE-128, SHAKE-256\\
+\textbf{Structure :} Construction éponge (sponge) --- architecture différente de SHA-2\\
+\textbf{SHAKE :} Sortie de longueur variable (XOF)\\
+\textbf{Keccak-256 :} Utilisé dans Ethereum (hash des transactions, adresses)\\
+\textbf{Post-QC :} Résistant (même logique que SHA-256)
+\end{algobox}
+
+\textbf{Construction éponge (Sponge) :}
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={draw, fill=sol_green!10, minimum width=2cm, minimum height=0.8cm, font=\small},
+  arrow/.style={-Stealth, thick}
+]
+  \node[box] (m1) at (0,0) {$m_1$};
+  \node[box] (m2) at (2.5,0) {$m_2$};
+  \node[box] (m3) at (5,0) {$m_3$};
+  \node[box, fill=suva_blue!15] (s0) at (0,-1.5) {état};
+  \node[box, fill=suva_blue!15] (s1) at (2.5,-1.5) {état};
+  \node[box, fill=suva_blue!15] (s2) at (5,-1.5) {état};
+  \node[box, fill=sol_green!15] (h1) at (7.5,-1.5) {sortie};
+
+  \draw[arrow] (m1) -- (s0) node[midway, right, font=\tiny]{XOR};
+  \draw[arrow] (s0) -- (s1) node[midway, above, font=\tiny]{f()};
+  \draw[arrow] (m2) -- (s1) node[midway, right, font=\tiny]{XOR};
+  \draw[arrow] (s1) -- (s2) node[midway, above, font=\tiny]{f()};
+  \draw[arrow] (m3) -- (s2) node[midway, right, font=\tiny]{XOR};
+  \draw[arrow] (s2) -- (h1) node[midway, above, font=\tiny]{squeeze};
+\end{tikzpicture}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{BLAKE2 / BLAKE3}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{BLAKE3 --- 2020}{sol_green}
+\textbf{Type :} Fonction de hachage + PRF + MAC + XOF\\
+\textbf{Vitesse :} Le plus rapide des algorithmes standard (parallélisable)\\
+\textbf{Sortie :} 256 bits par défaut, extensible\\
+\textbf{Utilisé dans :} IPFS, systèmes de fichiers modernes, Rust ecosystem
+\end{algobox}
+
+\subsection{Comparaison des fonctions de hachage}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{llllll}
+  \toprule
+  \textbf{Algo} & \textbf{Sortie} & \textbf{Vitesse} & \textbf{Structure} & \textbf{Post-QC} & \textbf{EVM} \\
+  \midrule
+  SHA-256 & 256 bits & Rapide & MD & Oui (128-bit) & Non natif \\
+  Keccak-256 & 256 bits & Rapide & Éponge & Oui (128-bit) & \textbf{Natif opcode} \\
+  SHA3-256 & 256 bits & Moyen & Éponge & Oui (128-bit) & Non \\
+  SHAKE-256 & Variable & Moyen & Éponge & Oui & Non \\
+  BLAKE3 & Variable & Très rapide & Arbre & Oui & Non \\
+  MD5 & 128 bits & Très rapide & MD & \textcolor{danger_red}{Cassé} & Non \\
+  SHA-1 & 160 bits & Rapide & MD & \textcolor{danger_red}{Cassé} & Non \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ═════════════════════════════════════════════════════════════════════
+\section{Cryptographie Asymétrique Classique}
+% ═════════════════════════════════════════════════════════════════════
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{RSA}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{RSA --- 1977, Rivest-Shamir-Adleman}{suva_blue}
+\textbf{Base mathématique :} Difficulté de factoriser $n = p \times q$\\
+\textbf{Clé publique :} $(n, e)$ \quad \textbf{Clé privée :} $(n, d)$ où $ed \equiv 1 \pmod{\phi(n)}$\\
+\textbf{Signature :} $s = m^d \bmod n$ \quad \textbf{Vérif :} $s^e \bmod n = m$\\
+\textbf{Tailles recommandées :} 2048 bits (min), 4096 bits (long terme)
+\end{algobox}
+
+\begin{danger}
+L'algorithme de Shor factorize $n$ en temps polynomial sur un ordinateur quantique.
+RSA-2048 serait cassé en quelques heures. \textbf{Ne pas utiliser dans de nouveaux systèmes.}
+\end{danger}
+
+\begin{pratique}{RSA en Python}
+\begin{lstlisting}[style=python]
+from Crypto.PublicKey import RSA
+from Crypto.Signature import pkcs1_15
+from Crypto.Hash import SHA256
+
+# Generer une paire de cles RSA-2048
+key = RSA.generate(2048)
+private_key = key
+public_key  = key.publickey()
+
+# Signer
+msg    = b"Message a signer"
+h      = SHA256.new(msg)
+sig    = pkcs1_15.new(private_key).sign(h)
+
+# Verifier
+h2 = SHA256.new(msg)
+try:
+    pkcs1_15.new(public_key).verify(h2, sig)
+    print("Signature valide")
+except ValueError:
+    print("Signature invalide")
+\end{lstlisting}
+\end{pratique}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Diffie-Hellman (DH)}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{Diffie-Hellman --- 1976}{suva_blue}
+\textbf{But :} Échange de clé sécurisé sur canal public (pas une signature)\\
+\textbf{Base :} Problème du logarithme discret dans $\mathbb{Z}_p^*$\\
+\textbf{Protocole :} Alice envoie $g^a \bmod p$, Bob envoie $g^b \bmod p$\\
+\textbf{Secret partagé :} $(g^a)^b = (g^b)^a = g^{ab} \bmod p$
+\end{algobox}
+
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, fill=suva_blue!10, align=center, font=\small,
+              minimum width=3cm, minimum height=1.5cm},
+  arrow/.style={-Stealth, thick, suva_blue}
+]
+  \node[box] (alice) {Alice\\secret : $a$\\calcule : $A = g^a \bmod p$};
+  \node[box, right=4cm of alice] (bob) {Bob\\secret : $b$\\calcule : $B = g^b \bmod p$};
+
+  \draw[arrow, ->] (alice.north) to[bend left=30] node[above]{envoie $A$} (bob.north);
+  \draw[arrow, ->] (bob.south) to[bend left=30] node[below]{envoie $B$} (alice.south);
+
+  \node[below=1cm of alice, font=\small] {Clé = $B^a = g^{ab}$};
+  \node[below=1cm of bob, font=\small]   {Clé = $A^b = g^{ab}$};
+\end{tikzpicture}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{ECC --- Elliptic Curve Cryptography}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{ECC (ECDSA / ECDH / EdDSA) --- 1985, Koblitz \& Miller}{suva_blue}
+\textbf{Base :} Logarithme discret sur courbe elliptique : trouver $k$ tel que $Q = k \cdot G$\\
+\textbf{Courbes :} secp256k1 (Bitcoin, Ethereum), P-256 (TLS), Curve25519 (Signal)\\
+\textbf{Avantage vs RSA :} Clés 10x plus courtes pour la même sécurité\\
+\textbf{ECDSA :} Signature \quad \textbf{ECDH :} Échange de clé \quad \textbf{EdDSA :} Signature sur Ed25519
+\end{algobox}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lcc}
+  \toprule
+  \textbf{Sécurité} & \textbf{RSA} & \textbf{ECC} \\
+  \midrule
+  80 bits & 1024 bits & 160 bits \\
+  128 bits & 3072 bits & 256 bits \\
+  256 bits & 15360 bits & 512 bits \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\begin{danger}
+Shor casse ECDSA en temps polynomial. secp256k1 (Ethereum) sera vulnérable.
+EdDSA (Ed25519) est aussi vulnérable. \textbf{Toutes les courbes elliptiques tombent.}
+\end{danger}
+
+\begin{pratique}{ECDSA en Python --- comme Ethereum}
+\begin{lstlisting}[style=python]
+from Crypto.PublicKey import ECC
+from Crypto.Signature import DSS
+from Crypto.Hash import SHA256
+
+# Generer une cle secp256k1 (meme courbe qu'Ethereum)
+key = ECC.generate(curve='P-256')
+
+# Signer
+msg = b"Transaction Ethereum"
+h   = SHA256.new(msg)
+sig = DSS.new(key, 'fips-186-3').sign(h)
+
+# Verifier
+pub = key.public_key()
+h2  = SHA256.new(msg)
+try:
+    DSS.new(pub, 'fips-186-3').verify(h2, sig)
+    print("Valide")
+except ValueError:
+    print("Invalide")
+\end{lstlisting}
+\end{pratique}
+
+% ═════════════════════════════════════════════════════════════════════
+\section{Algorithmes Quantiques (les menaces)}
+% ═════════════════════════════════════════════════════════════════════
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{L'ordinateur quantique --- principe}
+% ─────────────────────────────────────────────────────────────────────
+
+Un ordinateur classique utilise des bits : 0 ou 1.
+Un ordinateur quantique utilise des qubits qui exploitent trois phénomènes :
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+  \toprule
+  \textbf{Phénomène} & \textbf{Explication} & \textbf{Avantage} \\
+  \midrule
+  Superposition & Un qubit est 0 et 1 simultanément & Explorer toutes solutions en parallèle \\
+  Intrication & Deux qubits liés, mesure de l'un détermine l'autre & Communication instantanée d'état \\
+  Interférence & Amplifier bonnes réponses, annuler mauvaises & Trouver la bonne réponse rapidement \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Algorithme de Shor --- 1994}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{Shor --- Le tueur de RSA et ECDSA}{danger_red}
+\textbf{But :} Factoriser $n$ ou résoudre le logarithme discret\\
+\textbf{Complexité classique :} $O(e^{n^{1/3}})$ (exponentiel)\\
+\textbf{Complexité Shor :} $O(n^3)$ (polynomial) \\
+\textbf{Casse :} RSA, DH, ECDSA, ECDH, DSA, toutes les ECC\\
+\textbf{Qubits nécessaires :} $\sim$4000 qubits logiques pour RSA-2048\\
+\textbf{Qubits actuels :} IBM Eagle : 127 qubits, Google Willow : 105 qubits (bruyants)
+\end{algobox}
+
+\textbf{Étapes simplifiées de Shor :}
+\begin{enumerate}
+  \item Choisir un $a$ aléatoire, calculer $\gcd(a, n)$ --- si $> 1$, facteur trouvé
+  \item Utiliser la \textbf{QFT (Quantum Fourier Transform)} pour trouver la période $r$ de $f(x) = a^x \bmod n$
+  \item Calculer $\gcd(a^{r/2} \pm 1, n)$ → facteurs de $n$
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Algorithme de Grover --- 1996}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{Grover --- L'accélérateur de recherche}{orange_warn}
+\textbf{But :} Recherche dans une base non structurée\\
+\textbf{Classique :} $O(N)$ — tester une par une\\
+\textbf{Grover :} $O(\sqrt{N})$ — accélération quadratique\\
+\textbf{Impact :} AES-128 → 64 bits de sécurité, AES-256 → 128 bits, SHA-256 → 128 bits\\
+\textbf{Conclusion :} Doublage des tailles de clés suffit pour les symétriques et hachages
+\end{algobox}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{HHL --- 2009}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{HHL (Harrow-Hassidim-Lloyd)}{orange_warn}
+\textbf{But :} Résoudre des systèmes d'équations linéaires $Ax = b$ exponentiellement plus vite\\
+\textbf{Impact crypto :} Potentiellement dangereux pour certains schémas basés sur LWE\\
+\textbf{Statut :} Limitations pratiques importantes --- l'accélération réelle est débattue
+\end{algobox}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{État actuel des ordinateurs quantiques}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{llll}
+  \toprule
+  \textbf{Entreprise} & \textbf{Processeur} & \textbf{Qubits} & \textbf{Année} \\
+  \midrule
+  IBM & Condor & 1121 & 2023 \\
+  Google & Willow & 105 (meilleure correction) & 2024 \\
+  Microsoft & Topological & En développement & --- \\
+  IonQ & Aria & 25 logiques & 2023 \\
+  \midrule
+  \multicolumn{4}{l}{\textit{Requis pour casser RSA-2048 : $\sim$4 millions de qubits physiques}} \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\begin{attention}
+On est encore \textbf{loin} de casser RSA. Mais les experts disent : il faut migrer
+\textbf{maintenant} car les données chiffrées aujourd'hui peuvent être stockées et
+déchiffrées plus tard (attaque "harvest now, decrypt later").
+\end{attention}
+
+% ═════════════════════════════════════════════════════════════════════
+\section{Post-Quantique --- Famille Lattices}
+% ═════════════════════════════════════════════════════════════════════
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Kyber --- ML-KEM (FIPS 203)}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{Kyber / ML-KEM --- KEM post-quantique}{purple_pq}
+\textbf{Type :} KEM (Key Encapsulation Mechanism) --- remplacement de ECDH\\
+\textbf{Base :} MLWE (Module Learning With Errors)\\
+\textbf{Standardisé :} FIPS 203, 2024\\
+\textbf{Variantes :} Kyber-512 (128-bit), Kyber-768 (192-bit), Kyber-1024 (256-bit)\\
+\textbf{Usage :} TLS post-quantique, échange de clé symétrique
+\end{algobox}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lccc}
+  \toprule
+  & \textbf{Kyber-512} & \textbf{Kyber-768} & \textbf{Kyber-1024} \\
+  \midrule
+  Clé publique & 800 oct. & 1184 oct. & 1568 oct. \\
+  Clé privée & 1632 oct. & 2400 oct. & 3168 oct. \\
+  Chiffré & 768 oct. & 1088 oct. & 1568 oct. \\
+  Sécurité & 128-bit PQ & 192-bit PQ & 256-bit PQ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Dilithium --- ML-DSA (FIPS 204)}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{Dilithium / ML-DSA --- Signature post-quantique}{purple_pq}
+\textbf{Type :} Signature numérique\\
+\textbf{Base :} MLWE + MSIS (Module Short Integer Solution)\\
+\textbf{Standardisé :} FIPS 204, 2024\\
+\textbf{Variantes :} Dilithium2 (128), Dilithium3 (192), Dilithium5 (256)\\
+\textbf{Avantage :} Simple à implémenter, signer est rapide\\
+\textbf{Dans SuVa :} Implémenté, 6.6M gas (trop cher mainnet)
+\end{algobox}
+
+\textbf{Schéma Fiat-Shamir with Aborts :}
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, fill=purple_pq!8, align=center,
+              font=\small, minimum width=3.5cm, minimum height=0.9cm},
+  arrow/.style={-Stealth, thick, purple_pq}
+]
+  \node[box] (kg) {KeyGen\\$A, s_1, s_2 \to pk, sk$};
+  \node[box, right=1.5cm of kg] (y) {Tirer $y$ aléatoire\\(rejection sampling)};
+  \node[box, right=1.5cm of y] (w) {$w = Ay \bmod q$\\$c = H(msg, w_1)$};
+  \node[box, right=1.5cm of w] (z) {$z = y + cs_1$\\vérif norme $z$};
+  \node[box, below=0.8cm of z] (abort) {Abort si\\norme trop grande};
+  \node[box, below=0.8cm of w] (sig) {Signature = $(c, z, h)$};
+
+  \draw[arrow] (kg) -- (y) node[midway,above,font=\tiny]{sign};
+  \draw[arrow] (y) -- (w);
+  \draw[arrow] (w) -- (z);
+  \draw[arrow] (z) -- (abort);
+  \draw[arrow] (abort.west) to[bend right=40] node[left, font=\tiny]{recommencer} (y.south);
+  \draw[arrow] (z) -- (sig);
+\end{tikzpicture}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Falcon --- FN-DSA (FIPS 206)}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{Falcon / FN-DSA --- Signature compacte}{purple_pq}
+\textbf{Type :} Signature numérique\\
+\textbf{Base :} NTRU + distribution gaussienne discrète\\
+\textbf{Standardisé :} FIPS 206, 2024\\
+\textbf{Variantes :} Falcon-512 (128-bit), Falcon-1024 (256-bit)\\
+\textbf{Avantage :} Signatures 4x plus petites que Dilithium\\
+\textbf{Inconvénient :} Signing complexe, nécessite gaussienne précise\\
+\textbf{Dans SuVa :} Phase 2, 350K gas
+\end{algobox}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lcccc}
+  \toprule
+  \textbf{Algo} & \textbf{Clé pub.} & \textbf{Signature} & \textbf{Gas EVM} & \textbf{Sécurité} \\
+  \midrule
+  ECDSA (secp256k1) & 64 oct. & 65 oct. & 3\,000 & \textcolor{danger_red}{Cassé QC} \\
+  Dilithium2 & 1312 oct. & 2420 oct. & 13.5M & 128-bit PQ \\
+  ETHDilithium2 & Grande & 2420 oct. & 6.6M & $\sim$128-bit PQ \\
+  Falcon-512 & 897 oct. & 666 oct. & 350K & 128-bit PQ \\
+  Falcon-1024 & 1793 oct. & 1280 oct. & $\sim$700K & 256-bit PQ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{NTRU --- le précurseur}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{NTRU --- 1996, Hoffstein-Pipher-Silverman}{purple_pq}
+\textbf{Type :} Chiffrement + KEM\\
+\textbf{Base :} Réseaux NTRU, problème SVP dans un anneau d'entiers\\
+\textbf{Statut NIST :} Non retenu finalement (Round 4 éliminé)\\
+\textbf{Lien avec SuVa :} Falcon est basé sur les réseaux NTRU
+\end{algobox}
+
+% ═════════════════════════════════════════════════════════════════════
+\section{Post-Quantique --- Famille Hachage}
+% ═════════════════════════════════════════════════════════════════════
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{SPHINCS+ --- SLH-DSA (FIPS 205)}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{SPHINCS+ / SLH-DSA --- Sécurité maximale}{purple_pq}
+\textbf{Type :} Signature numérique basée sur hachage\\
+\textbf{Base :} SHA-256 ou SHAKE-256 uniquement\\
+\textbf{Avantage :} Sécurité ne dépend d'aucune hypothèse algébrique\\
+\textbf{Inconvénient :} Signatures très grandes (8 à 50 Ko), signing lent\\
+\textbf{Gas EVM :} 50M à 500M (impossible mainnet, envisageable L2)
+\end{algobox}
+
+\textbf{Architecture SPHINCS+ :} c'est un arbre de signatures à usage unique (OTS).
+Chaque feuille = une signature WOTS+. L'arbre permet une clé publique fixe.
+
+\begin{center}
+\begin{tikzpicture}[
+  leaf/.style={draw, fill=sol_green!15, rounded corners, font=\tiny,
+               minimum width=1cm, minimum height=0.5cm},
+  node_/.style={draw, fill=suva_blue!15, rounded corners, font=\tiny,
+               minimum width=1.2cm, minimum height=0.5cm}
+]
+  % Racine
+  \node[node_] (root) at (4, 3) {Racine (pk)};
+  % Niveau 1
+  \node[node_] (n1) at (2, 2) {nœud};
+  \node[node_] (n2) at (6, 2) {nœud};
+  % Feuilles
+  \node[leaf] (l1) at (1, 1) {WOTS+};
+  \node[leaf] (l2) at (3, 1) {WOTS+};
+  \node[leaf] (l3) at (5, 1) {WOTS+};
+  \node[leaf] (l4) at (7, 1) {WOTS+};
+
+  \draw (root) -- (n1); \draw (root) -- (n2);
+  \draw (n1) -- (l1); \draw (n1) -- (l2);
+  \draw (n2) -- (l3); \draw (n2) -- (l4);
+\end{tikzpicture}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{XMSS et LMS}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{XMSS / LMS --- Standards hash-based avec état}{purple_pq}
+\textbf{XMSS :} eXtended Merkle Signature Scheme --- RFC 8391\\
+\textbf{LMS :} Leighton-Micali Signature --- RFC 8554\\
+\textbf{Caractéristique :} Signatures \textbf{avec état} (il faut mémoriser les signatures déjà utilisées)\\
+\textbf{Avantage :} Signatures plus petites que SPHINCS+\\
+\textbf{Inconvénient :} État à maintenir --- complexe pour des blockchains\\
+\textbf{Recommandé par NIST :} Pour logiciels de mise à jour (firmware)
+\end{algobox}
+
+% ═════════════════════════════════════════════════════════════════════
+\section{Post-Quantique --- Famille Code Correcteur}
+% ═════════════════════════════════════════════════════════════════════
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{McEliece}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{McEliece --- 1978, le plus ancien PQC}{purple_pq}
+\textbf{Type :} Chiffrement\\
+\textbf{Base :} Difficulté de décoder un code linéaire aléatoire (code de Goppa)\\
+\textbf{Avantage :} 45 ans sans attaque connue\\
+\textbf{Inconvénient :} Clé publique énorme --- 256 Ko à 1 Mo\\
+\textbf{Statut NIST :} Classic McEliece retenu comme alternative (Round 4)
+\end{algobox}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lcc}
+  \toprule
+  \textbf{Paramètre} & \textbf{Kyber-768} & \textbf{McEliece-348864} \\
+  \midrule
+  Clé publique & 1184 oct. & 261\,120 oct. \\
+  Chiffré & 1088 oct. & 128 oct. \\
+  Sécurité & 192-bit PQ & 128-bit PQ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ═════════════════════════════════════════════════════════════════════
+\section{Post-Quantique --- Famille Isogénies}
+% ═════════════════════════════════════════════════════════════════════
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{SIKE --- Cassé en 2022}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{algobox}{SIKE --- L'exemple de ce qui peut mal tourner}{danger_red}
+\textbf{Type :} KEM\\
+\textbf{Base :} Isogénies entre courbes elliptiques supersingulières\\
+\textbf{Avantage :} Clés très compactes (330 oct.)\\
+\textbf{Finaliste NIST Round 4 :} Oui, très prometteur\\
+\textbf{Juillet 2022 :} Cassé par Wouter Castryck et Thomas Decru en 62 minutes\\
+avec un ordinateur portable ordinaire. Éliminé immédiatement.\\
+\textbf{Leçon :} Un algorithme peut sembler sûr pendant des années puis tomber brusquement.
+\end{algobox}
+
+\subsection{CSIDH et SQISign}
+
+\begin{algobox}{CSIDH / SQISign --- Isogénies après SIKE}{purple_pq}
+\textbf{CSIDH :} Alternative à SIKE, différente construction, non cassée\\
+\textbf{SQISign :} Signatures basées sur isogénies, très compactes mais lentes\\
+\textbf{Statut :} Recherche active, pas encore standardisé\\
+\textbf{Potentiel :} SQISign a des signatures aussi petites qu'ECDSA (64 oct.)
+\end{algobox}
+
+% ═════════════════════════════════════════════════════════════════════
+\section{Tableau comparatif global}
+% ═════════════════════════════════════════════════════════════════════
+
+\begin{center}
+\small\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{p{2.8cm}p{1.5cm}p{1.8cm}p{1.8cm}p{1.5cm}p{3.5cm}}
+  \toprule
+  \textbf{Algorithme} & \textbf{Type} & \textbf{Clé pub.} & \textbf{Sig./Chif.} & \textbf{PQ sûr} & \textbf{Statut / Usage} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Algorithme} & \textbf{Type} & \textbf{Clé pub.} & \textbf{Sig./Chif.} & \textbf{PQ sûr} & \textbf{Statut / Usage} \\
+  \midrule
+  \endhead
+  % Classiques
+  \rowcolor{danger_red!8}
+  RSA-2048 & Sig/Enc & 256 oct. & 256 oct. & \textcolor{danger_red}{Non} & Obsolète, Shor \\
+  \rowcolor{danger_red!8}
+  ECDSA-256 & Sig & 64 oct. & 65 oct. & \textcolor{danger_red}{Non} & Ethereum actuel, Shor \\
+  \rowcolor{danger_red!8}
+  ECDH-256 & KEM & 64 oct. & 65 oct. & \textcolor{danger_red}{Non} & TLS actuel, Shor \\
+  \rowcolor{danger_red!8}
+  EdDSA-25519 & Sig & 32 oct. & 64 oct. & \textcolor{danger_red}{Non} & SSH, Signal, Shor \\
+  \rowcolor{danger_red!8}
+  DH-2048 & KEM & 256 oct. & --- & \textcolor{danger_red}{Non} & VPN, Shor \\
+  \midrule
+  % Symétriques (résistants)
+  \rowcolor{success_bg}
+  AES-256 & Sym & --- & --- & \textcolor{sol_green}{Oui} & Standard universel \\
+  \rowcolor{success_bg}
+  ChaCha20 & Sym & --- & --- & \textcolor{sol_green}{Oui} & Mobile, TLS 1.3 \\
+  \rowcolor{success_bg}
+  SHA-256 & Hash & --- & 32 oct. & \textcolor{sol_green}{Oui} & Bitcoin, général \\
+  \rowcolor{success_bg}
+  Keccak-256 & Hash & --- & 32 oct. & \textcolor{sol_green}{Oui} & Ethereum natif \\
+  \midrule
+  % PQC
+  \rowcolor{purple_pq!8}
+  Kyber-768 & KEM & 1184 oct. & 1088 oct. & \textcolor{sol_green}{Oui} & FIPS 203, TLS PQ \\
+  \rowcolor{purple_pq!8}
+  Dilithium2 & Sig & 1312 oct. & 2420 oct. & \textcolor{sol_green}{Oui} & FIPS 204, SuVa fait \\
+  \rowcolor{purple_pq!8}
+  Falcon-512 & Sig & 897 oct. & 666 oct. & \textcolor{sol_green}{Oui} & FIPS 206, SuVa P2 \\
+  \rowcolor{purple_pq!8}
+  SPHINCS+-128 & Sig & 32 oct. & 8000 oct. & \textcolor{sol_green}{Oui} & FIPS 205, SuVa P5 \\
+  \rowcolor{purple_pq!8}
+  McEliece & KEM & 261K oct. & 128 oct. & \textcolor{sol_green}{Oui} & NIST alt., niche \\
+  \rowcolor{purple_pq!8}
+  XMSS & Sig & 64 oct. & 2500 oct. & \textcolor{sol_green}{Oui} & RFC 8391, firmware \\
+  \rowcolor{purple_pq!8}
+  NTRU & KEM & 699 oct. & 699 oct. & \textcolor{sol_green}{Oui} & Précurseur Falcon \\
+  \rowcolor{danger_red!8}
+  SIKE & KEM & 330 oct. & 346 oct. & \textcolor{danger_red}{Cassé} & Cassé 2022 \\
+  \rowcolor{purple_pq!8}
+  SQISign & Sig & 64 oct. & 177 oct. & \textcolor{sol_green}{Oui?} & Recherche \\
+  \bottomrule
+\end{longtable}
+\end{center}
+
+% ═════════════════════════════════════════════════════════════════════
+\section{Exercice de synthèse}
+% ═════════════════════════════════════════════════════════════════════
+
+\begin{pratique}{Choisir le bon algorithme}
+Pour chaque cas, dis quel algorithme utiliser \textbf{aujourd'hui en 2026} et pourquoi :
+
+\begin{enumerate}
+  \item Sécuriser des communications web (HTTPS) pour les 5 prochaines années
+  \item Chiffrer des données médicales qui doivent rester secrètes pendant 30 ans
+  \item Signer des transactions sur une blockchain Ethereum-compatible
+  \item Authentifier des mises à jour firmware sur des appareils IoT
+  \item Protéger 1 million de dollars en stablecoin contre un adversaire quantique
+\end{enumerate}
+
+\textbf{Réponses attendues :}
+\begin{enumerate}
+  \item TLS 1.3 avec Kyber-768 + ECDH hybride (déjà déployé par Google, Cloudflare)
+  \item AES-256 (symétrique) + Kyber-1024 pour l'échange de clé
+  \item Falcon-512 (350K gas) ou Dilithium2 si Falcon pas dispo
+  \item XMSS ou LMS (signatures hash-based avec état, idéal firmware)
+  \item SuVa Protocol avec Falcon-512 sur l'EVM --- c'est exactement ce projet !
+\end{enumerate}
+\end{pratique}
+
+\vspace{1cm}
+
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40,
+  left=6pt, right=6pt, top=4pt, bottom=4pt]
+\small\begin{tabular}{ll}
+  \textbf{Auteur} & Mohamed Lamine MBENGUE \\
+  \textbf{Spécialités} & Sécurité · DevOps · Dev Full Stack Web \& Mobile \\
+  \textbf{Contact} & +221 78 178 44 36 · mbenguemohamedlamine2022@gmail.com \\
+  \textbf{Portfolio} & \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}} \\
+\end{tabular}
+\end{tcolorbox}
+
+\end{document}

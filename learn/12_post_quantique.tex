@@ -1,0 +1,594 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{listings}
+\usepackage[table]{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+
+% ── Couleurs ──────────────────────────────────────────────────────────
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{code_bg}{RGB}{245, 247, 250}
+\definecolor{code_kw}{RGB}{0, 80, 200}
+\definecolor{code_str}{RGB}{180, 40, 40}
+\definecolor{code_cmt}{RGB}{80, 130, 80}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{success_bg}{RGB}{230, 255, 235}
+\definecolor{danger_red}{RGB}{180, 30, 30}
+\definecolor{sol_green}{RGB}{0, 120, 80}
+\definecolor{block_bg}{RGB}{235, 240, 255}
+\definecolor{quantum_purple}{RGB}{120, 40, 160}
+
+% ── Styles listings ───────────────────────────────────────────────────
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+}
+\lstdefinestyle{bash}{
+  basicstyle=\ttfamily\small\color{white},
+  backgroundcolor=\color{gray!80},
+  frame=single, breaklines=true,
+}
+
+% ── En-tête / pied de page ────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{suva_blue}\bfseries Cryptographie Post-Quantique}
+\fancyhead[R]{\color{gray}\small Leçon 12 --- SuVa Protocol}
+\fancyfoot[L]{\footnotesize\color{gray}Mohamed Lamine MBENGUE}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\footnotesize\color{gray}portfolio-alamine.web.app}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% ── Environnements ────────────────────────────────────────────────────
+\newtcolorbox{definition}[1]{
+  colback=suva_blue!5, colframe=suva_blue!60,
+  title={\bfseries Définition : #1}, fonttitle=\color{white}, breakable}
+\newtcolorbox{exemple}[1]{
+  colback=success_bg, colframe=sol_green!60,
+  title={\bfseries Exemple : #1}, fonttitle=\color{sol_green!80!black}, breakable}
+\newtcolorbox{attention}{
+  colback=warn_bg, colframe=orange!70,
+  title={\bfseries Attention}, fonttitle=\color{orange!80!black}, breakable}
+\newtcolorbox{danger}{
+  colback=danger_red!5, colframe=danger_red,
+  title={\bfseries Danger}, fonttitle=\color{white}, breakable}
+\newtcolorbox{pratique}[1]{
+  colback=block_bg, colframe=suva_blue!80,
+  title={\bfseries Exercice pratique : #1}, fonttitle=\color{white}, breakable}
+
+% ═════════════════════════════════════════════════════════════════════
+\begin{document}
+% ═════════════════════════════════════════════════════════════════════
+
+\begin{center}
+  {\color{suva_blue}\rule{\textwidth}{2pt}}\\[0.5cm]
+  {\Huge\bfseries\color{suva_blue} Cryptographie Post-Quantique}\\[0.3cm]
+  {\large\color{gray} Pourquoi, quoi, comment --- Leçon 12}\\[0.5cm]
+  {\color{suva_blue}\rule{\textwidth}{0.5pt}}
+\end{center}
+
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────────────────────────────
+\section{La cryptographie actuelle — et son problème}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Comment on sécurise internet aujourd'hui}
+
+Toute la sécurité d'internet repose sur \textbf{deux problèmes mathématiques difficiles} :
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{lll}
+  \toprule
+  \textbf{Problème} & \textbf{Utilisé dans} & \textbf{Difficulté} \\
+  \midrule
+  Factorisation de grands entiers & RSA & Si $n = p \times q$, trouver $p$ et $q$ \\
+  Logarithme discret sur courbe elliptique & ECDSA, TLS, Ethereum & Trouver $k$ tel que $Q = k \cdot G$ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\begin{exemple}{Pourquoi c'est difficile pour un ordinateur classique}
+Pour factoriser un nombre de 2048 bits, un ordinateur classique prendrait
+\textbf{plus longtemps que l'âge de l'univers}. C'est pour ça qu'on fait confiance à RSA.
+\end{exemple}
+
+\subsection{L'arrivée des ordinateurs quantiques}
+
+Un ordinateur quantique ne calcule pas comme un ordinateur classique.
+Il utilise des \textbf{qubits} qui peuvent être 0 et 1 en même temps (superposition).
+Cela lui permet d'explorer des millions de solutions en parallèle.
+
+\begin{danger}
+En 1994, Peter Shor a prouvé qu'un ordinateur quantique suffisamment puissant peut
+résoudre la factorisation et le logarithme discret en \textbf{temps polynomial}.\\[0.2cm]
+Concrètement : RSA, ECDSA, et toutes les signatures Ethereum seraient \textbf{cassées}.\\[0.2cm]
+Les experts estiment qu'un tel ordinateur existera entre \textbf{2030 et 2040}.
+\end{danger}
+
+\subsection{Ce qui serait compromis}
+
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, fill=danger_red!8, align=center,
+              font=\small, minimum width=3cm, minimum height=1.2cm},
+]
+  \node[box] at (0,0)    {HTTPS\\(TLS)};
+  \node[box] at (3.5,0)  {Bitcoin\\ECDSA};
+  \node[box] at (7,0)    {Ethereum\\ECDSA};
+  \node[box] at (3.5,-2) {SSH\\(clés RSA)};
+  \node[box] at (7,-2)   {Emails signés\\(PGP/RSA)};
+  \node[box] at (0,-2)   {VPN\\(DH/ECDH)};
+
+  \node[font=\large\bfseries, color=danger_red] at (3.5, -3.5)
+    {Tout ceci serait cassé par un ordinateur quantique};
+\end{tikzpicture}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{La cryptographie post-quantique}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{definition}{Cryptographie post-quantique (PQC)}
+La cryptographie post-quantique (PQC) désigne les algorithmes qui restent sécurisés
+même face à un ordinateur quantique. Ils reposent sur des problèmes mathématiques
+que Shor \textbf{ne peut pas résoudre}.
+\end{definition}
+
+\subsection{Attention : ce n'est pas de la crypto quantique}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+  \toprule
+  & \textbf{Cryptographie quantique} & \textbf{Cryptographie post-quantique} \\
+  \midrule
+  C'est quoi & Utilise la physique quantique & Algorithmes maths résistants au quantum \\
+  Matériel & Lasers, fibres optiques spéciales & Ordinateur classique normal \\
+  Usage & Distribution de clés (QKD) & Signatures, chiffrement, authentification \\
+  Dans SuVa & Non & Oui --- Dilithium, Falcon, SPHINCS+ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Les familles d'algorithmes post-quantiques}
+
+Il existe 4 grandes familles, basées sur des problèmes mathématiques différents :
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{llll}
+  \toprule
+  \textbf{Famille} & \textbf{Problème de base} & \textbf{Exemples} & \textbf{Dans SuVa} \\
+  \midrule
+  Réseaux de points (Lattices) & CVP, LWE, NTRU & Dilithium, Falcon, Kyber & Oui \\
+  Hachage (Hash-based) & Fonctions de hachage & SPHINCS+, XMSS & Oui \\
+  Code correcteur & Décodage de codes linéaires & McEliece & Non \\
+  Isogénies & Courbes elliptiques supersingulières & SIKE (cassé en 2022!) & Non \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{La standardisation NIST}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{definition}{NIST}
+Le NIST (National Institute of Standards and Technology) est l'agence américaine des
+standards technologiques. Il a lancé en 2016 un concours pour standardiser les algorithmes
+post-quantiques. En 2024, il a publié les \textbf{3 premiers standards officiels}.
+\end{definition}
+
+\subsection{Le processus : 8 ans de compétition}
+
+\begin{center}
+\begin{tikzpicture}[
+  phase/.style={draw, rounded corners, fill=suva_blue!10, align=center,
+                font=\small, minimum width=2.5cm, minimum height=1.2cm},
+  arrow/.style={-Stealth, thick, suva_blue}
+]
+  \node[phase] (r1) at (0,0) {2016\\69 candidats\\Soumission};
+  \node[phase] (r2) at (3,0) {2019\\26 retenus\\Round 2};
+  \node[phase] (r3) at (6,0) {2020\\15 retenus\\Round 3};
+  \node[phase] (r4) at (9,0) {2022\\4 sélectionnés\\Round 4};
+  \node[phase, fill=success_bg, draw=sol_green] (std) at (6,-2) {2024\\Standards publiés\\FIPS 203, 204, 205, 206};
+
+  \draw[arrow] (r1) -- (r2);
+  \draw[arrow] (r2) -- (r3);
+  \draw[arrow] (r3) -- (r4);
+  \draw[arrow] (r4) -- (std);
+\end{tikzpicture}
+\end{center}
+
+\subsection{Les 4 standards NIST 2024}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{lllll}
+  \toprule
+  \textbf{Standard} & \textbf{Nom} & \textbf{Type} & \textbf{Usage} & \textbf{Dans SuVa} \\
+  \midrule
+  FIPS 203 & ML-KEM (Kyber) & KEM & Échange de clés & Non \\
+  \rowcolor{suva_blue!10}
+  FIPS 204 & ML-DSA (Dilithium) & Signature & Authentification & Oui (fait) \\
+  \rowcolor{suva_blue!10}
+  FIPS 205 & SLH-DSA (SPHINCS+) & Signature & Fallback sécurité max & Oui (futur) \\
+  \rowcolor{suva_blue!10}
+  FIPS 206 & FN-DSA (Falcon) & Signature & Priorité \#1 SuVa & Oui (Phase 2) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\begin{attention}
+SIKE, un candidat très prometteur basé sur les isogénies, a été \textbf{complètement cassé
+en 2022} par un mathématicien avec un simple ordinateur portable en 1 heure.
+Cela montre pourquoi la compétition NIST est si importante --- on cherche des
+algorithmes résistants aux attaques imprévues.
+\end{attention}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Les réseaux de points (Lattices)}
+% ─────────────────────────────────────────────────────────────────────
+
+La base mathématique de Dilithium \textbf{et} Falcon.
+
+\subsection{C'est quoi un réseau de points ?}
+
+Un réseau de points (lattice) est un ensemble de points dans un espace multidimensionnel,
+régulièrement espacés. Imagine une grille, mais en 500 dimensions.
+
+\begin{center}
+\begin{tikzpicture}
+  % Grille 2D pour illustrer
+  \foreach \x in {0,1,2,3,4} {
+    \foreach \y in {0,1,2,3} {
+      \fill[suva_blue] (\x, \y) circle (2pt);
+    }
+  }
+  % Vecteurs de base
+  \draw[-Stealth, thick, danger_red] (0,0) -- (1,0) node[right] {$\mathbf{b_1}$};
+  \draw[-Stealth, thick, sol_green] (0,0) -- (0,1) node[above] {$\mathbf{b_2}$};
+  % Point le plus proche de la cible
+  \fill[orange] (2.3, 1.7) circle (3pt) node[right, font=\small] {cible};
+  \fill[danger_red] (2,2) circle (3pt) node[right, font=\small, color=danger_red] {plus proche};
+\end{tikzpicture}
+\end{center}
+
+\subsection{Les deux problèmes difficiles}
+
+\begin{definition}{SVP --- Shortest Vector Problem}
+Trouver le vecteur le plus court dans un réseau. En grande dimension, c'est
+exponentiellement difficile même pour un ordinateur quantique.
+\end{definition}
+
+\begin{definition}{CVP --- Closest Vector Problem}
+Étant donné un point quelconque, trouver le point du réseau le plus proche.
+Encore plus difficile que SVP.
+\end{definition}
+
+\begin{definition}{LWE --- Learning With Errors}
+Étant donné des équations linéaires avec du bruit aléatoire ajouté, retrouver le
+secret caché. C'est la base de Dilithium. Le bruit rend le problème insoluble.
+\end{definition}
+
+\subsection{Pourquoi les ordinateurs quantiques ne cassent pas les lattices}
+
+L'algorithme de Shor résout le logarithme discret en exploitant une \textit{structure
+périodique}. Les problèmes de lattices n'ont pas cette structure.
+L'algorithme de Grover (quantique) donne au plus une accélération quadratique ---
+ce qui se compense en doublant la taille des clés.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+  \toprule
+  \textbf{Problème} & \textbf{Ordinateur classique} & \textbf{Ordinateur quantique} \\
+  \midrule
+  Factorisation (RSA) & $2^{n/3}$ & $n^3$ (Shor) \textcolor{danger_red}{CASSÉ} \\
+  Log discret (ECDSA) & $2^{n/2}$ & $n^3$ (Shor) \textcolor{danger_red}{CASSÉ} \\
+  SVP/LWE (Dilithium) & $2^{n}$ & $2^{n/2}$ (Grover) \textcolor{sol_green}{Résistant} \\
+  Hash (SPHINCS+) & $2^{n}$ & $2^{n/2}$ (Grover) \textcolor{sol_green}{Résistant} \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Dilithium --- ML-DSA (FIPS 204)}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Vue d'ensemble}
+
+Dilithium est l'algorithme de signature post-quantique le plus adopté.
+Il repose sur le problème \textbf{MLWE} (Module Learning With Errors).
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{lccc}
+  \toprule
+  \textbf{Paramètre} & \textbf{Dilithium2} & \textbf{Dilithium3} & \textbf{Dilithium5} \\
+  \midrule
+  Niveau sécurité NIST & 2 (128-bit) & 3 (192-bit) & 5 (256-bit) \\
+  Taille clé publique & 1312 oct. & 1952 oct. & 2592 oct. \\
+  Taille signature & 2420 oct. & 3293 oct. & 4595 oct. \\
+  Gas vérification EVM & $\sim$13.5M & --- & --- \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Flux simplifié : keygen, sign, verify}
+
+\begin{center}
+\begin{tikzpicture}[
+  step/.style={draw, rounded corners, fill=suva_blue!8, align=center,
+               font=\small, minimum width=3.5cm, minimum height=1.2cm},
+  arrow/.style={-Stealth, thick, suva_blue}
+]
+  % KEYGEN
+  \node[step] (seed) at (0,0) {Graine aléatoire\\(32 octets)};
+  \node[step] (keys) at (4,0) {Clé publique (pk)\\Clé privée (sk)};
+  \draw[arrow] (seed) -- (keys) node[midway, above, font=\tiny]{KeyGen};
+
+  % SIGN
+  \node[step] (msg) at (0,-2.5) {Message\\+ sk};
+  \node[step] (sig) at (4,-2.5) {Signature\\(2420 oct.)};
+  \draw[arrow] (msg) -- (sig) node[midway, above, font=\tiny]{Sign};
+
+  % VERIFY
+  \node[step] (ver_in) at (0,-5) {pk + message\\+ signature};
+  \node[step, fill=success_bg, draw=sol_green] (result) at (4,-5) {true / false};
+  \draw[arrow] (ver_in) -- (result) node[midway, above, font=\tiny]{Verify};
+\end{tikzpicture}
+\end{center}
+
+\subsection{ETHDilithium vs Dilithium standard}
+
+ZKNox a modifié Dilithium pour l'adapter à l'EVM :
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+  \toprule
+  \textbf{Aspect} & \textbf{Dilithium (NIST)} & \textbf{ETHDilithium (ZKNox)} \\
+  \midrule
+  Fonction de hachage & SHAKE-256 & Keccak-256 \\
+  Raison & Standard NIST & Keccak est natif sur l'EVM (opcode) \\
+  Gas verify & $\sim$13.5M & $\sim$6.6M \\
+  Clé publique & 1312 oct. & Plus grande (précalculs stockés) \\
+  Compatibilité NIST & Oui & Non (déviation documentée) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\begin{lstlisting}[style=python, caption={Utilisation basique dans ce projet}]
+from Falcon_dilithium import ETHDilithium2, Dilithium2
+
+# Version ETH (optimisee pour l'EVM)
+pk, sk = ETHDilithium2.keygen()
+sig    = ETHDilithium2.sign(sk, b"message SuVa")
+ok     = ETHDilithium2.verify(pk, b"message SuVa", sig)
+print(ok)  # True
+
+# Version NIST standard
+pk2, sk2 = Dilithium2.keygen()
+sig2     = Dilithium2.sign(sk2, b"message SuVa")
+print(Dilithium2.verify(pk2, b"message SuVa", sig2))  # True
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Falcon --- FN-DSA (FIPS 206)}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Vue d'ensemble}
+
+Falcon est basé sur les \textbf{réseaux NTRU} --- une structure algébrique plus compacte
+que les lattices généraux. Il produit des signatures beaucoup plus petites que Dilithium.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{lccc}
+  \toprule
+  \textbf{Paramètre} & \textbf{ECDSA} & \textbf{Dilithium2} & \textbf{Falcon-512} \\
+  \midrule
+  Niveau sécurité & 128-bit & 128-bit (PQ) & 128-bit (PQ) \\
+  Clé publique & 64 oct. & 1312 oct. & 897 oct. \\
+  Signature & 65 oct. & 2420 oct. & 666 oct. \\
+  Gas verify (EVM) & 3\,000 & $\sim$6.6M & $\sim$350\,000 \\
+  Résistant quantum & \textcolor{danger_red}{Non} & \textcolor{sol_green}{Oui} & \textcolor{sol_green}{Oui} \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Pourquoi Falcon est difficile à implémenter}
+
+Falcon utilise une distribution gaussienne discrète pour générer ses signatures.
+Il faut un générateur de nombres aléatoires très précis.
+Un mauvais aléatoire peut \textbf{révéler la clé privée}.
+
+\begin{attention}
+C'est pour ça que ZKNox a déjà travaillé sur ETHFALCON. Implémenter Falcon
+correctement est un travail de cryptographe expérimenté. Ton travail c'est
+l'\textbf{intégration}, pas ré-implémenter Falcon from scratch.
+\end{attention}
+
+\subsection{Falcon vs Dilithium : quand utiliser lequel}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+  \toprule
+  \textbf{Critère} & \textbf{Dilithium} & \textbf{Falcon} \\
+  \midrule
+  Facilité d'implémentation & Simple & Complexe \\
+  Taille signature & Grande (2420 oct.) & Petite (666 oct.) \\
+  Gas EVM & 6.6M & 350K \\
+  Signing côté client & Rapide & Plus lent (gaussienne) \\
+  Recommandé pour & HW wallets & Transactions fréquentes \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{SPHINCS+ --- SLH-DSA (FIPS 205)}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Vue d'ensemble}
+
+SPHINCS+ est basé uniquement sur les \textbf{fonctions de hachage}. Sa sécurité ne dépend
+d'aucun problème algébrique --- uniquement de la résistance de SHA-256 ou SHAKE-256.
+
+\begin{definition}{Sécurité maximale mais coût élevé}
+SPHINCS+ est le plus conservateur des 3 algorithmes. Même si on trouvait une faille
+dans les lattices, SPHINCS+ resterait sécurisé. Mais ses signatures font entre
+8 Ko et 50 Ko, et la vérification coûte 50M à 500M gas --- inutilisable sur l'EVM mainnet.
+\end{definition}
+
+\subsection{Rôle dans SuVa}
+
+SPHINCS+ est prévu comme \textbf{mécanisme de fallback} pour les opérations à très haute
+valeur (ex: récupération de compte, migration de clé). Il serait déployé sur un L2
+(Arbitrum, Base) où le gas est 100x moins cher.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{llll}
+  \toprule
+  & \textbf{Falcon} & \textbf{Dilithium} & \textbf{SPHINCS+} \\
+  \midrule
+  Usage SuVa & Transactions quotidiennes & Fallback Falcon & Opérations critiques \\
+  Réseau & Ethereum mainnet & Ethereum mainnet & L2 uniquement \\
+  Gas & 350K & 6.6M & 50--500M \\
+  Phase SuVa & 2 & Fait & 5 (recherche) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Exercices pratiques}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{pratique}{PQ1 --- Comparer les tailles de clés et signatures}
+\begin{lstlisting}[style=python]
+from Falcon_dilithium import ETHDilithium2, Dilithium2
+
+# Generer les cles pour les deux versions
+pk_eth, sk_eth = ETHDilithium2.keygen()
+pk_std, sk_std = Dilithium2.keygen()
+
+msg = b"SuVa Protocol"
+
+# Signer
+sig_eth = ETHDilithium2.sign(sk_eth, msg)
+sig_std = Dilithium2.sign(sk_std, msg)
+
+# Afficher les tailles
+print(f"ETHDilithium - cle publique : {len(pk_eth)} octets")
+print(f"ETHDilithium - signature    : {len(sig_eth)} octets")
+print(f"Dilithium    - cle publique : {len(pk_std)} octets")
+print(f"Dilithium    - signature    : {len(sig_std)} octets")
+
+# Verifier
+assert ETHDilithium2.verify(pk_eth, msg, sig_eth), "ETHDilithium echec"
+assert Dilithium2.verify(pk_std, msg, sig_std), "Dilithium echec"
+print("Toutes les verifications passent !")
+\end{lstlisting}
+\end{pratique}
+
+\begin{pratique}{PQ2 --- Tester la vérification avec mauvaise signature}
+\begin{lstlisting}[style=python]
+from Falcon_dilithium import Dilithium2
+
+pk, sk = Dilithium2.keygen()
+msg    = b"message original"
+sig    = Dilithium2.sign(sk, msg)
+
+# Cas 1 : message modifie
+r1 = Dilithium2.verify(pk, b"message modifie", sig)
+print(f"Message modifie -> {r1}")   # False
+
+# Cas 2 : signature corrompue
+sig_corrompu = bytearray(sig)
+sig_corrompu[10] ^= 0xFF  # flip un bit
+r2 = Dilithium2.verify(pk, msg, bytes(sig_corrompu))
+print(f"Signature corrompue -> {r2}")  # False
+
+# Cas 3 : bonne signature
+r3 = Dilithium2.verify(pk, msg, sig)
+print(f"Signature valide -> {r3}")  # True
+\end{lstlisting}
+\end{pratique}
+
+\begin{pratique}{PQ3 --- Générer les vecteurs KAT et les valider}
+\begin{lstlisting}[style=bash]
+# Dans le dossier python-ref/Falcon_dilithium_py/
+python generate_ethdilithium_test_vectors.py
+
+# Cela cree le fichier test/ZKNOX_ethdilithium.t.sol
+# avec des vecteurs de test hard-codes
+
+# Puis tester en Solidity
+cd ../..   # retour dans ETHDILITHIUM-main
+forge test -vv --match-test ethdilithium
+
+# Tu dois voir : [PASS] pour chaque test
+\end{lstlisting}
+\end{pratique}
+
+\begin{pratique}{PQ4 --- Rapport sécurité (Phase 1 William)}
+Réponds à ces 3 questions par écrit (1 paragraphe chacune) :\\[0.3cm]
+\textbf{Q1.} ETHDilithium remplace SHAKE-256 par Keccak-256.
+Ces deux fonctions ont des propriétés de sécurité similaires (résistance aux collisions,
+préimage). En quoi cette substitution \textit{pourrait} affaiblir ou non la sécurité ?
+Cherche : "SHAKE-256 vs Keccak-256 security properties"\\[0.2cm]
+\textbf{Q2.} ETHDilithium n'est pas un standard NIST. Si SuVa est examiné par UCL
+pour un grant académique, quelle justification donner pour ce choix ?\\[0.2cm]
+\textbf{Q3.} Mesure le gas réel avec \texttt{forge test --gas-report} et compare
+avec les valeurs annoncées (6.6M). Est-ce que ça correspond ?
+\end{pratique}
+
+% ─────────────────────────────────────────────────────────────────────
+\section*{Résumé : ce que tu dois retenir}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue]
+\begin{enumerate}
+  \item Les ordinateurs quantiques casseront ECDSA → toutes les signatures Ethereum
+  \item La PQC utilise des problèmes que les quantiques ne peuvent pas résoudre
+  \item Le NIST a standardisé 3 algorithmes de signature en 2024 : Dilithium, Falcon, SPHINCS+
+  \item Dilithium = implémenté, 6.6M gas, trop cher pour la prod
+  \item Falcon = 350K gas, priorité \#1 SuVa, ZKNox a déjà ETHFALCON
+  \item SPHINCS+ = ultra-sécurisé mais 50-500M gas, pour L2 uniquement
+  \item ETHDilithium = version Keccak de Dilithium, plus rapide sur EVM mais hors standard NIST
+\end{enumerate}
+\end{tcolorbox}
+
+\vspace{1cm}
+
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40,
+  left=6pt, right=6pt, top=4pt, bottom=4pt]
+\small\begin{tabular}{ll}
+  \textbf{Auteur} & Mohamed Lamine MBENGUE \\
+  \textbf{Spécialités} & Sécurité · DevOps · Dev Full Stack Web \& Mobile \\
+  \textbf{Contact} & +221 78 178 44 36 · mbenguemohamedlamine2022@gmail.com \\
+  \textbf{Portfolio} & \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}} \\
+\end{tabular}
+\end{tcolorbox}
+
+\end{document}

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from falcon_sign import Falcon; f=Falcon\\(256\\); print\\(''sig_bound:'', f.param.sig_bound\\); print\\(''sig_bytelen:'', f.param.sig_bytelen\\)\")",
+      "Bash(python -c \":*)",
+      "Bash(python3 -c \":*)",
+      "Bash(py -3 -c \":*)",
+      "Bash(py -3 -m Falcon_dilithium_py.generate_falcon_test_vectors)",
+      "Bash(forge test:*)"
+    ]
+  }
+}

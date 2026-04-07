@@ -1,0 +1,604 @@
+% ============================================================
+%  SuVa Protocol — Phase 2 : ETHFalcon on EVM
+%  Rapport technique
+%  Auteur : Mohamed Lamine MBENGUE
+%  Portfolio : https://portfolio-alamine.web.app
+%  Date : Mars 2026
+% ============================================================
+\documentclass[11pt,a4paper]{article}
+
+% ── Encodage & langue ────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% ── Typographie ──────────────────────────────────────────────────────────────
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{fourier}          % Utopia font — cohérent avec les slides
+
+% ── Mise en page ─────────────────────────────────────────────────────────────
+\usepackage[top=2.5cm,bottom=2.5cm,left=2.8cm,right=2.8cm]{geometry}
+\usepackage{parskip}
+\setlength{\parindent}{0pt}
+
+% ── Maths ────────────────────────────────────────────────────────────────────
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{physics}
+
+% ── Couleurs & boîtes ────────────────────────────────────────────────────────
+\usepackage[dvipsnames,table]{xcolor}
+
+\definecolor{suvaBlue}{RGB}{0,82,155}
+\definecolor{suvaGold}{RGB}{204,153,0}
+\definecolor{suvaGreen}{RGB}{0,128,80}
+\definecolor{suvaRed}{RGB}{180,30,30}
+\definecolor{boxBg}{RGB}{240,248,255}
+\definecolor{warnBg}{RGB}{255,248,230}
+
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable,skins}
+
+% Boite résultat (vert/bleu)
+\newtcolorbox{resultbox}[1][]{
+  enhanced,
+  breakable,
+  colback=boxBg,
+  colframe=suvaBlue,
+  fonttitle=\bfseries\color{white},
+  coltitle=white,
+  attach boxed title to top left={yshift=-2mm,xshift=4mm},
+  boxed title style={colback=suvaBlue},
+  title={Résultat},
+  #1
+}
+
+% Boite avertissement (orange)
+\newtcolorbox{warningbox}[1][]{
+  enhanced,
+  breakable,
+  colback=warnBg,
+  colframe=suvaGold,
+  fonttitle=\bfseries\color{white},
+  coltitle=white,
+  attach boxed title to top left={yshift=-2mm,xshift=4mm},
+  boxed title style={colback=suvaGold},
+  title={Important},
+  #1
+}
+
+% ── Code source ──────────────────────────────────────────────────────────────
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{suvaBlue}\bfseries,
+  commentstyle=\color{gray},
+  stringstyle=\color{suvaGreen},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{suvaBlue!40},
+  backgroundcolor=\color{suvaBlue!5},
+  captionpos=b
+}
+
+% ── Tableaux ─────────────────────────────────────────────────────────────────
+\usepackage{booktabs,multirow,array}
+
+% ── Liens ────────────────────────────────────────────────────────────────────
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=suvaBlue,
+  urlcolor=suvaBlue,
+  citecolor=suvaGreen
+}
+
+% ── En-têtes et pieds de page ────────────────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{suvaBlue}\textbf{SuVa Protocol — Phase 2}}
+\fancyhead[R]{\small\color{gray}ETHFalcon on EVM}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ── Sections colorées ────────────────────────────────────────────────────────
+\usepackage{titlesec}
+\titleformat{\section}
+  {\Large\bfseries\color{suvaBlue}}
+  {\thesection.}{0.6em}{}[\color{suvaBlue}\titlerule]
+\titleformat{\subsection}
+  {\large\bfseries\color{suvaBlue!80}}
+  {\thesubsection.}{0.5em}{}
+
+% ── Abréviations ─────────────────────────────────────────────────────────────
+\newcommand{\ethfalcon}{\textsc{ETHFalcon}}
+\newcommand{\ethdilithium}{\textsc{ETHDilithium}}
+\newcommand{\Zq}{\mathbb{Z}_{q}}
+\newcommand{\ring}{\mathbb{Z}_q[X]/(X^n+1)}
+
+% ============================================================
+%  DOCUMENT
+% ============================================================
+\begin{document}
+
+% ── Page de titre ────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{1.5cm}
+
+  {\color{suvaBlue}\rule{\linewidth}{2pt}}
+  \vspace{0.5cm}
+
+  {\Huge\bfseries\color{suvaBlue} SuVa Protocol}\\[0.3cm]
+  {\LARGE\color{suvaGold} Rapport Technique — Phase 2}\\[0.2cm]
+  {\Large ETHFalcon : Falcon sur EVM avec KeccakPRNG}
+
+  \vspace{0.5cm}
+  {\color{suvaBlue}\rule{\linewidth}{2pt}}
+
+  \vspace{2cm}
+
+  \begin{tabular}{rl}
+    \textbf{Auteur :}    & Mohamed Lamine MBENGUE \\[4pt]
+    \textbf{Portfolio :} & \href{https://portfolio-alamine.web.app}{portfolio-alamine.web.app} \\[4pt]
+    \textbf{Projet :}    & SuVa Protocol — Post-Quantum Signatures on EVM \\[4pt]
+    \textbf{Phase :}     & Phase 2 — ETHFalcon \\[4pt]
+    \textbf{Date :}      & Mars 2026 \\[4pt]
+  \end{tabular}
+
+  \vfill
+
+  \begin{tcolorbox}[colback=suvaBlue!8,colframe=suvaBlue,width=0.85\linewidth]
+    \centering
+    \textbf{Résumé exécutif}\\[6pt]
+    La Phase 2 du projet SuVa Protocol implémente \ethfalcon{}, une variante
+    de la signature post-quantique Falcon où SHAKE-256 est remplacé par
+    KeccakPRNG (Keccak-256). Cette modification rend la vérification
+    entièrement compatible avec l'EVM. Le contrat \texttt{ZKNOX\_ethfalcon.sol}
+    effectue la vérification en \textbf{$\approx 46{,}67$ M gas} (multiplication
+    schoolbook $O(n^2)$, $n=256$), contre 6,58 M pour \ethdilithium{} et
+    13,42 M pour Dilithium standard.
+  \end{tcolorbox}
+
+  \vspace{1cm}
+  {\color{suvaBlue}\rule{\linewidth}{1pt}}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Résumé exécutif}
+% ============================================================
+
+\begin{resultbox}[title={Résultats de la Phase 2}]
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Schéma} & \textbf{Gas (verify)} & \textbf{Taille sig.} & \textbf{Taille vk} \\
+\midrule
+Dilithium (NIST II) & 13{,}42 M & $\approx 2\,420$ B & $\approx 1\,312$ B \\
+ETHDilithium (Keccak) & 6{,}58 M & $\approx 2\,420$ B & $\approx 1\,312$ B \\
+\textbf{ETHFalcon-256} & \textbf{46{,}67 M} & \textbf{356 B} & \textbf{448 B} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{resultbox}
+
+\medskip
+
+La Phase 2 atteint ses objectifs principaux :
+\begin{itemize}
+  \item Le module Python \texttt{ETHFalcon256} (keygen / sign / verify) fonctionne
+        correctement et produit des vecteurs de test reproductibles.
+  \item Le contrat Solidity \texttt{ZKNOX\_ethfalcon.sol} vérifie correctement les
+        signatures ETHFalcon-256, validé par deux tests Forge (message correct et
+        message erroné).
+  \item La taille de signature ETHFalcon (356 B) est \textbf{6,8× plus petite}
+        que Dilithium ($\approx 2420$ B), réduisant le calldata.
+  \item Le coût en gas plus élevé ($\approx 46{,}67$ M vs $6{,}58$ M) est dû à la
+        multiplication polynomiale schoolbook $O(n^2)$ ; une NTT dédiée à
+        $q=12289$ réduirait ce coût (objectif Phase 3).
+\end{itemize}
+
+% ============================================================
+\section{Contexte cryptographique — Falcon}
+% ============================================================
+
+\subsection{Principe général}
+
+Falcon est un schéma de signature basé sur les réseaux NTRU, standardisé par
+le NIST (FIPS 206, 2024) \cite{NIST_PQC}. Il repose sur le problème difficile
+\textbf{NTRU-SIS} : étant donné une paire $(f,g)$ de petits polynômes vérifiant
+$fh \equiv g \pmod{q}$, retrouver $f$ et $g$.
+
+\textbf{Paramètres Falcon-256 :}
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Paramètre & Valeur \\
+\midrule
+$n$ (degré du polynôme)        & 256 \\
+$q$ (module)                   & 12289 \\
+Anneau                         & $\ring$ \\
+Borne de norme $\beta^2$       & 16\,468\,416 \\
+Longueur sel (\texttt{SALT\_LEN}) & 40 octets \\
+Taille signature totale        & 356 octets \\
+Taille clé publique            & 448 octets \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Schéma de vérification}
+
+La vérification d'une signature Falcon utilise l'équation :
+\[
+  \|s_0\|^2 + \|s_1\|^2 \leq \beta^2
+\]
+où les vecteurs sont calculés comme suit :
+\begin{enumerate}
+  \item $t \leftarrow \mathrm{HashToPoint}(\mathrm{salt} \| \mathrm{msg})$ : un
+        polynôme de $n=256$ coefficients dans $\Zq$.
+  \item $s_0 \leftarrow t - h \cdot s_1 \pmod{q,\, X^n+1}$ : erreur de signature.
+  \item Vérifier $\|s_0\|^2 + \|s_1\|^2 \leq \beta^2$ avec centrage modular.
+\end{enumerate}
+
+Les normes sont calculées avec les coefficients \textbf{centrés} dans
+$(-q/2, q/2]$ : si $c > q/2$, on traite $c$ comme $c - q$.
+
+\subsection{Comparaison avec Dilithium}
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Propriété & Dilithium (NIST II) & Falcon-256 \\
+\midrule
+Problème dur       & MLWE + MSIS & NTRU-SIS \\
+Taille de signature & $\approx 2420$ B & $356$ B \\
+Clé publique        & $\approx 1312$ B & $448$ B \\
+HashToPoint         & SHAKE-256 & SHAKE-256 (standard) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section{Modification ETHFalcon — Keccak à la place de SHAKE-256}
+% ============================================================
+
+\subsection{Motivation}
+
+L'opcode \texttt{KECCAK256} (0x20) est natif sur l'EVM avec un coût de 30 gas
+de base + 6 gas par mot de 32 octets. En revanche, SHAKE-256 n'est pas
+disponible nativement et nécessite une implémentation coûteuse en bytecode
+Solidity.
+
+La fonction \texttt{HashToPoint} est le seul endroit où Falcon utilise un XOF
+(eXtendable Output Function). Remplacer SHAKE-256 par un KeccakPRNG (déjà
+utilisé dans ETHDilithium) rend la vérification entièrement compatible EVM.
+
+\subsection{Algorithme HashToPoint avec KeccakPRNG}
+
+\begin{warningbox}[title={Compatibilité Python / Solidity}]
+L'algorithme ci-dessous doit être identique en Python (module de référence) et
+en Solidity (contrat on-chain). Toute divergence produirait une vérification
+incorrecte.
+\end{warningbox}
+
+\textbf{Protocole KeccakPRNG utilisé :}
+\begin{enumerate}
+  \item Calculer la graine : $\texttt{seed} = \mathrm{keccak256}(\mathrm{salt} \| \mathrm{msg})$
+  \item Boucle de génération (compteur $c$ initialisé à 0) :
+    \begin{enumerate}
+      \item Générer un bloc de 32 octets :
+            $\texttt{block} = \mathrm{keccak256}(\texttt{seed} \| c_{\mathrm{BE64}})$
+      \item Traiter le bloc par paires d'octets $(b_0, b_1)$ en \textbf{big-endian} :
+            $\mathrm{elt} = (b_0 \ll 8) \mid b_1$
+      \item Rejection sampling : si $\mathrm{elt} < 5q = 61445$, alors
+            $t[\mathrm{filled}] = \mathrm{elt} \bmod q$, $\mathrm{filled}$++
+      \item Incrémenter $c$
+    \end{enumerate}
+  \item Continuer jusqu'à $\mathrm{filled} = n = 256$
+\end{enumerate}
+
+\textbf{Note sur le byte order :} Falcon standard utilise big-endian dans
+\texttt{falcon\_sign.py} (ligne : \texttt{elt = (twobytes[0] << 8) + twobytes[1]}).
+ETHFalcon conserve ce choix, ce qui diffère de certaines implémentations
+little-endian.
+
+% ============================================================
+\section{Implémentation}
+% ============================================================
+
+\subsection{Structure des fichiers}
+
+\begin{center}
+\begin{tabular}{lp{8cm}}
+\toprule
+Fichier & Rôle \\
+\midrule
+\texttt{src/ZKNOX\_falcon\_params.sol} &
+  Constantes : $q$, $n$, $\beta^2$, seuil rejection, longueurs \\
+\texttt{src/ZKNOX\_falcon\_poly.sol} &
+  Multiplication polynomiale schoolbook + norme L2 centrée \\
+\texttt{src/ZKNOX\_ethfalcon.sol} &
+  Contrat principal, fonction \texttt{verify()} \\
+\midrule
+\texttt{python-ref/\ldots/Falcon\_falcon/falcon\_eth.py} &
+  Classe \texttt{ETHFalcon256} (Python de référence) \\
+\texttt{python-ref/\ldots/generate\_falcon\_test\_vectors.py} &
+  Générateur de vecteurs de test Solidity \\
+\texttt{test/ZKNOX\_ethfalcon.t.sol} &
+  Tests Forge (généré automatiquement) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Module Python}
+
+Le module Python suit la même architecture qu'ETHDilithium :
+
+\begin{lstlisting}[language=Python,caption={Utilisation d'ETHFalcon256}]
+from Falcon_dilithium_py.Falcon_falcon.falcon_eth import ETHFalcon256
+
+msg = b"SuVa Protocol Phase 2"
+sk, vk = ETHFalcon256.keygen()
+sig = ETHFalcon256.sign(sk, msg)
+ok = ETHFalcon256.verify(vk, msg, sig)
+assert ok  # True
+\end{lstlisting}
+
+Le module sous-classe \texttt{falcon\_sign.Falcon} en remplacant uniquement
+la méthode \texttt{\_\_hash\_to\_point\_\_} par \texttt{hash\_to\_point\_keccak}.
+Cela garantit que la signature (opération de sign) utilise aussi KeccakPRNG,
+assurant la cohérence sign/verify.
+
+\subsection{Contrat Solidity — \texttt{ZKNOX\_ethfalcon.sol}}
+
+L'interface du contrat accepte les données pré-décodées (même approche
+qu'\texttt{ZKNOX\_ethdilithium.sol}) :
+
+\begin{lstlisting}[language=Solidity,caption={Interface verify()}]
+function verify(
+    uint256[256] calldata h,    // 256 coefficients cle publique (0..q-1)
+    bytes        calldata salt, // 40 octets du sel de signature
+    uint256[256] calldata s1,   // 256 coeff s1 decodesmodq (0..q-1)
+    bytes        calldata msg   // message original
+) external pure returns (bool)
+\end{lstlisting}
+
+\textbf{Algorithme en 4 étapes :}
+\begin{enumerate}
+  \item \textbf{HashToPoint :} $t \leftarrow \texttt{\_hashToPoint}(\mathrm{salt}, \mathrm{msg})$
+        via KeccakPRNG (décrit ci-dessus).
+  \item \textbf{Multiplication polynomiale :}
+        $hs_1 \leftarrow \texttt{poly\_mul}(h, s_1)$
+        dans $\ring$ avec la règle $X^{256} \equiv -1$.
+  \item \textbf{Calcul de $s_0$ :}
+        $s_0[i] \leftarrow (t[i] + q - hs_1[i]) \bmod q$.
+  \item \textbf{Vérification de norme :}
+        $\|s_0\|^2 + \|s_1\|^2 \leq \beta^2 = 16\,468\,416$.
+\end{enumerate}
+
+\subsection{Génération des vecteurs de test}
+
+Le script \texttt{generate\_falcon\_test\_vectors.py} :
+\begin{enumerate}
+  \item Génère une paire de clés et signe un message de test avec
+        \texttt{ETHFalcon256}.
+  \item Décode la clé publique ($h$ via \texttt{deserialize\_to\_poly}) et
+        la signature ($s_1$ via \texttt{decompress}).
+  \item Convertit $s_1$ signé en non-signé : \texttt{s1\_uint[i] = s1[i] \% q}.
+  \item Écrit \texttt{test/ZKNOX\_ethfalcon.t.sol} avec les tableaux
+        initialisés élément par élément (Solidity n'accepte pas les littéraux
+        de grands tableaux).
+\end{enumerate}
+
+% ============================================================
+\section{Mesures de gas}
+% ============================================================
+
+\begin{resultbox}[title={Résultats forge test --gas-report}]
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Contrat} & \textbf{Gas verify} & \textbf{Taille sig.} & \textbf{Multiplication} \\
+\midrule
+\texttt{ZKNOX\_dilithium}    & 13{,}42 M & $\approx 2420$ B & NTT ($O(n\log n)$) \\
+\texttt{ZKNOX\_ethdilithium} & 6{,}58 M  & $\approx 2420$ B & NTT ($O(n\log n)$) \\
+\textbf{\texttt{ZKNOX\_ethfalcon}} & \textbf{46{,}67 M} & \textbf{356 B} & Schoolbook ($O(n^2)$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{resultbox}
+
+\subsection{Analyse du coût en gas}
+
+Le coût élevé de \texttt{ZKNOX\_ethfalcon} ($\approx 46{,}67$ M gas) est
+principalement dû à la multiplication polynomiale schoolbook $O(n^2)$ :
+$256 \times 256 = 65\,536$ multiplications modulo $q=12289$.
+
+\textbf{Décomposition estimée :}
+\begin{itemize}
+  \item Multiplication \texttt{poly\_mul} : $\approx 40$ M gas (65\,536 modmul)
+  \item HashToPoint (KeccakPRNG, $\approx 16$--20 blocs keccak) :
+        $\approx 5$--6 M gas
+  \item Norme et vérification : $< 1$ M gas
+\end{itemize}
+
+\subsection{Comparaison gaz/octet de signature}
+
+\begin{center}
+\begin{tabular}{lrrl}
+\toprule
+Schéma & Gas & Sig (B) & Gas/octet \\
+\midrule
+Dilithium     & 13{,}42 M & 2420 & $5\,545$ \\
+ETHDilithium  & 6{,}58 M  & 2420 & $2\,719$ \\
+ETHFalcon     & 46{,}67 M & 356  & $131\,101$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{warningbox}[title={Observation}]
+Malgré une signature 6,8× plus courte, ETHFalcon consomme 7,1× plus de gas
+qu'ETHDilithium. L'introduction d'une NTT pour $q=12289$ (Phase 3) est
+indispensable pour rendre ETHFalcon compétitif.
+\end{warningbox}
+
+% ============================================================
+\section{Analyse de sécurité}
+% ============================================================
+
+\subsection{Sécurité de la construction ETHFalcon}
+
+Le remplacement de SHAKE-256 par KeccakPRNG affecte uniquement la fonction
+\texttt{HashToPoint}. Les propriétés de sécurité de Falcon reposent sur :
+
+\begin{enumerate}
+  \item \textbf{Résistance NTRU-SIS :} Inchangée. Le problème dur reste
+        retrouver $(f,g)$ à partir de $h = gf^{-1} \bmod q$. Le changement
+        de hash n'affecte pas ce problème.
+
+  \item \textbf{Indistingabilité de la fonction de hachage :} KeccakPRNG est
+        une construction pseudo-aléatoire basée sur Keccak-256, qui est
+        considérée comme une fonction de hachage sûre. L'output est
+        computationnellement indistingable d'un XOF aléatoire pour des
+        adversaires polynomiaux.
+
+  \item \textbf{Uniformité du HashToPoint :} La rejection sampling garantit
+        une distribution uniforme sur $\Zq$ pour chaque coefficient de $t$.
+        Le seuil $5q = 61445$ assure une probabilité d'acceptation de
+        $5q/2^{16} \approx 93.7\%$, identique à l'implémentation SHAKE.
+
+  \item \textbf{Séparabilité sign/verify :} La modification est transparente
+        pour le signer (la signature ne dépend de hash que via le sel, déjà
+        incorporé dans le processus Falcon gaussien).
+\end{enumerate}
+
+\subsection{Niveau de sécurité}
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Type d'attaque & Falcon-256 standard & ETHFalcon-256 \\
+\midrule
+Quantique (bits) & $\sim 103$ & $\sim 103$ \\
+Classique (bits) & $\sim 103$ & $\sim 103$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La sécurité est identique à Falcon-256 standard. La seule différence est
+computationnelle (on-chain), pas cryptographique.
+
+% ============================================================
+\section{Tests et validation}
+% ============================================================
+
+\subsection{Tests Python}
+
+\begin{lstlisting}[language=bash,caption={Exécution des tests Python}]
+cd python-ref/
+py -3 -m Falcon_dilithium_py.generate_falcon_test_vectors
+# Output:
+# [*] Generating ETHFalcon256 test vectors
+#     verify(correct) = True  OK
+#     verify(wrong)   = False  (expected False)
+# [+] Written: .../test/ZKNOX_ethfalcon.t.sol
+\end{lstlisting}
+
+\subsection{Tests Forge}
+
+\begin{lstlisting}[language=bash,caption={Résultats forge test}]
+forge test --match-contract ETHFalconTest -vv --gas-report
+# Ran 2 tests for test/ZKNOX_ethfalcon.t.sol:ETHFalconTest
+# [PASS] testVerify()         (gas: 46732996)
+# [PASS] testVerifyWrongMsg() (gas: 46734869)
+# Suite result: ok. 2 passed; 0 failed; 0 skipped
+\end{lstlisting}
+
+Les deux tests passent :
+\begin{itemize}
+  \item \texttt{testVerify()} : vérifie qu'une signature valide est acceptée.
+  \item \texttt{testVerifyWrongMsg()} : vérifie qu'un message incorrect est
+        rejeté (même $h$, même sel, même $s_1$, message modifié).
+\end{itemize}
+
+% ============================================================
+\section{Perspectives — Phase 3}
+% ============================================================
+
+\subsection{Objectif principal : NTT pour q = 12289}
+
+La Phase 3 doit implémenter une Number Theoretic Transform (NTT) adaptée
+à $q = 12289$ pour remplacer la multiplication schoolbook. Cela permettrait
+de réduire la complexité de $O(n^2)$ à $O(n \log n)$.
+
+\textbf{Défi :} $q = 12289 = 3 \cdot 2^{12} + 1$ est premier et admet une
+racine primitive $\omega = 3$ d'ordre $q-1 = 12288 = 2^{12} \cdot 3$. Une
+NTT pour $n=256 = 2^8$ est donc réalisable avec une racine $2n$-ième de l'unité.
+
+\textbf{Gain attendu :} Réduction de $\approx 40$ M gas (schoolbook) à
+$\approx 2$--4 M gas (NTT), rendant ETHFalcon compétitif avec ETHDilithium.
+
+\subsection{QuantumVault.sol}
+
+L'objectif final est \texttt{QuantumVault.sol}, un smart contract de coffre
+post-quantique combinant :
+\begin{itemize}
+  \item \textbf{ETHFalcon NTT} pour les signatures compactes (356 B),
+  \item \textbf{ETHDilithium} comme fallback ou double vérification,
+  \item Un mécanisme d'upgradabilité conforme ERC-2535 (Diamond proxy).
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Phase & Objectif & Statut \\
+\midrule
+Phase 1 & ETHDilithium (NTT, Keccak)     & Terminée (6,58 M gas) \\
+Phase 2 & ETHFalcon (schoolbook, Keccak)  & Terminée (46,67 M gas) \\
+Phase 3 & ETHFalcon (NTT, q=12289)        & Planifiée ($\sim 4$ M gas) \\
+Phase 4 & QuantumVault.sol                & Planifiée \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+%  Références
+% ============================================================
+\newpage
+\begin{thebibliography}{9}
+
+\bibitem{NIST_PQC}
+  NIST,
+  \textit{FIPS 206: Module-Lattice-Based Digital Signature Standard (ML-DSA)},
+  FIPS 206, 2024.
+  \url{https://csrc.nist.gov/pubs/fips/206/final}
+
+\bibitem{Falcon_Spec}
+  P.-A. Fouque, J. Hoffstein, P. Kirchner, V. Lyubashevsky, T. Pornin,
+  T. Prest, T. Ricosset, G. Seiler, W. Whyte, Z. Zhang,
+  \textit{Falcon: Fast-Fourier Lattice-based Compact Signatures over NTRU},
+  Specification v1.2, 2020.
+  \url{https://falcon-sign.info/falcon.pdf}
+
+\bibitem{ZKNOX}
+  R. Dubois, S. Masson,
+  \textit{ZKNOX: Ethereum-Friendly Post-Quantum Signatures},
+  GitHub, 2025.
+  \url{https://github.com/ZKNox}
+
+\bibitem{KeccakPRNG}
+  Z. Zhang,
+  \textit{Falcon-go: Keccak PRNG implementation},
+  GitHub.
+  \url{https://github.com/zhenfeizhang/falcon-go}
+
+\end{thebibliography}
+
+\end{document}

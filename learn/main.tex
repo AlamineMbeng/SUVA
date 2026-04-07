@@ -1,0 +1,202 @@
+\documentclass[12pt, a4paper]{book}
+
+% ── Encodage et langue ──────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% ── Mise en page ────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+
+% ── Mathématiques ───────────────────────────────────────────────────
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{bbm}
+
+% ── Code source ─────────────────────────────────────────────────────
+\usepackage{listings}
+\usepackage{xcolor}
+
+% ── Graphiques et boîtes ────────────────────────────────────────────
+\usepackage{tikz}
+\usepackage{mdframed}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{graphicx}
+
+% ── Couleurs du projet ──────────────────────────────────────────────
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{suva_dark}{RGB}{15, 20, 40}
+\definecolor{code_bg}{RGB}{245, 247, 250}
+\definecolor{code_kw}{RGB}{0, 80, 200}
+\definecolor{code_str}{RGB}{180, 40, 40}
+\definecolor{code_cmt}{RGB}{80, 130, 80}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{warn_border}{RGB}{200, 150, 0}
+\definecolor{info_bg}{RGB}{230, 245, 255}
+\definecolor{info_border}{RGB}{30, 100, 180}
+\definecolor{success_bg}{RGB}{230, 255, 235}
+\definecolor{success_border}{RGB}{40, 160, 80}
+
+% ── Configuration listings Python ───────────────────────────────────
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, framerule=0.5pt, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  stepnumber=1, numbersep=8pt,
+  breaklines=true, breakatwhitespace=true,
+  showstringspaces=false,
+  tabsize=4,
+  morekeywords={assert, yield, with, as, lambda, True, False, None},
+}
+
+\lstdefinestyle{solidity}{
+  language=C++,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, framerule=0.5pt, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  stepnumber=1, numbersep=8pt,
+  breaklines=true,
+  morekeywords={uint256, address, bytes, bytes32, memory, storage, external,
+                view, pure, returns, mapping, struct, event, emit,
+                require, revert, modifier, payable, public, private, internal},
+}
+
+\lstdefinestyle{bash}{
+  language=bash,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  backgroundcolor=\color{suva_dark!10},
+  frame=single, framerule=0.5pt, rulecolor=\color{gray!60},
+  breaklines=true,
+  showstringspaces=false,
+}
+
+% ── Environnements personnalisés ─────────────────────────────────────
+\newtcolorbox{theorembox}[2][]{
+  colback=info_bg, colframe=info_border,
+  fonttitle=\bfseries, title={Théorème~: #2}, #1
+}
+\newtcolorbox{defbox}[2][]{
+  colback=success_bg, colframe=success_border,
+  fonttitle=\bfseries, title={Définition~: #2}, #1
+}
+\newtcolorbox{warningbox}[1][]{
+  colback=warn_bg, colframe=warn_border,
+  fonttitle=\bfseries, title={Attention}, #1
+}
+\newtcolorbox{exercice}[2][]{
+  colback=white, colframe=suva_blue!60,
+  fonttitle=\bfseries, title={Exercice #2}, #1, breakable
+}
+\newtcolorbox{solution}[1][]{
+  colback=gray!5, colframe=gray!40,
+  fonttitle=\bfseries\itshape, title={Solution}, #1, breakable
+}
+\newtcolorbox{importantbox}[1][]{
+  colback=suva_blue!10, colframe=suva_blue,
+  fonttitle=\bfseries, title={Point clé}, #1
+}
+
+% ── Commandes mathématiques ──────────────────────────────────────────
+\newcommand{\Zq}{\mathbb{Z}_q}
+\newcommand{\Rq}{R_q}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\norm}[1]{\left\|#1\right\|}
+\newcommand{\inftynorm}[1]{\left\|#1\right\|_\infty}
+\newcommand{\pmod}[1]{\ (\mathrm{mod}\ #1)}
+\newcommand{\NTT}{\mathrm{NTT}}
+\newcommand{\INTT}{\mathrm{NTT}^{-1}}
+
+% ── En-têtes et pieds de page ────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE,RO]{\thepage}
+\fancyhead[LO]{\nouppercase{\rightmark}}
+\fancyhead[RE]{\nouppercase{\leftmark}}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Titre du document ────────────────────────────────────────────────
+\title{
+  \vspace{-1cm}
+  {\Huge\bfseries\color{suva_blue} Guide d'Apprentissage\\[0.3cm]
+  \Large Cryptographie Post-Quantique\\
+  \normalsize pour le Projet SuVa / ETHDILITHIUM}\\[1cm]
+  \large Théorie, Code et Exercices Pratiques
+}
+\author{Basé sur le codebase ZKNox / SuVa Protocol}
+\date{Mars 2026}
+
+% ════════════════════════════════════════════════════════════════════
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+% ── Préface ──────────────────────────────────────────────────────────
+\chapter*{Préface}
+\addcontentsline{toc}{chapter}{Préface}
+
+Ce guide est conçu pour te permettre de maîtriser progressivement
+toutes les briques nécessaires pour contribuer efficacement au projet
+\textbf{SuVa / ETHDILITHIUM}.
+
+\bigskip
+\begin{tcolorbox}[colback=suva_blue!10, colframe=suva_blue,
+  title={\bfseries Comment utiliser ce guide}, fonttitle=\bfseries]
+\begin{enumerate}
+  \item Lis la \textbf{théorie} de chaque section.
+  \item Tape \textbf{toi-même} les exemples de code (ne copie-colle pas).
+  \item Fais les \textbf{exercices} avant de regarder les solutions.
+  \item Relis le code source du projet avec le chapitre correspondant ouvert.
+\end{enumerate}
+\end{tcolorbox}
+
+\bigskip
+\textbf{Prérequis minimum~:} Python 3.10+, notions d'arithmétique de lycée.
+
+\bigskip
+\textbf{Ordre de lecture recommandé~:}
+\begin{center}
+\begin{tikzpicture}[node distance=1.2cm,
+  box/.style={draw=suva_blue, rounded corners, fill=info_bg,
+               minimum width=4cm, minimum height=0.7cm, font=\small}]
+  \node[box] (a) {Ch.1 : Guide de test};
+  \node[box, below of=a] (b) {Ch.2 : Arithmétique modulaire};
+  \node[box, below of=b] (c) {Ch.3 : Anneaux polynomiaux};
+  \node[box, below of=c] (d) {Ch.4 : NTT};
+  \node[box, below of=d] (e) {Ch.5 : Réseaux de treillis};
+  \node[box, below of=e] (f) {Ch.6 : Dilithium complet};
+  \node[box, below of=f] (g) {Ch.7 : Ethereum / Solidity};
+  \node[box, below of=g] (h) {Ch.8 : Falcon};
+  \foreach \x/\y in {a/b, b/c, c/d, d/e, e/f, f/g, g/h}
+    \draw[->, thick, suva_blue] (\x) -- (\y);
+\end{tikzpicture}
+\end{center}
+
+% ── Inclusion des chapitres ───────────────────────────────────────────
+\include{00_guide_test}
+\include{01_arithmetique}
+\include{02_polynomes}
+\include{03_ntt}
+\include{04_lattices}
+\include{05_dilithium}
+\include{06_ethereum}
+\include{07_falcon}
+
+\end{document}

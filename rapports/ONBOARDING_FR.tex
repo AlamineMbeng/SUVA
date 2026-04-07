@@ -1,0 +1,1138 @@
+%================================================
+% GUIDE D'ONBOARDING — PROTOCOLE SUVA (FRANÇAIS)
+% Signatures Post-Quantiques sur EVM — Guide Débutant
+% Cible : étudiant en 2e année, notions de programmation
+% Auteur : Mohamed Lamine MBENGUE
+% Date : Avril 2026
+%================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage[table]{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+%--- Couleurs ---
+\definecolor{suva-blue}{RGB}{0, 82, 165}
+\definecolor{suva-green}{RGB}{0, 150, 90}
+\definecolor{suva-orange}{RGB}{220, 100, 0}
+\definecolor{code-bg}{RGB}{245, 245, 245}
+\definecolor{pass-green}{RGB}{0, 140, 70}
+\definecolor{fail-red}{RGB}{180, 0, 0}
+
+%--- En-tête / Pied de page ---
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{suva-blue}{\textbf{SuVa Protocol --- Guide d'onboarding}}}
+\lhead{\textit{Version française}}
+\rfoot{\thepage}
+\lfoot{\textit{Avril 2026}}
+
+%--- Style de code : Solidity ---
+\lstdefinestyle{solidity}{
+  language=C,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{code-bg},
+  keywordstyle=\color{suva-blue}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  frame=single,
+  breaklines=true,
+  captionpos=b
+}
+
+%--- Style de code : Python ---
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{code-bg},
+  keywordstyle=\color{suva-blue}\bfseries,
+  commentstyle=\color{suva-green}\itshape,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  frame=single,
+  breaklines=true,
+  captionpos=b
+}
+
+%--- Style de code : bash ---
+\lstdefinestyle{bash}{
+  language=bash,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{code-bg},
+  keywordstyle=\color{suva-orange}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  frame=single,
+  breaklines=true,
+  captionpos=b
+}
+
+%--- Boîtes personnalisées ---
+\newtcolorbox{resultbox}[1][]{
+  enhanced,colback=suva-green!8,colframe=suva-green!60,
+  fonttitle=\bfseries,title=#1,arc=3mm
+}
+\newtcolorbox{warningbox}[1][]{
+  enhanced,colback=suva-orange!8,colframe=suva-orange!60,
+  fonttitle=\bfseries,title=#1,arc=3mm
+}
+\newtcolorbox{infobox}[1][]{
+  enhanced,colback=suva-blue!6,colframe=suva-blue!50,
+  fonttitle=\bfseries,title=#1,arc=3mm
+}
+
+%================================================
+\begin{document}
+%================================================
+
+%--- Page de titre ---
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+{\Huge\bfseries\textcolor{suva-blue}{SuVa Protocol}\par}
+\vspace{0.5cm}
+{\Large\textit{Stablecoin Résistant aux Ordinateurs Quantiques sur EVM}\par}
+\vspace{1.5cm}
+\rule{\linewidth}{0.5pt}
+\vspace{0.5cm}
+{\LARGE\bfseries Guide d'Onboarding\par}
+\vspace{0.3cm}
+{\large De zéro au post-quantique : une introduction technique complète\par}
+\vspace{0.5cm}
+\rule{\linewidth}{0.5pt}
+\vspace{2cm}
+
+\begin{tabular}{ll}
+\textbf{Projet :}   & SuVa Protocol \\[4pt]
+\textbf{Auteur :}   & Mohamed Lamine MBENGUE \\[4pt]
+\textbf{Date :}     & Avril 2026 \\[4pt]
+\textbf{Version :}  & 2.0 \\[4pt]
+\textbf{Langue :}   & Français \\[4pt]
+\textbf{Codebase :} & ETHDILITHIUM-main (fork ZKNox) \\
+\end{tabular}
+
+\vfill
+\begin{tcolorbox}[enhanced,colback=suva-blue!8,colframe=suva-blue,arc=4mm]
+\centering\textit{Ce guide suppose que tu sais écrire une fonction Python et que tu as entendu\\
+parler de Bitcoin, mais que tu ne connais ni la cryptographie ni la blockchain.\\
+À la fin, tu comprendras chaque ligne de code du projet SuVa.}
+\end{tcolorbox}
+\end{titlepage}
+
+%--- Table des matières ---
+\tableofcontents
+\newpage
+
+%================================================
+\section*{Comment utiliser ce guide}
+\addcontentsline{toc}{section}{Comment utiliser ce guide}
+%================================================
+
+\begin{infobox}[Stratégie de lecture]
+Ce guide est conçu pour être lu du début à la fin, mais chaque partie est aussi autonome.
+Si tu maîtrises déjà l'arithmétique modulaire, commence à la Partie 2.
+Si tu sais ce qu'est une fonction de hachage, va directement à la Section~2.4.
+Chaque concept mathématique est accompagné d'un exemple numérique concret --- ne saute pas ces exemples.
+\end{infobox}
+
+Le guide est divisé en sept parties :
+
+\begin{enumerate}
+  \item \textbf{Mathématiques} --- L'algèbre nécessaire : arithmétique modulaire, anneaux de polynômes, réseaux euclidiens et NTT.
+  \item \textbf{Cryptographie} --- Signatures numériques, fonctions de hachage, ECDSA et pourquoi les ordinateurs quantiques sont dangereux.
+  \item \textbf{Cryptographie Post-Quantique} --- Les nouveaux standards NIST : Dilithium et Falcon.
+  \item \textbf{Blockchain / EVM} --- Ethereum, gas, Solidity et Foundry.
+  \item \textbf{Le Projet SuVa} --- Vision, architecture, phases et chiffres clés.
+  \item \textbf{Lecture du Code} --- Lecture commentée du code Python et Solidity ligne par ligne.
+  \item \textbf{Guide Pratique} --- Configurer ton environnement et lancer les tests toi-même.
+\end{enumerate}
+
+\newpage
+
+%================================================
+\part{Mathématiques}
+%================================================
+
+%================================================
+\section{Arithmétique Modulaire}
+%================================================
+
+\subsection{Que signifie $a \equiv b \pmod{n}$ ?}
+
+Tu connais déjà l'arithmétique modulaire sans le savoir. Sur une horloge à 12 heures, s'il est 10h et qu'on ajoute 5 heures, on obtient 3h, pas 15h. C'est l'arithmétique modulo 12.
+
+Formellement, on écrit $a \equiv b \pmod{n}$ (se lit : « $a$ est congru à $b$ modulo $n$ ») lorsque $a$ et $b$ ont le même reste dans la division par $n$. Autrement dit, $n$ divise $a - b$.
+
+\begin{infobox}[Définition]
+$a \equiv b \pmod{n}$ signifie $n \mid (a - b)$, c'est-à-dire qu'il existe un entier $k$ tel que $a = b + k \cdot n$.
+\end{infobox}
+
+\paragraph{Exemples concrets :}
+\begin{align*}
+17 &\equiv 3 \pmod{7} \quad \text{car } 17 = 2 \times 7 + 3 \\
+25 &\equiv 0 \pmod{5} \quad \text{car } 25 = 5 \times 5 + 0 \\
+-1 &\equiv 6 \pmod{7} \quad \text{car } -1 = (-1) \times 7 + 6
+\end{align*}
+
+L'ensemble $\{0, 1, 2, \ldots, n-1\}$ forme ce qu'on appelle $\mathbb{Z}_n$, les entiers modulo $n$.
+
+\subsection{Addition et multiplication modulo $n$}
+
+On effectue les opérations ordinaires, puis on réduit :
+
+\begin{infobox}[Arithmétique dans $\mathbb{Z}_7$]
+$5 + 4 \equiv 9 \equiv 2 \pmod{7}$ \\
+$3 \times 5 \equiv 15 \equiv 1 \pmod{7}$
+\end{infobox}
+
+\subsection{Inverse modulaire}
+
+L'\emph{inverse modulaire} de $a$ modulo $n$ est l'entier $a^{-1}$ tel que :
+\[a \cdot a^{-1} \equiv 1 \pmod{n}\]
+
+\begin{resultbox}[Exemple : $3^{-1} \pmod{7}$]
+On cherche $x$ tel que $3x \equiv 1 \pmod{7}$.\\
+$x = 5$ : $3 \times 5 = 15 \equiv 1 \pmod{7}$. \checkmark \\
+Donc $3^{-1} \equiv 5 \pmod{7}$.
+\end{resultbox}
+
+\begin{warningbox}[Quand l'inverse existe-t-il ?]
+L'inverse de $a$ modulo $n$ existe \emph{si et seulement si} $\pgcd(a, n) = 1$. Si $n$ est premier, tout élément non nul a un inverse. C'est pourquoi les schémas cryptographiques choisissent $q$ premier.
+\end{warningbox}
+
+\subsection{Pourquoi l'arithmétique modulaire en cryptographie ?}
+
+\begin{enumerate}
+  \item \textbf{Fini et efficace} : tous les nombres restent dans $\{0, \ldots, n-1\}$.
+  \item \textbf{Difficile à inverser} : la multiplication modulo $n$ est facile dans un sens, mais trouver les entrées à partir du résultat est computationnellement difficile.
+  \item \textbf{Structure algébrique riche} : $\mathbb{Z}_p$ pour $p$ premier forme un \emph{corps} --- tout élément non nul a un inverse.
+\end{enumerate}
+
+%================================================
+\section{Anneaux de Polynômes}
+%================================================
+
+\subsection{Qu'est-ce qu'un polynôme ?}
+
+Un polynôme sur $\mathbb{Z}_q$ de degré $< n$ est :
+\[p(X) = a_0 + a_1 X + a_2 X^2 + \cdots + a_{n-1} X^{n-1}\]
+où chaque $a_i \in \{0, 1, \ldots, q-1\}$. En Python : une liste de $n$ entiers.
+
+\begin{lstlisting}[style=python]
+# Polynome 3 + 2X + 5X^2 + 1X^3  (n=4, coefficients mod 7)
+p = [3, 2, 5, 1]   # p[i] = coefficient de X^i
+\end{lstlisting}
+
+\subsection{Réduction modulo $(X^n + 1)$ : la règle $X^n \equiv -1$}
+
+Dans l'anneau $\mathbb{Z}_q[X]/(X^n+1)$, dès qu'on voit $X^n$, on le remplace par $-1$ :
+
+\begin{infobox}[La règle de réduction]
+$X^n \equiv -1$, donc $X^{n+k} \equiv -X^k$ pour tout $k \geq 0$.
+\end{infobox}
+
+Ainsi, lors d'une multiplication, tout terme $a_k X^k$ avec $k \geq n$ devient $-a_{k-n} X^{k-n}$.
+
+\subsection{Multiplication dans $\mathbb{Z}_q[X]/(X^n+1)$ en Python}
+
+\begin{lstlisting}[style=python]
+def poly_mul(a, b, q, n):
+    result = [0] * n
+    for i in range(n):
+        for j in range(n):
+            idx = (i + j) % n
+            prod = (a[i] * b[j]) % q
+            if i + j >= n:   # X^(i+j) = -X^(i+j-n)
+                result[idx] = (result[idx] - prod) % q
+            else:
+                result[idx] = (result[idx] + prod) % q
+    return result
+\end{lstlisting}
+
+\subsection{Pourquoi cet anneau ? Efficacité + Sécurité}
+
+\begin{enumerate}
+  \item \textbf{Efficacité} : la NTT réduit la multiplication de $O(n^2)$ à $O(n \log n)$.
+  \item \textbf{Sécurité} : les problèmes Ring-LWE sur cet anneau sont difficiles même pour les ordinateurs quantiques.
+\end{enumerate}
+
+%================================================
+\section{Bases des Réseaux Euclidiens}
+%================================================
+
+\subsection{Qu'est-ce qu'un réseau euclidien ?}
+
+Un réseau euclidien est une grille régulière de points dans un espace de dimension $n$. Formellement, avec $n$ vecteurs de base $\mathbf{b}_1, \ldots, \mathbf{b}_n$ :
+\[\mathcal{L} = \left\{ \sum_{i=1}^n z_i \mathbf{b}_i \; : \; z_i \in \mathbb{Z} \right\}\]
+
+\subsection{Le problème du vecteur court (SVP)}
+
+\begin{warningbox}[Problème du Vecteur Court (SVP)]
+Étant donné une base d'un réseau, trouver le vecteur non nul le plus court.
+\end{warningbox}
+
+SVP est NP-difficile dans le pire des cas. Même les ordinateurs quantiques n'apportent qu'une amélioration modeste (racine carrée via Grover, pas polynomial comme Shor).
+
+\subsection{Learning With Errors (LWE)}
+
+\begin{infobox}[Learning With Errors]
+Étant donné une matrice aléatoire $\mathbf{A} \in \mathbb{Z}_q^{m \times n}$ et un vecteur $\mathbf{b} = \mathbf{A}\mathbf{s} + \mathbf{e}$ où $\mathbf{s}$ est un secret et $\mathbf{e}$ un petit vecteur d'erreur, retrouve $\mathbf{s}$.
+\end{infobox}
+
+\paragraph{Analogie :} Coordonnées GPS bruitées. Avec des coordonnées exactes, tu peux localiser quelqu'un ; avec du bruit, c'est très difficile.
+
+\subsection{Réseau NTRU (base de Falcon)}
+
+\begin{infobox}[Problème NTRU]
+Étant donné $h \equiv g \cdot f^{-1} \pmod{q, X^n+1}$, avec $f$ et $g$ de petits polynômes, retrouve $f$ et $g$.
+\end{infobox}
+
+C'est la base de la sécurité de Falcon.
+
+\begin{resultbox}[Pourquoi les réseaux sont post-quantiques]
+Le meilleur algorithme quantique connu pour les problèmes de réseaux tourne en temps $2^{O(n)}$. Aucun algorithme quantique en temps polynomial n'est connu pour SVP ou LWE.
+\end{resultbox}
+
+%================================================
+\section{Transformée Théorique des Nombres (NTT)}
+%================================================
+
+\subsection{Pourquoi la NTT ?}
+
+Multiplier deux polynômes de degré $n$ naïvement nécessite $n^2$ multiplications. Pour $n=256$, c'est $65\,536$ multiplications --- coûteux en gas. La NTT réduit ça à $O(n \log n)$.
+
+\subsection{Principe}
+
+La NTT évalue un polynôme en $n$ points spéciaux (racines de l'unité modulo $q$), multiplie point par point, puis applique la NTT inverse.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Schéma} & \textbf{Module $q$} & \textbf{Racine NTT} \\
+\midrule
+Dilithium & $q = 8\,380\,417$ & $\omega = 1753$ \\
+Falcon    & $q = 12\,289$     & $\omega = 12$ (générateur primitif) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{warningbox}[ETHFalcon Phase 2 sans NTT]
+La Phase 2 utilise l'algorithme scolaire $O(n^2)$ : 46,67M gas. La NTT ramènerait ça à $\sim$4M gas.
+\end{warningbox}
+
+\newpage
+%================================================
+\part{Cryptographie}
+%================================================
+
+%================================================
+\section{Signatures Numériques --- Les Bases}
+%================================================
+
+\subsection{Quel problème les signatures résolvent-elles ?}
+
+Les signatures numériques garantissent trois choses :
+\begin{itemize}
+  \item \textbf{Authenticité} : seul le détenteur de la clé privée a pu signer.
+  \item \textbf{Non-répudiation} : le signataire ne peut pas nier avoir signé.
+  \item \textbf{Intégrité} : si le message est modifié après la signature, elle devient invalide.
+\end{itemize}
+
+\subsection{Le modèle KeyGen $\to$ Sign $\to$ Verify}
+
+\begin{itemize}
+  \item $\mathbf{KeyGen}()$ : génère une \emph{clé publique} $pk$ (partagée) et une \emph{clé privée} $sk$ (secrète).
+  \item $\mathbf{Sign}(sk, msg)$ : produit une signature $\sigma$.
+  \item $\mathbf{Verify}(pk, msg, \sigma)$ : retourne \texttt{vrai} ou \texttt{faux}.
+\end{itemize}
+
+%================================================
+\section{Fonctions de Hachage}
+%================================================
+
+\subsection{Propriétés de sécurité}
+
+\begin{enumerate}
+  \item \textbf{Résistance à la préimage} : impossible de retrouver $m$ à partir de $H(m)$.
+  \item \textbf{Résistance à la seconde préimage} : impossible de trouver $m' \neq m$ avec $H(m) = H(m')$.
+  \item \textbf{Résistance aux collisions} : impossible de trouver $(m, m')$ avec $H(m) = H(m')$.
+\end{enumerate}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Fonction} & \textbf{Sortie} & \textbf{Standard} & \textbf{Usage SuVa} \\
+\midrule
+SHA-256    & 256 bits (fixe)  & NIST FIPS 180  & Non directement \\
+Keccak-256 & 256 bits (fixe)  & Natif Ethereum & ETHFalcon HashToPoint \\
+SHAKE-256  & Variable (XOF)   & NIST FIPS 202  & Falcon/Dilithium standard \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Pourquoi Keccak est natif sur l'EVM}
+
+L'EVM possède un opcode natif \texttt{KECCAK256} : 30 gas + 6 gas par mot de 32 octets. En revanche, SHAKE-256 n'a aucun opcode natif --- l'implémenter en Solidity coûterait des millions de gas.
+
+\begin{resultbox}[L'innovation SuVa]
+ETHFalcon remplace SHAKE-256 par un PRNG basé sur Keccak (KeccakPRNG). Ce seul changement réduit le coût de vérification d'un ordre de grandeur tout en préservant la sécurité.
+\end{resultbox}
+
+%================================================
+\section{ECDSA --- La Signature Actuelle d'Ethereum}
+%================================================
+
+\subsection{Clé privée $\to$ Clé publique}
+
+\begin{itemize}
+  \item \textbf{Clé privée} : entier aléatoire $k \in \{1, \ldots, n-1\}$ (256 bits)
+  \item \textbf{Clé publique} : $K = k \cdot G$ où $G$ est le point générateur de secp256k1
+\end{itemize}
+
+Calculer $k \cdot G$ est facile ; retrouver $k$ à partir de $K$ est le problème ECDLP, réputé infaisable classiquement.
+
+%================================================
+\section{Pourquoi les Ordinateurs Quantiques Cassent ECDSA}
+%================================================
+
+\begin{warningbox}[Algorithme de Shor (1994)]
+Un ordinateur quantique peut résoudre le problème du logarithme discret (ECDLP) en \textbf{temps polynomial} $O(n^3)$. Avec $\sim$4000 qubits stables, ECDSA est totalement cassé.
+\end{warningbox}
+
+\begin{warningbox}[Attaque « Harvest Now, Decrypt Later »]
+Un adversaire peut \textbf{aujourd'hui} enregistrer toutes les transactions Ethereum publiques. Quand un ordinateur quantique arrivera, il retrouvera les clés privées depuis les clés publiques historiques. La migration vers la PQC est urgente \emph{maintenant}.
+\end{warningbox}
+
+\begin{infobox}[Grover vs Shor]
+\textbf{Shor} : temps polynomial --- casse complètement RSA/ECDSA.\\
+\textbf{Grover} : accélération en racine carrée --- divise par deux la sécurité des hachages. SHA-256 reste sûr (128 bits quantiques). Les signatures basées sur les hachages (SPHINCS+) restent sûres.
+\end{infobox}
+
+\newpage
+%================================================
+\part{Cryptographie Post-Quantique}
+%================================================
+
+%================================================
+\section{Standardisation PQC par le NIST}
+%================================================
+
+En 2016, le NIST a lancé une compétition publique. Après 8 ans et 3 tours d'évaluation, quatre standards ont été publiés en août 2024 :
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{FIPS} & \textbf{Algorithme} & \textbf{Type} & \textbf{Problème dur} \\
+\midrule
+FIPS 203 & ML-KEM (Kyber)     & Encapsulation de clé & Module-LWE \\
+FIPS 204 & ML-DSA (Dilithium) & Signature numérique  & Module-LWE + SIS \\
+FIPS 205 & SLH-DSA (SPHINCS+) & Signature numérique  & Fonctions de hachage \\
+FIPS 206 & FN-DSA (Falcon)    & Signature numérique  & Réseau NTRU \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+SuVa utilise ML-DSA (Phase 1), FN-DSA/Falcon (Phases 2--4), et étudiera SLH-DSA/SPHINCS+ en Phase 5.
+
+%================================================
+\section{Falcon (FN-DSA, FIPS 206)}
+%================================================
+
+\subsection{Paramètres}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Paramètre} & \textbf{Falcon-256} & \textbf{Falcon-512} \\
+\midrule
+$n$ & 256 & 512 \\
+$q$ & 12\,289 & 12\,289 \\
+Taille clé publique & 448 octets & 897 octets \\
+Taille signature    & 356 octets & 666 octets \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+SuVa utilise Falcon-256 ($n=256$). Signatures 3.6$\times$ plus courtes que Dilithium.
+
+\subsection{Vérification : étape par étape}
+
+\begin{infobox}[Algorithme de vérification ETHFalcon]
+\textbf{Entrées} : clé publique $h$, salt (40 octets), $s_1$ (256 coefficients), message $msg$
+
+\begin{enumerate}
+  \item \textbf{HashToPoint} : $t \gets \text{KeccakPRNG}(\text{salt} \| msg)$ --- produit 256 coefficients dans $\{0,\ldots,q-1\}$
+  \item \textbf{Multiplication} : $h \cdot s_1 \pmod{q, X^{256}+1}$
+  \item \textbf{Retrouve} $s_0$ : $s_0 \equiv t - h \cdot s_1 \pmod{q}$
+  \item \textbf{Centrage} de $s_0$ : mappe $\{0,\ldots,q-1\}$ vers $(-q/2, q/2]$
+  \item \textbf{Vérification de norme} : $\|s_0\|^2 + \|s_1\|^2 \leq \beta^2$
+\end{enumerate}
+
+Logique clé : une signature valide a de petits $(s_0, s_1)$. Forger sans la trapdoor est infaisable.
+\end{infobox}
+
+%================================================
+\section{ETHFalcon --- L'Innovation SuVa}
+%================================================
+
+\subsection{KeccakPRNG --- HashToPoint}
+
+\begin{lstlisting}[style=python, caption={KeccakPRNG pour HashToPoint}]
+def hash_to_point_keccak(salt, msg, n, q):
+    state = keccak256(salt + msg)   # graine initiale
+    result = []
+    counter = 0
+    while len(result) < n:
+        block = keccak256(state + counter.to_bytes(8, 'big'))
+        for i in range(0, 32, 2):
+            elt = (block[i] << 8) | block[i+1]
+            if elt < 5 * q:         # rejet pour distribution uniforme
+                result.append(elt % q)
+        counter += 1
+    return result[:n]
+\end{lstlisting}
+
+Le seuil $5 \times 12\,289 = 61\,445$ garantit une distribution parfaitement uniforme dans $\{0,\ldots,q-1\}$.
+
+\newpage
+%================================================
+\part{Blockchain et EVM}
+%================================================
+
+%================================================
+\section{Bases d'Ethereum}
+%================================================
+
+\subsection{Comptes : EOA vs Comptes Contrats}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Propriété} & \textbf{EOA} & \textbf{Compte Contrat} \\
+\midrule
+Contrôlé par & Clé privée ECDSA & Code de contrat \\
+A du code ?  & Non & Oui \\
+Peut initier une tx ? & Oui & Non (seulement via appels) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+L'objectif de SuVa Phase 4 : faire agir les comptes contrats comme des portefeuilles, où la clé est Falcon au lieu d'ECDSA.
+
+\subsection{Le Gas}
+
+Chaque opération EVM a un coût en gas. Tu paies : $\text{frais} = \text{gas} \times \text{prix du gas (gwei)}$.
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+\textbf{Opération} & \textbf{Gas} \\
+\midrule
+ADD, SUB               & 3 \\
+MUL                    & 5 \\
+MULMOD                 & 8 \\
+KECCAK256 (32 octets)  & 36 \\
+SLOAD (stockage froid) & 2\,100 \\
+Transaction de base    & 21\,000 \\
+Limite par bloc mainnet & 30\,000\,000 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%================================================
+\section{Concepts Clés de Solidity}
+%================================================
+
+\subsection{Structure d'un contrat}
+
+\begin{lstlisting}[style=solidity, caption={Éléments clés de Solidity}]
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.25;
+
+contract MonContrat {
+    // Variables d'etat (on-chain, couteux)
+    uint256 public compteur;
+    address public owner;
+
+    // Modificateur : condition verifiee avant chaque appel
+    modifier seulementOwner() {
+        require(msg.sender == owner, "Acces refuse");
+        _;
+    }
+
+    // pure = aucune lecture/ecriture d'etat
+    function additionner(uint256 a, uint256 b)
+        public pure returns (uint256)
+    {
+        return a + b;
+    }
+
+    // view = lit l'etat, pas d'ecriture
+    function getCompteur() public view returns (uint256) {
+        return compteur;
+    }
+
+    // payable = peut recevoir de l'ETH
+    function depot() public payable { }
+}
+\end{lstlisting}
+
+\subsection{Emplacements des données}
+
+\begin{center}
+\begin{tabular}{llr}
+\toprule
+\textbf{Emplacement} & \textbf{Description} & \textbf{Coût relatif} \\
+\midrule
+\texttt{calldata} & Arguments de fonction, lecture seule & Le moins cher \\
+\texttt{memory}   & Temporaire, effacé après l'appel & Moyen \\
+\texttt{storage}  & État persistant on-chain & Le plus cher \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Dans ETHFalcon, $h$, $salt$, $s_1$, $msg$ sont déclarés \texttt{calldata} pour éviter les copies inutiles.
+
+\subsection{Foundry : compiler, tester, déployer}
+
+\begin{lstlisting}[style=bash]
+# Compiler
+forge build
+
+# Lancer tous les tests avec detail
+forge test -vv
+
+# Tests avec rapport de gas
+forge test -vv --gas-report
+
+# Deployer sur Sepolia
+forge script script/DeploySuVa.s.sol \
+  --rpc-url https://ethereum-sepolia-rpc.publicnode.com \
+  --private-key TON_PRIVATE_KEY \
+  --broadcast
+
+# Verifier un contrat sur Etherscan
+forge verify-contract ADRESSE src/Contrat.sol:Contrat \
+  --chain-id 11155111 \
+  --etherscan-api-key TA_CLE_API \
+  --watch
+\end{lstlisting}
+
+\newpage
+%================================================
+\part{Le Projet SuVa}
+%================================================
+
+%================================================
+\section{Vision et Architecture Globale}
+%================================================
+
+\subsection{Problème résolu}
+
+Les institutions financières veulent stocker des stablecoins (USDT, USDC) de façon sécurisée sur Ethereum. Mais ECDSA les expose à la menace quantique future. SuVa ajoute une couche de signature post-quantique sans modifier Ethereum.
+
+\subsection{Les quatre phases}
+
+\begin{longtable}{@{}p{1.8cm}p{4cm}p{4cm}p{4cm}@{}}
+\toprule
+\textbf{Phase} & \textbf{Objectif} & \textbf{Livrable} & \textbf{Tests} \\
+\midrule
+\endhead
+Phase 1 & Vérifieur Dilithium on-chain & \texttt{ZKNOX\_dilithium.sol} & -- \\[4pt]
+Phase 2 & ETHFalcon (Falcon + Keccak) & \texttt{ZKNOX\_ethfalcon.sol} + Python & -- \\[4pt]
+Phase 3 & QuantumVault & \texttt{QuantumVault.sol}, \texttt{qUSDT.sol} & 26/26 \\[4pt]
+Phase 4 & SuVaWallet ERC-4337 & \texttt{SuVaWallet.sol}, \texttt{SuVaWalletFactory.sol} & 15/15 \\[4pt]
+Phase 5 & SPHINCS+ PoC & Étude de faisabilité + PoC L2 & à venir \\
+\bottomrule
+\end{longtable}
+
+\textbf{Total : 41/41 tests passants. Tous les contrats déployés et vérifiés sur Sepolia.}
+
+%================================================
+\section{Phase 3 --- QuantumVault}
+%================================================
+
+\subsection{Qu'est-ce que QuantumVault ?}
+
+QuantumVault est un coffre-fort de stablecoins sécurisé par Falcon. Un utilisateur dépose du USDT, reçoit du qUSDT (reçu tokenisé), et ne peut retirer qu'en présentant une signature Falcon valide.
+
+\subsection{Architecture des contrats}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Contrat} & \textbf{Rôle} \\
+\midrule
+\texttt{ZKNOX\_ethfalcon.sol} & Vérifieur Falcon on-chain (Phase 2) \\
+\texttt{MockERC20.sol}        & USDT simulé pour Sepolia \\
+\texttt{qUSDT.sol}            & Token ERC-20 reçu lors d'un dépôt \\
+\texttt{QuantumVault.sol}     & Coffre principal \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Flux deposit / withdraw}
+
+\begin{lstlisting}[style=solidity, caption={Interface simplifiée de QuantumVault}]
+// Enregistrer sa cle Falcon publique
+function registerFalconKey(uint256[256] calldata h) external;
+
+// Deposer du USDT -> recevoir qUSDT
+function deposit(uint256 amount) external;
+
+// Retirer : doit presenter une signature Falcon valide
+function withdraw(
+    uint256 amount,
+    uint256[256] calldata h,
+    bytes   calldata salt,
+    uint256[256] calldata s1
+) external;
+\end{lstlisting}
+
+\subsection{Chiffres clés Phase 3}
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+\textbf{Métrique} & \textbf{Valeur} \\
+\midrule
+Tests Forge & 26/26 passants \\
+Gas deposit & $\sim$50\,000 gas \\
+Gas withdraw (avec vérif Falcon) & $\sim$48M gas (schoolbook) \\
+Adresse Sepolia QuantumVault & \texttt{0x601c...af1c4} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%================================================
+\section{Phase 4 --- SuVaWallet ERC-4337}
+%================================================
+
+\subsection{C'est quoi ERC-4337 ?}
+
+\textbf{Le problème :} Un compte Ethereum classique (EOA) est lié à une clé ECDSA. Impossible d'utiliser Falcon nativement.
+
+\textbf{La solution ERC-4337 :} Un contrat intelligent peut jouer le rôle de compte s'il implémente \texttt{validateUserOp()}.
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Composant} & \textbf{Rôle} \\
+\midrule
+\texttt{UserOperation} & La « transaction » de l'utilisateur \\
+\texttt{EntryPoint} & Contrat officiel ERC-4337 (\texttt{0x5FF1...2789}) \\
+\texttt{Bundler} & Regroupe les UserOps et appelle l'EntryPoint \\
+\texttt{SuVaWallet} & Notre contrat-compte \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Flux d'une transaction SuVaWallet}
+
+\begin{lstlisting}
+Utilisateur --> signe avec ECDSA + Falcon
+  --> envoie UserOperation au Bundler
+  --> Bundler appelle EntryPoint
+  --> EntryPoint appelle SuVaWallet.validateUserOp()
+      --> verifie ECDSA (ecrecover)
+      --> verifie Falcon (IFalconVerifier)
+      --> retourne SIG_VALIDATION_SUCCESS
+  --> EntryPoint appelle SuVaWallet.execute()
+      --> execute la transaction
+\end{lstlisting}
+
+\subsection{Double signature}
+
+\begin{lstlisting}[style=solidity, caption={Format de la signature UserOperation}]
+// bytes[0..64]  = signature ECDSA (65 octets)
+// bytes[65..]   = abi.encode(h, salt, s1) -- Falcon
+
+bytes memory ecdsaSig  = sig[0:65];
+bytes memory falconSig = sig[65:];
+
+(uint256[256] memory h,
+ bytes        memory salt,
+ uint256[256] memory s1) = abi.decode(falconSig, (...));
+\end{lstlisting}
+
+Les deux signatures doivent être valides pour que la transaction s'exécute.
+
+\subsection{SuVaWalletFactory --- CREATE2}
+
+La factory déploie des wallets à des adresses déterministes :
+
+\begin{lstlisting}[style=solidity]
+function createWallet(
+    address entryPoint,
+    address falconVerifier,
+    address owner,
+    uint256 salt
+) external returns (SuVaWallet wallet) {
+    bytes32 create2salt = keccak256(abi.encodePacked(owner, salt));
+    wallet = new SuVaWallet{salt: create2salt}(
+        entryPoint, falconVerifier, owner
+    );
+}
+\end{lstlisting}
+
+\subsection{Interface publique --- IFalconVerifier}
+
+\begin{lstlisting}[style=solidity, caption={Interface commune pour l'interopérabilité}]
+interface IFalconVerifier {
+    function verify(
+        uint256[256] calldata h,      // cle publique
+        bytes        calldata salt,   // nonce de signature
+        uint256[256] calldata s1,     // vecteur s1
+        bytes        calldata message // message signe
+    ) external pure returns (bool);
+}
+\end{lstlisting}
+
+Cette interface est le point d'interopérabilité avec BTQ (voir Partie~7).
+
+\subsection{Adresses Sepolia --- Phase 4}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Contrat} & \textbf{Adresse Sepolia} \\
+\midrule
+SuVaWalletFactory & \texttt{0x716a0C550eC1267Db493515d4a114C2FCf942e6B} \\
+SuVaWallet & \texttt{0x8a907C21014ED2926a53b4d18eC6e1b8C5a514cE} \\
+EntryPoint (ERC-4337) & \texttt{0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Les deux contrats sont \textbf{vérifiés sur Sepolia Etherscan} (code source public).
+
+%================================================
+\section{EIP-8141 et la Phase 5}
+%================================================
+
+\subsection{EIP-8141 --- Frame Transaction (avril 2026)}
+
+EIP-8141, publié par Vitalik Buterin et l'équipe ERC-4337, propose d'intégrer l'abstraction de compte \textbf{directement dans le protocole Ethereum} :
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+& \textbf{ERC-4337 (actuel)} & \textbf{EIP-8141 (futur)} \\
+\midrule
+Niveau & Applicatif & Protocole natif \\
+Bundler & Requis & Non requis \\
+EntryPoint & Contrat externe & Intégré dans l'EVM \\
+PQC & Via \texttt{validateUserOp()} & Supporté nativement \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{SuVa Phase 4 est un précurseur direct de cette vision.}
+
+\subsection{Phase 5 --- SPHINCS+}
+
+SPHINCS+ (FIPS 205, SLH-DSA) est un algorithme de signature basé uniquement sur les fonctions de hachage --- aucune structure algébrique (pas de réseaux, pas de courbes). Avantage : la sécurité ne repose que sur la solidité de SHA-256 / SHAKE, des hypothèses très conservatrices.
+
+\textbf{Objectif Phase 5 :} Étude de faisabilité et PoC sur L2, dans la direction EIP-8141.
+
+\newpage
+%================================================
+\part{Lecture du Code}
+%================================================
+
+%================================================
+\section{Structure du Code Source}
+%================================================
+
+\begin{lstlisting}
+d:\Projects\suva\
+|- ONBOARDING.md
+|- rapports\
+|   |- rapport_phase3_EN.tex  / rapport_phase3_FR.tex
+|   |- rapport_phase4_EN.tex  / rapport_phase4_FR.tex
+|   |- ONBOARDING_EN.tex      / ONBOARDING_FR.tex
+`- falcon_dilithium\
+    `- ETHDILITHIUM-main\
+        |- src\
+        |   |- IFalconVerifier.sol    <- interface commune
+        |   |- ZKNOX_ethfalcon.sol    <- verifieur Falcon
+        |   |- QuantumVault.sol       <- Phase 3
+        |   |- qUSDT.sol              <- Phase 3
+        |   |- MockERC20.sol          <- Phase 3
+        |   |- SuVaWallet.sol         <- Phase 4
+        |   `- SuVaWalletFactory.sol  <- Phase 4
+        |- test\
+        |   |- QuantumVault.t.sol     <- 26 tests
+        |   `- SuVaWallet.t.sol       <- 15 tests
+        |- script\
+        |   `- DeploySuVa.s.sol       <- script deploiement
+        `- python-ref\
+            `- Falcon_dilithium_py\
+                |- Falcon_falcon\     <- module Python Falcon
+                `- generate_falcon_test_vectors.py
+\end{lstlisting}
+
+%================================================
+\section{Lecture du Contrat SuVaWallet.sol}
+%================================================
+
+\begin{lstlisting}[style=solidity, caption={SuVaWallet.sol --- structure annotée}]
+contract SuVaWallet is IAccount {
+    address public immutable entryPoint;
+    address public immutable falconVerifier;
+    address public immutable owner;
+
+    // Hash de la cle publique Falcon enregistree
+    bytes32 public falconPkHash;
+
+    // Seul l'EntryPoint ERC-4337 peut appeler ces fonctions
+    modifier onlyEntryPoint() {
+        require(msg.sender == entryPoint, "Pas l'EntryPoint");
+        _;
+    }
+
+    // Validation de la UserOperation :
+    // 1. Verifie ECDSA
+    // 2. Verifie Falcon
+    // 3. Retourne 0 (succes) ou 1 (echec)
+    function validateUserOp(
+        UserOperation calldata userOp,
+        bytes32 userOpHash,
+        uint256 missingAccountFunds
+    ) external onlyEntryPoint returns (uint256) {
+        _verifyECDSA(userOp.signature, userOpHash);
+        _verifyFalcon(userOp.signature, userOpHash);
+        return 0;  // SIG_VALIDATION_SUCCESS
+    }
+
+    // Execute une transaction apres validation
+    function execute(
+        address to,
+        uint256 value,
+        bytes calldata data
+    ) external onlyEntryPoint {
+        (bool success,) = to.call{value: value}(data);
+        require(success, "Execute: echec");
+    }
+}
+\end{lstlisting}
+
+%================================================
+\section{Tests Forge --- Comprendre les Mocks}
+%================================================
+
+\begin{lstlisting}[style=solidity, caption={SuVaWallet.t.sol --- structure des tests}]
+contract SuVaWalletTest is Test {
+
+    // Mocks : simulent les vrais contrats
+    MockEntryPoint  entryPoint;
+    MockFalconVerifier falconVerifier;
+    SuVaWallet wallet;
+
+    uint256 constant OWNER_PRIVATE_KEY = 0xA11CE;
+    address OWNER;
+
+    function setUp() public {
+        OWNER = vm.addr(OWNER_PRIVATE_KEY);
+        entryPoint     = new MockEntryPoint();
+        falconVerifier = new MockFalconVerifier();
+        wallet = new SuVaWallet(
+            address(entryPoint),
+            address(falconVerifier),
+            OWNER
+        );
+    }
+
+    // Test : validateUserOp doit retourner 0 si tout est valide
+    function test_ValidateUserOp_Success() public {
+        // 1. Signer le hash avec la cle ECDSA
+        bytes32 hash = keccak256("test");
+        (uint8 v, bytes32 r, bytes32 s) =
+            vm.sign(OWNER_PRIVATE_KEY, hash);
+        bytes memory ecdsaSig = abi.encodePacked(r, s, v);
+
+        // 2. Construire la signature Falcon (mock)
+        bytes memory falconPart = abi.encode(h, salt, s1);
+        bytes memory fullSig = abi.encodePacked(ecdsaSig, falconPart);
+
+        // 3. Verifier
+        uint256 result = wallet.validateUserOp(userOp, hash, 0);
+        assertEq(result, 0, "Doit retourner SIG_VALIDATION_SUCCESS");
+    }
+}
+\end{lstlisting}
+
+\newpage
+%================================================
+\part{Guide Pratique}
+%================================================
+
+%================================================
+\section{Configuration de l'environnement}
+%================================================
+
+\subsection{Prérequis}
+
+\begin{lstlisting}[style=bash]
+# 1. Installer Foundry (forge, cast, anvil)
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+
+# 2. Verifier l'installation
+forge --version
+# forge 0.2.x (nightly ...)
+
+# 3. Installer Python (si pas deja fait)
+python --version   # 3.10+
+
+# 4. Installer les dependances Python
+cd falcon_dilithium/ETHDILITHIUM-main/python-ref/
+pip install -r requirements.txt
+# ou manuellement : pip install falcon-py pytest
+\end{lstlisting}
+
+%================================================
+\section{Lancer les Tests}
+%================================================
+
+\begin{lstlisting}[style=bash]
+cd falcon_dilithium/ETHDILITHIUM-main
+
+# Compiler
+forge build
+
+# Tests rapides (profil lite, sans optimiseur)
+FOUNDRY_PROFILE=lite forge test -vv
+
+# Tests complets avec rapport de gas
+forge test -vv --gas-report
+
+# Sortie attendue :
+# [PASS] test_ValidateUserOp_Success
+# [PASS] test_ValidateUserOp_WrongECDSA
+# ...
+# Suite result: ok. 41 passed; 0 failed
+\end{lstlisting}
+
+%================================================
+\section{Déployer et Vérifier}
+%================================================
+
+\begin{lstlisting}[style=bash]
+# Deployer sur Sepolia
+forge script script/DeploySuVa.s.sol \
+  --rpc-url https://ethereum-sepolia-rpc.publicnode.com \
+  --private-key $PRIVATE_KEY \
+  --broadcast
+
+# Verifier SuVaWalletFactory
+forge verify-contract \
+  0x716a0C550eC1267Db493515d4a114C2FCf942e6B \
+  src/SuVaWalletFactory.sol:SuVaWalletFactory \
+  --chain-id 11155111 \
+  --etherscan-api-key $ETHERSCAN_KEY \
+  --watch
+
+# Verifier SuVaWallet (avec args constructeur)
+forge verify-contract \
+  0x8a907C21014ED2926a53b4d18eC6e1b8C5a514cE \
+  src/SuVaWallet.sol:SuVaWallet \
+  --chain-id 11155111 \
+  --constructor-args $(cast abi-encode \
+    "constructor(address,address,address)" \
+    0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789 \
+    0xa6279c2ce813306da0f7b81e434e4a88f0b25626 \
+    0xD7390D91139Bf5868DDdF3b6677708b30b78D210) \
+  --etherscan-api-key $ETHERSCAN_KEY \
+  --watch
+\end{lstlisting}
+
+%================================================
+\section{Adresses de Référence --- Sepolia}
+%================================================
+
+\begin{longtable}{@{}p{2cm}p{4cm}p{8cm}@{}}
+\toprule
+\textbf{Phase} & \textbf{Contrat} & \textbf{Adresse Sepolia} \\
+\midrule
+\endhead
+2 / 3 & ZKNOX\_ethfalcon & \texttt{0xa6279c2ce813306da0f7b81e434e4a88f0b25626} \\
+3 & MockUSDT & \texttt{0xf088bc3f822ee138753afe3190d1adec60abbaf3} \\
+3 & qUSDT & \texttt{0xf8f3009c473d538da9b188f33bd6a6cbead29902} \\
+3 & QuantumVault & \texttt{0x601cd837e9edd0dfb311ff1a48ed7bea7bbaf1c4} \\
+4 & SuVaWalletFactory & \texttt{0x716a0C550eC1267Db493515d4a114C2FCf942e6B} \\
+4 & SuVaWallet & \texttt{0x8a907C21014ED2926a53b4d18eC6e1b8C5a514cE} \\
+-- & EntryPoint (ERC-4337) & \texttt{0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789} \\
+\bottomrule
+\end{longtable}
+
+%================================================
+\section{Collaboration BTQ et Direction Future}
+%================================================
+
+\subsection{BTQ et QSSN}
+
+BTQ est une startup post-quantique blockchain. Leur protocole QSSN (Quantum Safe Signature Network) partage le même objectif que SuVa : actifs quantum-safe sur Ethereum sans modifier le protocole.
+
+\textbf{Points de convergence :}
+\begin{itemize}
+  \item Même approche : wrapping d'actifs existants avec signature PQC
+  \item Interface commune : \texttt{IFalconVerifier} peut devenir un standard
+  \item EIP conjoint : soumettre un standard Ethereum quantum-safe pour toute la communauté
+\end{itemize}
+
+\subsection{Lexique complet}
+
+\begin{longtable}{@{}p{3cm}p{11cm}@{}}
+\toprule
+\textbf{Terme} & \textbf{Définition} \\
+\midrule
+\endhead
+EOA & Compte Ethereum classique lié à une clé ECDSA \\
+Smart contract & Programme qui s'exécute sur la blockchain Ethereum \\
+Gas & Coût de calcul d'une opération Ethereum (payé en ETH) \\
+ERC-20 & Standard pour les tokens fongibles (USDT, USDC, etc.) \\
+ERC-4337 & Standard pour les comptes-contrats avec validation personnalisée \\
+Lattice & Structure mathématique utilisée par Falcon (réseaux euclidiens) \\
+NTT & Transformée Théorique des Nombres --- accélère la multiplication polynomiale \\
+Bundler & Service qui regroupe les UserOps et les soumet à l'EntryPoint \\
+Sepolia & Réseau de test Ethereum (gratuit) \\
+Etherscan & Explorateur blockchain (code source, transactions, adresses) \\
+CREATE2 & Déploiement de contrat à adresse déterministe \\
+SPHINCS+ & Signature PQC basée sur les hachages (Phase 5) \\
+QSSN & Quantum Safe Signature Network --- protocole de BTQ \\
+EIP & Ethereum Improvement Proposal --- proposition de standard officiel \\
+EIP-8141 & Proposition d'abstraction de compte native dans Ethereum (2026) \\
+SVP & Short Vector Problem --- problème de réseau difficile \\
+LWE & Learning With Errors --- base de sécurité de Dilithium \\
+NTRU & Problème de réseau --- base de sécurité de Falcon \\
+XOF & Fonction à Sortie Extensible (SHAKE-256) \\
+\bottomrule
+\end{longtable}
+
+\vspace{2em}
+\begin{center}
+\textit{SuVa Protocol --- Ethereum Quantum-Safe, Dès Aujourd'hui.}
+\end{center}
+
+\end{document}

@@ -1,0 +1,576 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{shapes, positioning}
+
+% ── Couleurs ──────────────────────────────────────────────────────────
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{code_bg}{RGB}{245, 247, 250}
+\definecolor{code_kw}{RGB}{0, 80, 200}
+\definecolor{code_str}{RGB}{180, 40, 40}
+\definecolor{code_cmt}{RGB}{80, 130, 80}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{success_bg}{RGB}{230, 255, 235}
+\definecolor{dark_bg}{RGB}{25, 30, 50}
+
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+}
+\lstdefinestyle{output}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{gray!10},
+  frame=single, rulecolor=\color{gray!50},
+  breaklines=true,
+}
+
+\newtcolorbox{defbox}[2][]{
+  colback=success_bg, colframe=green!50!black,
+  fonttitle=\bfseries, title={Définition : #2}, #1
+}
+\newtcolorbox{theorembox}[2][]{
+  colback=blue!5, colframe=suva_blue,
+  fonttitle=\bfseries, title={Théorème : #2}, #1
+}
+\newtcolorbox{exercice}[2][]{
+  colback=white, colframe=suva_blue!60,
+  fonttitle=\bfseries, title={Exercice #2}, #1, breakable
+}
+\newtcolorbox{solution}[1][]{
+  colback=gray!5, colframe=gray!40,
+  fonttitle=\bfseries\itshape, title={Solution}, #1, breakable
+}
+\newtcolorbox{importantbox}[1][]{
+  colback=suva_blue!10, colframe=suva_blue,
+  fonttitle=\bfseries, title={Connexion avec le projet}, #1
+}
+\newtcolorbox{warningbox}[1][]{
+  colback=warn_bg, colframe=orange!80!black,
+  fonttitle=\bfseries, title={Attention}, #1
+}
+
+\newcommand{\Zq}{\mathbb{Z}_q}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\pmod}[1]{\ (\mathrm{mod}\ #1)}
+
+\newcommand{\auteur}{Mohamed Lamine MBENGUE}
+\newcommand{\specialites}{Sécurité · DevOps · Dev Full Stack Web \& Mobile}
+\newcommand{\tel}{+221 78 178 44 36}
+\newcommand{\email}{mbenguemohamedlamine2022@gmail.com}
+\newcommand{\portfolio}{portfolio-alamine.web.app}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{suva_blue}\textbf{SuVa --- Chapitre 1}}
+\fancyhead[R]{\color{gray}Arithmétique Modulaire}
+\fancyfoot[L]{\footnotesize\color{gray}\auteur}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\footnotesize\color{gray}\portfolio}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% ══════════════════════════════════════════════════════════════════════
+\begin{document}
+
+\begin{center}
+  {\color{suva_blue}\rule{\linewidth}{2pt}}\\[0.5cm]
+  {\Huge\bfseries\color{suva_blue} Chapitre 1}\\[0.3cm]
+  {\large\bfseries Arithmétique Modulaire et Corps Finis}\\[0.2cm]
+  {\small\color{gray} Fondement mathématique de toute la cryptographie du projet}\\[0.3cm]
+  {\color{suva_blue}\rule{\linewidth}{2pt}}
+\end{center}
+
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40,
+  left=6pt, right=6pt, top=4pt, bottom=4pt]
+\small
+\begin{tabular}{ll}
+  \textbf{Auteur} & \auteur \\
+  \textbf{Spécialités} & \specialites \\
+  \textbf{Tél} & \tel \quad \textbf{Email} : \email \\
+  \textbf{Portfolio} & \href{https://\portfolio}{\texttt{\portfolio}} \\
+\end{tabular}
+\end{tcolorbox}
+
+\tableofcontents
+\newpage
+
+%══════════════════════════════════════════════════════════════════════
+\section{Arithmétique modulaire --- rappels}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{L'opération modulo}
+
+\begin{defbox}{Modulo}
+Pour deux entiers $a \in \ZZ$ et $m \in \ZZ_{>0}$, on dit que
+$a \equiv r \pmod{m}$ si $m$ divise $a - r$.
+L'entier $r$ est le \textbf{reste} de la division euclidienne de $a$ par $m$.
+
+On note aussi $a \bmod m = r$ avec $r \in \{0, 1, \ldots, m-1\}$.
+\end{defbox}
+
+\textbf{Exemples~:}
+\begin{align*}
+  17 \bmod 5 &= 2  &\text{car } 17 = 3 \times 5 + 2\\
+  -3 \bmod 7 &= 4  &\text{car } -3 = (-1) \times 7 + 4\\
+  100 \bmod 13 &= 9 &\text{car } 100 = 7 \times 13 + 9
+\end{align*}
+
+\begin{warningbox}
+En Python, \texttt{-3 \% 7 = 4} (correct). En C, le résultat peut être négatif.
+Dans le projet, tous les calculs doivent donner un résultat dans $[0, q-1]$.
+\end{warningbox}
+
+\subsection{L'anneau $\mathbb{Z}_q$}
+
+\begin{defbox}{L'anneau $\mathbb{Z}_q$}
+$\mathbb{Z}_q = \{0, 1, 2, \ldots, q-1\}$ muni de l'addition et de la
+multiplication modulo $q$. C'est un \textbf{corps} (corps fini) si et
+seulement si $q$ est \textbf{premier}.
+\end{defbox}
+
+\begin{importantbox}
+Dans le projet SuVa / Dilithium, le module est~:
+$$q = 8\,380\,417$$
+Ce nombre est premier (vérifie-le !). Tous les coefficients des polynômes
+vivent dans $\mathbb{Z}_q = \{0, 1, \ldots, 8\,380\,416\}$.
+\end{importantbox}
+
+\subsection{Propriétés de l'addition et de la multiplication modulo $q$}
+
+Les règles habituelles s'appliquent~:
+\begin{align*}
+  (a + b) \bmod q &\equiv ((a \bmod q) + (b \bmod q)) \bmod q\\
+  (a \cdot b) \bmod q &\equiv ((a \bmod q) \cdot (b \bmod q)) \bmod q
+\end{align*}
+
+\textbf{Exemple avec $q = 8\,380\,417$~:}
+\begin{lstlisting}[style=python]
+q = 8_380_417
+
+a = 5_000_000
+b = 4_000_000
+
+addition = (a + b) % q
+print(f"({a} + {b}) mod q = {addition}")
+# (5000000 + 4000000) mod 8380417 = 619583
+
+multiplication = (a * b) % q
+print(f"({a} * {b}) mod q = {multiplication}")
+# Resultat dans [0, 8380416]
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{L'inverse modulaire}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Définition}
+
+\begin{defbox}{Inverse modulaire}
+L'inverse de $a$ modulo $q$ est l'entier $a^{-1} \in \{1, \ldots, q-1\}$
+tel que~:
+$$a \cdot a^{-1} \equiv 1 \pmod{q}$$
+L'inverse existe si et seulement si $\gcd(a, q) = 1$.
+Si $q$ est premier, tout $a \neq 0$ est inversible.
+\end{defbox}
+
+\subsection{Algorithme d'Euclide étendu}
+
+\begin{theorembox}{Théorème de Bézout}
+Pour tout $a, b$ tels que $\gcd(a, b) = d$, il existe $u, v \in \ZZ$
+tels que~:
+$$au + bv = d$$
+Si $d = 1$, alors $u = a^{-1} \pmod{b}$.
+\end{theorembox}
+
+\begin{lstlisting}[style=python]
+def xgcd(a, b):
+    """
+    Algorithme d'Euclide etendu.
+    Retourne (gcd, u, v) tels que a*u + b*v = gcd.
+    """
+    if b == 0:
+        return a, 1, 0
+    g, u, v = xgcd(b, a % b)
+    return g, v, u - (a // b) * v
+
+def mod_inverse(a, q):
+    """Inverse de a modulo q (q premier)."""
+    g, u, v = xgcd(a % q, q)
+    assert g == 1, f"{a} n'est pas inversible modulo {q}"
+    return u % q
+
+# Test
+q = 8_380_417
+a = 42
+inv = mod_inverse(a, q)
+print(f"42^(-1) mod q = {inv}")
+print(f"Verification : 42 * {inv} mod q = {(42 * inv) % q}")  # Doit etre 1
+\end{lstlisting}
+
+\subsection{Méthode rapide : petit théorème de Fermat}
+
+\begin{theorembox}{Petit théorème de Fermat}
+Si $q$ est premier et $\gcd(a, q) = 1$, alors~:
+$$a^{q-1} \equiv 1 \pmod{q}$$
+Donc~: $a^{-1} \equiv a^{q-2} \pmod{q}$
+\end{theorembox}
+
+\begin{lstlisting}[style=python]
+def mod_inverse_fermat(a, q):
+    """Inverse via le petit theoreme de Fermat (q premier)."""
+    return pow(a, q - 2, q)  # pow(a, e, m) = a^e mod m (Python integre)
+
+q = 8_380_417
+a = 42
+inv = mod_inverse_fermat(a, q)
+print(f"42^(-1) mod q = {inv}")
+print(f"Verification  : {(42 * inv) % q}")  # 1
+\end{lstlisting}
+
+\begin{importantbox}
+La fonction \texttt{pow(a, q-2, q)} de Python est \textbf{très efficace}~:
+elle utilise l'exponentiation rapide en $O(\log q)$ multiplications.
+C'est ce qui est utilisé dans le projet pour les inversions modulaires.
+\end{importantbox}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Réduction symétrique (centred reduction)}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Motivation}
+
+Dans Dilithium, les coefficients ne vivent pas toujours dans $[0, q-1]$.
+Parfois on préfère les représenter dans $[-(q-1)/2, (q-1)/2]$.
+
+\begin{defbox}{Réduction symétrique}
+La réduction symétrique de $a$ modulo $q$ est~:
+$$a_{\mathrm{sym}} = \begin{cases}
+  a \bmod q & \text{si } (a \bmod q) \leq (q-1)/2\\
+  (a \bmod q) - q & \text{sinon}
+\end{cases}$$
+Résultat dans $[-(q-1)/2, (q-1)/2]$.
+\end{defbox}
+
+\begin{lstlisting}[style=python]
+# Fichier : utilities/utils.py dans le projet
+def reduce_mod_pm(a, q):
+    """Reduction symmetrique de a modulo q."""
+    r = a % q
+    if r > (q - 1) // 2:
+        r -= q
+    return r
+
+q = 8_380_417
+# Exemples
+print(reduce_mod_pm(8_380_416, q))  # = -1 (pas q-1)
+print(reduce_mod_pm(1, q))          # =  1
+print(reduce_mod_pm(q // 2 + 1, q)) # = -(q//2)
+\end{lstlisting}
+
+\begin{importantbox}
+Cette fonction apparaît dans \texttt{utilities/utils.py}.
+Elle est utilisée dans la vérification de normes ($\|z\|_\infty < \gamma_1 - \beta$).
+\end{importantbox}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Décomposition power-of-2 (HighBits / LowBits)}
+%══════════════════════════════════════════════════════════════════════
+
+C'est un mécanisme crucial dans Dilithium pour compresser la clé publique.
+
+\subsection{Principe}
+
+\begin{defbox}{Décomposition modulaire}
+Pour $r \in \ZZ_q$ et $\alpha$ pair divisant $q - 1$, on écrit~:
+$$r = r_1 \cdot \alpha + r_0$$
+avec $r_0 \in (- \alpha/2,\ \alpha/2]$ (partie basse, \emph{LowBits})
+et $r_1 = (r - r_0) / \alpha$ (partie haute, \emph{HighBits}).
+\end{defbox}
+
+\textbf{Pourquoi~?} Dans Dilithium, $t = A s_1 + s_2$ est un vecteur de polynômes.
+On décompose $t = t_1 \cdot 2^d + t_0$. La clé publique ne publie que $t_1$
+(bits hauts), économisant $d = 13$ bits par coefficient. $t_0$ reste secret.
+
+\begin{lstlisting}[style=python]
+# Extrait de utilities/utils.py
+def decompose(r, alpha, q=8_380_417):
+    """
+    Decomposes r = r1 * alpha + r0
+    r0 in (-alpha/2, alpha/2]
+    """
+    r = r % q
+    r0 = r % alpha
+    if r0 > alpha // 2:
+        r0 -= alpha
+    r1 = (r - r0) // alpha
+    if r1 == (q - 1) // alpha + 1:
+        r1 = 0
+        r0 -= 1
+    return r1, r0
+
+def high_bits(r, alpha, q=8_380_417):
+    r1, _ = decompose(r, alpha, q)
+    return r1
+
+def low_bits(r, alpha, q=8_380_417):
+    _, r0 = decompose(r, alpha, q)
+    return r0
+
+# Test
+q = 8_380_417
+d = 13
+alpha = 1 << d  # 2^13 = 8192
+
+r = 100_000
+r1, r0 = decompose(r, alpha, q)
+print(f"r  = {r}")
+print(f"r1 = {r1}  (partie haute, dans la cle publique)")
+print(f"r0 = {r0}  (partie basse, secrete)")
+print(f"Verification : r1 * {alpha} + r0 = {r1 * alpha + r0}")
+# Doit etre congruent a r mod q
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Le vecteur hint --- make\_hint et use\_hint}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Motivation}
+
+Lors de la vérification, on recalcule $w' = Az - ct_1 \cdot 2^d$ et on
+veut retrouver $w_1 = \mathrm{HighBits}(Ay)$ d'origine.
+Le problème~: $Az - ct_1 \cdot 2^d \approx Ay$ mais pas exactement.
+Le \textbf{hint} $h$ encode la correction nécessaire de manière compacte.
+
+\begin{defbox}{Hint}
+Pour $r \in \ZZ_q$ et $r + z \in \ZZ_q$ avec $z$ petit~:
+$$h = \mathrm{MakeHint}(z, r, \alpha) \in \{0, 1\}$$
+$$r_1 = \mathrm{UseHint}(h, r + z, \alpha)$$
+de sorte que $r_1 = \mathrm{HighBits}(r, \alpha)$.
+\end{defbox}
+
+\begin{lstlisting}[style=python]
+# Extrait de utilities/utils.py
+def make_hint(z, r, alpha, q=8_380_417):
+    """
+    Cree un hint indiquant si HighBits(r, alpha) != HighBits(r+z, alpha).
+    Retourne 0 ou 1.
+    """
+    r1 = high_bits(r, alpha, q)
+    v1 = high_bits(r + z, alpha, q)
+    return int(r1 != v1)
+
+def use_hint(h, r, alpha, q=8_380_417):
+    """
+    Utilise le hint pour recuperer HighBits(r - z, alpha)
+    sans connaitre z.
+    """
+    m = (q - 1) // alpha
+    r1, r0 = decompose(r, alpha, q)
+    if h == 1 and r0 > 0:
+        return (r1 + 1) % m
+    if h == 1 and r0 <= 0:
+        return (r1 - 1) % m
+    return r1
+
+# Demonstration
+q = 8_380_417
+alpha = 2 * ((q - 1) // 88)  # = 2 * gamma_2 dans Dilithium
+
+r = 500_000   # valeur originale
+z = 90_000    # petite perturbation (typiquement cs2 + ct0)
+
+r1_original = high_bits(r, alpha, q)
+h = make_hint(z, r, alpha, q)
+r1_recovered = use_hint(h, r + z, alpha, q)
+
+print(f"r1 original  = {r1_original}")
+print(f"hint h       = {h}")
+print(f"r1 recupere  = {r1_recovered}")
+print(f"Correct ?    = {r1_original == r1_recovered}")
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Vérification de la norme infinie}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{defbox}{Norme infinie}
+Pour un polynôme $f = \sum_{i=0}^{n-1} f_i \cdot x^i \in R_q$, la norme
+infinie (après réduction symétrique) est~:
+$$\|f\|_\infty = \max_{i=0}^{n-1} |f_i|$$
+\end{defbox}
+
+\begin{importantbox}
+Dans Dilithium, les rejections sampling vérifient~:
+\begin{itemize}
+  \item $\|z\|_\infty < \gamma_1 - \beta$ \hfill ($\gamma_1 = 2^{17}$, $\beta = 78$)
+  \item $\|w_0 - cs_2\|_\infty < \gamma_2 - \beta$ \hfill ($\gamma_2 = (q-1)/88$)
+  \item $\|ct_0\|_\infty < \gamma_2$
+\end{itemize}
+Si une de ces conditions échoue, le signe recommence.
+\end{importantbox}
+
+\begin{lstlisting}[style=python]
+def check_norm_bound(poly_coeffs, bound, q=8_380_417):
+    """
+    Verifie si |coefficient| >= bound pour au moins un coefficient.
+    Retourne True si la norme depasse la borne (==> rejeter).
+    """
+    for coeff in poly_coeffs:
+        # Reduction symmetrique
+        c = coeff % q
+        if c > (q - 1) // 2:
+            c -= q
+        if abs(c) >= bound:
+            return True
+    return False
+
+# Test
+import random
+q = 8_380_417
+gamma_1 = 1 << 17    # 131072
+beta = 78
+bound = gamma_1 - beta  # 130994
+
+# Un vecteur z valide (petits coefficients)
+z_valid = [random.randint(-bound + 1, bound - 1) for _ in range(256)]
+print(f"z_valid depasse borne ? {check_norm_bound(z_valid, bound)}")  # False
+
+# Un vecteur z invalide (trop grand)
+z_bad = z_valid.copy()
+z_bad[42] = gamma_1  # coefficient trop grand
+print(f"z_bad depasse borne  ? {check_norm_bound(z_bad, bound)}")   # True
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Exercices}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{exercice}{1 --- Calculs modulo q}
+Soit $q = 8\,380\,417$.
+
+\begin{enumerate}[label=\alph*)]
+  \item Calcule $(7\,000\,000 + 2\,000\,000) \bmod q$.
+  \item Calcule $(-1) \bmod q$.
+  \item Calcule $q^2 \bmod q$.
+  \item Trouve $a^{-1} \bmod q$ pour $a = 256$.
+  \item Vérifie que $256 \times a^{-1} \equiv 1 \pmod{q}$.
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+q = 8_380_417
+
+# a)
+print((7_000_000 + 2_000_000) % q)   # 619583
+
+# b)
+print((-1) % q)                        # 8380416
+
+# c)
+print((q**2) % q)                      # 0  (q^2 = q * q)
+
+# d)
+inv_256 = pow(256, q - 2, q)
+print(f"256^(-1) mod q = {inv_256}")
+
+# e)
+print((256 * inv_256) % q)             # 1
+\end{lstlisting}
+\end{solution}
+
+\begin{exercice}{2 --- Reduction symétrique}
+\begin{enumerate}[label=\alph*)]
+  \item Calcule la réduction symétrique de $8\,380\,416$ modulo $q$.
+  \item Calcule la réduction symétrique de $4\,000\,000$ modulo $q$.
+  \item Quelle est la plage de la réduction symétrique pour $q = 8\,380\,417$ ?
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+q = 8_380_417
+
+def sym(a, q):
+    r = a % q
+    return r - q if r > (q-1)//2 else r
+
+print(sym(8_380_416, q))  # -1
+print(sym(4_000_000, q))  # 4000000 (deja dans la plage)
+# Plage : [-(q-1)//2, (q-1)//2] = [-4190208, 4190208]
+\end{lstlisting}
+\end{solution}
+
+\begin{exercice}{3 --- Décomposition et hint (le plus important)}
+Soit $q = 8\,380\,417$, $\alpha = 2\gamma_2$ avec $\gamma_2 = (q-1)/88$.
+
+\begin{enumerate}[label=\alph*)]
+  \item Calcule $\alpha$.
+  \item Décompose $r = 3\,000\,000$ : calcule $r_1, r_0$.
+  \item Vérifie que $r_1 \times \alpha + r_0 \equiv r \pmod{q}$.
+  \item Soit $z = 50\,000$. Calcule $h = \mathrm{MakeHint}(z, r, \alpha)$.
+  \item Vérifie que $\mathrm{UseHint}(h, r+z, \alpha) = \mathrm{HighBits}(r, \alpha)$.
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+q = 8_380_417
+gamma_2 = (q - 1) // 88
+alpha = 2 * gamma_2
+print(f"alpha = {alpha}")  # 190464
+
+# b) Decomposer r = 3_000_000
+r = 3_000_000
+r0 = r % alpha
+if r0 > alpha // 2:
+    r0 -= alpha
+r1 = (r - r0) // alpha
+print(f"r1 = {r1}, r0 = {r0}")
+
+# c) Verification
+print(f"r1*alpha + r0 = {r1 * alpha + r0}")  # == r
+
+# d) Hint
+z = 50_000
+h = make_hint(z, r, alpha, q)
+print(f"hint h = {h}")
+
+# e) UseHint
+r1_rec = use_hint(h, r + z, alpha, q)
+r1_orig = high_bits(r, alpha, q)
+print(f"r1_orig = {r1_orig}, r1_rec = {r1_rec}")
+print(f"Correct : {r1_orig == r1_rec}")
+\end{lstlisting}
+\end{solution}
+
+\begin{exercice}{4 --- Exploration du code source}
+Ouvre le fichier \texttt{utilities/utils.py} du projet.
+\begin{enumerate}[label=\alph*)]
+  \item Identifie la différence entre \texttt{make\_hint} et \texttt{make\_hint\_optimised}.
+        (Indice~: Dilithium 5.1 vs spec NIST)
+  \item Quel est l'avantage de \texttt{make\_hint\_optimised} ?
+  \item À quel endroit dans \texttt{Falcon\_dilithium.py} est appelé \texttt{make\_hint\_optimised} ?
+\end{enumerate}
+\end{exercice}
+
+\end{document}

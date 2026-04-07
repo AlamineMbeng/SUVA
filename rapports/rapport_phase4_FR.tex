@@ -1,0 +1,613 @@
+%================================================
+% RAPPORT PHASE 4 -- SUVA PROTOCOL
+% SuVaWallet.sol -- Wallet ERC-4337 Double Signature
+% Pour : William Schulz
+% Par  : Mohamed Lamine MBENGUE
+% Date : Avril 2026
+%================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage[table]{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+%--- Couleurs ---
+\definecolor{suva-blue}{RGB}{0, 82, 165}
+\definecolor{suva-green}{RGB}{0, 150, 90}
+\definecolor{suva-orange}{RGB}{220, 100, 0}
+\definecolor{code-bg}{RGB}{245, 245, 245}
+\definecolor{pass-green}{RGB}{0, 140, 70}
+\definecolor{fail-red}{RGB}{180, 0, 0}
+
+%--- En-tete/Pied de page ---
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{suva-blue}{\textbf{SuVa Protocol --- Rapport Phase 4}}}
+\lhead{\textit{Confidentiel}}
+\rfoot{\thepage}
+\lfoot{\textit{Avril 2026}}
+
+%--- Styles de code ---
+\lstdefinestyle{solidity}{
+  language=C,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{code-bg},
+  keywordstyle=\color{suva-blue}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  numbers=left, numberstyle=\tiny\color{gray},
+  frame=single, breaklines=true, captionpos=b
+}
+\lstdefinestyle{bash}{
+  language=bash,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{code-bg},
+  keywordstyle=\color{suva-blue}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  numbers=none,
+  frame=single, breaklines=true, captionpos=b
+}
+
+%--- Boites personnalisees ---
+\newtcolorbox{resultbox}[1][]{
+  enhanced,colback=suva-green!8,colframe=suva-green!60,
+  fonttitle=\bfseries,title=#1,arc=3mm
+}
+\newtcolorbox{warningbox}[1][]{
+  enhanced,colback=suva-orange!8,colframe=suva-orange!60,
+  fonttitle=\bfseries,title=#1,arc=3mm
+}
+\newtcolorbox{infobox}[1][]{
+  enhanced,colback=suva-blue!6,colframe=suva-blue!50,
+  fonttitle=\bfseries,title=#1,arc=3mm
+}
+
+%================================================
+\begin{document}
+%================================================
+
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+{\Huge\bfseries\textcolor{suva-blue}{SuVa Protocol}\par}
+\vspace{0.5cm}
+{\Large\textit{Stablecoin Quantique sur EVM}\par}
+\vspace{1.5cm}
+\rule{\linewidth}{0.5pt}
+\vspace{0.5cm}
+{\LARGE\bfseries Rapport Technique --- Phase 4\par}
+\vspace{0.3cm}
+{\large SuVaWallet.sol --- Wallet ERC-4337 avec Validation Double Signature\par}
+\vspace{0.5cm}
+\rule{\linewidth}{0.5pt}
+\vspace{2cm}
+
+\begin{tabular}{ll}
+\textbf{Client :}    & William Schulz \\[4pt]
+\textbf{Auteur :}    & Mohamed Lamine MBENGUE \\[4pt]
+\textbf{Portfolio :} & \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}} \\[4pt]
+\textbf{Date :}      & Avril 2026 \\[4pt]
+\textbf{Version :}   & 1.0 --- Final \\[4pt]
+\textbf{Statut :}    & \textcolor{pass-green}{\textbf{COMPLET}} \\[4pt]
+\textbf{Codebase :}  & ETHDILITHIUM-main (fork ZKNox) \\
+\end{tabular}
+
+\vfill
+\begin{tcolorbox}[enhanced,colback=suva-blue!8,colframe=suva-blue,arc=4mm]
+\centering\textit{Document confidentiel. Ce rapport couvre les livrables de la Phase 4 :\\
+SuVaWallet.sol wallet ERC-4337, SuVaWalletFactory.sol, validation double signature\\
+(ECDSA + Falcon-256), 15 tests forge, deploiement Sepolia.}
+\end{tcolorbox}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+%================================================
+\section{Resume Executif}
+%================================================
+
+\begin{resultbox}[Phase 4 --- Tous les objectifs atteints]
+\begin{itemize}
+  \item[$\checkmark$] \textbf{SuVaWallet.sol} --- wallet ERC-4337 IAccount avec double validation
+  \item[$\checkmark$] \textbf{SuVaWalletFactory.sol} --- factory CREATE2 pour deploiement deterministe
+  \item[$\checkmark$] \textbf{Double signature} --- ECDSA + Falcon-256 toutes deux requises
+  \item[$\checkmark$] \textbf{15 tests forge passants} --- tous les chemins de validation couverts
+  \item[$\checkmark$] \textbf{41/41 tests totaux} sur toutes les phases --- zero regression
+  \item[$\checkmark$] \textbf{Deploiement Sepolia} --- SuVaWallet live sur testnet
+  \item[$\checkmark$] \textbf{Compatible EntryPoint ERC-4337 v0.6}
+\end{itemize}
+\end{resultbox}
+
+\vspace{0.5cm}
+
+La Phase 4 livre le \textbf{SuVaWallet} --- un smart contract wallet implementant le standard
+ERC-4337 d'abstraction de compte. Chaque transaction doit etre autorisee par deux signatures
+independantes : une signature ECDSA standard (compatible Ethereum) et une signature post-quantique
+Falcon-256.
+
+Cette architecture double signature offre une \textbf{defense en profondeur} : si les ordinateurs
+quantiques cassent ECDSA a l'avenir, les fonds restent proteges par la signature Falcon. Si un bug
+est trouve dans le verificateur Falcon, la signature ECDSA sert de repli.
+
+%================================================
+\section{Contexte ERC-4337}
+%================================================
+
+\subsection{Qu'est-ce que ERC-4337 ?}
+
+ERC-4337 (Abstraction de Compte) permet aux smart contracts de fonctionner comme des wallets.
+Au lieu de signer des transactions avec une cle privee, les utilisateurs soumettent des
+\textbf{UserOperations} qui sont validees par la logique personnalisee de leur smart wallet.
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.5cm,
+  box/.style={rectangle,draw,rounded corners,minimum width=3cm,minimum height=0.9cm,
+              align=center,font=\small},
+  arrow/.style={-Stealth,thick}
+]
+  \node[box, fill=suva-blue!15]   (user)    at (0,0)    {Utilisateur};
+  \node[box, fill=gray!15]        (bundler) at (4,0)    {Bundler};
+  \node[box, fill=suva-orange!15] (ep)      at (8,0)    {EntryPoint};
+  \node[box, fill=suva-green!15]  (wallet)  at (8,-2.2) {SuVaWallet};
+
+  \draw[arrow] (user)    -- node[above,font=\footnotesize]{UserOperation} (bundler);
+  \draw[arrow] (bundler) -- node[above,font=\footnotesize]{handleOps()} (ep);
+  \draw[arrow] (ep)      -- node[right,font=\footnotesize]{validateUserOp()} (wallet);
+  \draw[arrow] (wallet)  -- node[left, font=\footnotesize]{execute()} (ep);
+\end{tikzpicture}
+\end{center}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Acteur} & \textbf{Role} \\
+\midrule
+\textbf{Utilisateur} & Signe UserOperation avec ECDSA + Falcon \\
+\textbf{Bundler}     & Collecte les UserOps et les soumet a l'EntryPoint \\
+\textbf{EntryPoint}  & Contrat ERC-4337 officiel, valide et execute \\
+\textbf{SuVaWallet}  & Logique de validation personnalisee : double signature \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Pourquoi ERC-4337 pour SuVa ?}
+
+Les wallets Ethereum standard utilisent une seule signature ECDSA. ERC-4337 permet a SuVa de :
+\begin{itemize}
+  \item Exiger \textbf{deux signatures} par transaction (ECDSA + Falcon)
+  \item Definir une logique de validation personnalisee en Solidity
+  \item Rester compatible avec l'ecosysteme ERC-4337 standard (bundlers, paymasters)
+  \item Permettre des extensions futures (abstraction de gas, rotation de cle)
+\end{itemize}
+
+%================================================
+\section{Architecture}
+%================================================
+
+\subsection{Vue d'ensemble des contrats}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Contrat} & \textbf{Role} & \textbf{Etat cle} \\
+\midrule
+\texttt{SuVaWallet.sol}        & Wallet ERC-4337, validation double sig & \texttt{owner}, \texttt{falconPkHash} \\
+\texttt{SuVaWalletFactory.sol} & Factory CREATE2                        & sans etat \\
+\texttt{IFalconVerifier.sol}   & Interface partagee (Phase 3 + 4)       & --- \\
+\texttt{ZKNOX\_ethfalcon}      & Verificateur Falcon-256 (reutilise)    & sans etat \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Encodage de la signature}
+
+Le champ \texttt{userOp.signature} encode les deux signatures concatenees :
+
+\begin{lstlisting}[style=bash, caption={Structure de la signature composite}]
+userOp.signature = Sig_ECDSA (65 octets) || Payload_Falcon
+
+ou :
+  Sig_ECDSA      = abi.encodePacked(r, s, v)      -- 65 octets
+  Payload_Falcon = abi.encode(h, salt, s1)
+                    h    = uint256[256]  (cle publique Falcon)
+                    salt = bytes         (nonce 40 octets)
+                    s1   = uint256[256]  (polynome de signature)
+\end{lstlisting}
+
+\begin{infobox}[Decision de conception : signatures concatenees]
+Concatener les deux signatures dans un seul champ \texttt{bytes} garde SuVaWallet compatible
+avec tout bundler ERC-4337 sans modification. Le wallet lui-meme separe et valide chaque
+signature independamment.
+\end{infobox}
+
+%================================================
+\section{SuVaWallet.sol --- Implementation}
+%================================================
+
+\subsection{Variables d'etat}
+
+\begin{lstlisting}[style=solidity, caption={Etat de SuVaWallet}]
+IEntryPoint     public immutable entryPoint;
+IFalconVerifier public immutable falconVerifier;
+
+address public owner;        // proprietaire ECDSA
+bytes32 public falconPkHash; // keccak256(abi.encodePacked(h))
+\end{lstlisting}
+
+Les deux adresses sont immuables --- definies a la construction, non modifiables.
+\texttt{falconPkHash} stocke un engagement sur la cle publique Falcon (32 octets),
+economisant 5,1M gas par rapport au stockage de la cle complete de 8 192 octets.
+
+\subsection{validateUserOp()}
+
+\begin{lstlisting}[style=solidity, caption={validateUserOp --- logique de double signature}]
+function validateUserOp(
+    UserOperation calldata userOp,
+    bytes32               userOpHash,
+    uint256               missingAccountFunds
+) external override onlyEntryPoint returns (uint256 validationData) {
+    // Payer le prefund EntryPoint si necessaire
+    if (missingAccountFunds > 0) {
+        (bool ok,) = payable(address(entryPoint)).call{
+            value: missingAccountFunds
+        }("");
+        require(ok, "SuVaWallet: prefund failed");
+    }
+
+    // Rejeter si signature trop courte
+    if (userOp.signature.length < 65) return SIG_VALIDATION_FAILED;
+
+    // Separer la signature composite
+    bytes memory ecdsaSig  = _slice(userOp.signature, 0, 65);
+    bytes memory falconSig = _slice(userOp.signature, 65,
+                                    userOp.signature.length - 65);
+
+    // 1. Verifier ECDSA -- doit recuperer l'owner enregistre
+    if (!_verifyECDSA(userOpHash, ecdsaSig))  return SIG_VALIDATION_FAILED;
+
+    // 2. Verifier Falcon -- doit correspondre au hash de cle enregistre
+    if (!_verifyFalcon(userOpHash, falconSig)) return SIG_VALIDATION_FAILED;
+
+    return SIG_VALIDATION_SUCCESS; // == 0
+}
+\end{lstlisting}
+
+\subsection{Verification ECDSA}
+
+\begin{lstlisting}[style=solidity, caption={\_verifyECDSA}]
+function _verifyECDSA(bytes32 hash, bytes memory sig)
+    internal view returns (bool)
+{
+    if (sig.length != 65) return false;
+    bytes32 r; bytes32 s; uint8 v;
+    assembly {
+        r := mload(add(sig, 32))
+        s := mload(add(sig, 64))
+        v := byte(0, mload(add(sig, 96)))
+    }
+    address recovered = ecrecover(hash, v, r, s);
+    return recovered != address(0) && recovered == owner;
+}
+\end{lstlisting}
+
+Utilise le precompile natif Ethereum \texttt{ecrecover}. L'adresse recuperee doit correspondre
+exactement a \texttt{owner}.
+
+\subsection{Verification Falcon}
+
+\begin{lstlisting}[style=solidity, caption={\_verifyFalcon}]
+function _verifyFalcon(bytes32 userOpHash, bytes memory falconSig)
+    internal view returns (bool)
+{
+    if (falconPkHash == bytes32(0)) return false; // aucune cle enregistree
+
+    (uint256[256] memory h, bytes memory salt, uint256[256] memory s1)
+        = abi.decode(falconSig, (uint256[256], bytes, uint256[256]));
+
+    // Verifier que la cle publique correspond au hash enregistre
+    if (keccak256(abi.encodePacked(h)) != falconPkHash) return false;
+
+    // Message signe = le userOpHash de 32 octets
+    bytes memory message = abi.encodePacked(userOpHash);
+
+    return falconVerifier.verify(h, salt, s1, message);
+}
+\end{lstlisting}
+
+\begin{infobox}[Qu'est-ce que Falcon signe ?]
+La signature Falcon est calculee sur le \texttt{userOpHash} --- un hash de 32 octets de toute
+la UserOperation (sender, nonce, callData, limites de gas, etc.) calcule par l'EntryPoint.
+Cela lie la signature Falcon a l'operation exacte autorisee, prevenant toute substitution
+de parametre.
+\end{infobox}
+
+%================================================
+\section{SuVaWalletFactory.sol}
+%================================================
+
+\begin{lstlisting}[style=solidity, caption={Factory --- deploiement deterministe CREATE2}]
+function createWallet(
+    address _entryPoint,
+    address _falconVerifier,
+    address _owner,
+    uint256 salt
+) external returns (SuVaWallet wallet) {
+    bytes32 create2salt = keccak256(abi.encodePacked(_owner, salt));
+    wallet = new SuVaWallet{salt: create2salt}(
+        _entryPoint, _falconVerifier, _owner
+    );
+    emit WalletCreated(address(wallet), _owner);
+}
+\end{lstlisting}
+
+\begin{infobox}[Pourquoi CREATE2 ?]
+CREATE2 permet de calculer l'adresse d'un wallet \textit{avant} son deploiement, en utilisant
+uniquement \texttt{owner} et \texttt{salt}. C'est requis par ERC-4337 : le bundler doit connaitre
+l'adresse du wallet pour construire le champ \texttt{initCode} de la premiere UserOperation.
+La fonction \texttt{getAddress()} retourne cette adresse predite.
+\end{infobox}
+
+%================================================
+\section{Couverture des Tests}
+%================================================
+
+\subsection{Sortie forge test}
+
+\begin{lstlisting}[style=bash, caption={forge test --match-path test/SuVaWallet.t.sol -vv}]
+Ran 15 tests for test/SuVaWallet.t.sol:SuVaWalletTest
+[PASS] testDeployment()                    (gas:    15 824)
+[PASS] testRegisterFalconKey()             (gas:    69 526)
+[PASS] testRegisterFalconKeyOnlyOwner()    (gas:    34 869)
+[PASS] testValidateUserOpSuccess()         (gas: 5 322 396)
+[PASS] testValidateUserOpWrongECDSA()      (gas: 5 198 564)
+[PASS] testValidateUserOpWrongFalcon()     (gas: 5 323 328)
+[PASS] testValidateUserOpShortSig()        (gas:    12 891)
+[PASS] testValidateUserOpNoFalconKey()     (gas: 6 014 507)
+[PASS] testValidateUserOpOnlyEntryPoint()  (gas: 1 147 169)
+[PASS] testExecute()                       (gas:   107 194)
+[PASS] testExecuteOnlyEntryPoint()         (gas:    79 643)
+[PASS] testExecuteSendsETH()               (gas:    47 544)
+[PASS] testFactoryCreateWallet()           (gas:   830 493)
+[PASS] testFactoryGetAddress()             (gas:   833 663)
+[PASS] testReceiveETH()                    (gas:    15 277)
+Suite result: ok. 15 passed; 0 failed
+\end{lstlisting}
+
+\begin{resultbox}[15/15 tests Phase 4 passants --- 41/41 au total sur toutes les phases]
+Zero echec. Zero regression.
+\end{resultbox}
+
+\subsection{Tableau des tests}
+
+\begin{center}
+\begin{tabular}{llc}
+\toprule
+\textbf{Test} & \textbf{Ce qu'il verifie} & \textbf{Resultat} \\
+\midrule
+\texttt{testDeployment}                   & owner, entryPoint, verifier corrects           & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testRegisterFalconKey}            & pkHash stocke comme keccak256(h)               & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testRegisterFalconKeyOnlyOwner}   & non-owner ne peut pas enregistrer              & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testValidateUserOpSuccess}        & ECDSA + Falcon valides $\Rightarrow$ retourne 0 & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testValidateUserOpWrongECDSA}     & mauvaise cle ECDSA $\Rightarrow$ retourne 1    & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testValidateUserOpWrongFalcon}    & sig Falcon invalide $\Rightarrow$ retourne 1   & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testValidateUserOpShortSig}       & sig $<$ 65 octets $\Rightarrow$ retourne 1     & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testValidateUserOpNoFalconKey}    & aucune cle enregistree $\Rightarrow$ retourne 1 & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testValidateUserOpOnlyEntryPoint} & appel non-EntryPoint revert                    & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testExecute}                      & appel transmis au contrat cible                & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testExecuteOnlyEntryPoint}        & execute non-EntryPoint revert                  & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testExecuteSendsETH}              & ETH transmis correctement                      & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testFactoryCreateWallet}          & factory deploie wallet avec bon owner          & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testFactoryGetAddress}            & adresse predite = adresse deployee             & \textcolor{pass-green}{\textbf{OK}} \\
+\texttt{testReceiveETH}                   & wallet recoit ETH                              & \textcolor{pass-green}{\textbf{OK}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%================================================
+\section{Deploiement Sepolia}
+%================================================
+
+Tous les contrats Phase 4 sont deployes et live sur le testnet Ethereum Sepolia (Chain ID : 11155111).
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Contrat} & \textbf{Adresse Sepolia} \\
+\midrule
+\texttt{ZKNOX\_ethfalcon}      & \texttt{0xA6279C2CE813306da0f7B81E434E4A88f0b25626} \\
+\texttt{MockERC20 (USDT)}      & \texttt{0xf088Bc3f822Ee138753AFe3190D1adEC60AbbaF3} \\
+\texttt{qUSDT}                 & \texttt{0xf8f3009C473D538DA9B188F33bD6a6cBead29902} \\
+\texttt{QuantumVault}          & \texttt{0x601CD837E9EDd0dfb311ff1A48eD7BeA7BBAf1c4} \\
+\texttt{SuVaWalletFactory}     & \texttt{0x716a0C550eC1267Db493515d4a114C2FCf942e6B} \\
+\texttt{SuVaWallet}            & \texttt{0x8a907C21014ED2926a53b4d18eC6e1b8C5a514cE} \\
+\texttt{EntryPoint (ERC-4337)} & \texttt{0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Parametre} & \textbf{Valeur} \\
+\midrule
+Adresse deploieur & \texttt{0xD7390D91139Bf5868DDdF3b6677708b30b78D210} \\
+Tx de deploiement & \texttt{0x73f4d8c1f997ca7620cf1a71af9cc5056ef8dcb56eeef4acc7b96fd5a800504e} \\
+Bloc              & 10561066 \\
+Gas total         & 4,790,419 gas \\
+Cout total        & 0,000005748 ETH \\
+Reseau            & Ethereum Sepolia (Chain ID 11155111) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%================================================
+\section{Decisions de Conception}
+%================================================
+
+\subsection{Les deux signatures sont-elles toujours requises ?}
+
+\textbf{Decision : oui, les deux signatures requises pour chaque transaction.}
+
+Rendre Falcon optionnel annulerait la resistance quantique --- un attaquant qui casse ECDSA
+pourrait simplement soumettre des operations sans la signature Falcon. La friction UX
+supplementaire est acceptable pour un wallet de garde de stablecoin ou la securite est
+la priorite principale.
+
+\subsection{La signature Falcon tient-elle dans les limites calldata ERC-4337 ?}
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Composant} & \textbf{Taille (octets)} & \textbf{Note} \\
+\midrule
+Signature ECDSA          &    65 & standard \\
+\texttt{h} encode        & 8,192 & uint256[256] \\
+\texttt{salt}            &    40 & octets nonce \\
+\texttt{s1} encode       & 8,192 & uint256[256] \\
+Overhead encodage ABI    &   128 & en-tetes abi.encode \\
+\midrule
+\textbf{Signature totale} & \textbf{16,617} & dans les limites bundler \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Les bundlers ERC-4337 autorisent typiquement jusqu'a 60 Ko de calldata. La signature
+composite tient confortablement a \textasciitilde 16 Ko.
+
+\subsection{IFalconVerifier refactored en interface partagee}
+
+En Phase 4, \texttt{IFalconVerifier} a ete extrait de \texttt{QuantumVault.sol} vers un fichier
+dedie \texttt{IFalconVerifier.sol}. Les deux contrats \texttt{QuantumVault} et \texttt{SuVaWallet}
+importent depuis cette interface partagee, eliminant la duplication.
+
+%================================================
+\section{Analyse du Gas}
+%================================================
+
+\begin{center}
+\begin{tabular}{llr}
+\toprule
+\textbf{Operation} & \textbf{Contrat} & \textbf{Gas} \\
+\midrule
+\texttt{validateUserOp} (MockFalcon)   & SuVaWallet & 5,322,396 \\
+\texttt{validateUserOp} (mauvais ECDSA)& SuVaWallet & 5,198,564 \\
+\texttt{validateUserOp} (mauvais Falcon)& SuVaWallet & 5,323,328 \\
+\texttt{execute} (appel simple)        & SuVaWallet &   107,194 \\
+\texttt{createWallet}                  & Factory    &   830,493 \\
+\texttt{registerFalconKey}             & SuVaWallet &    69,526 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%================================================
+\section{Checklist des Livrables}
+%================================================
+
+\begin{center}
+\begin{tabular}{clc}
+\toprule
+& \textbf{Livrable} & \textbf{Statut} \\
+\midrule
+$\checkmark$ & \texttt{SuVaWallet.sol} --- ERC-4337 IAccount          & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & \texttt{SuVaWalletFactory.sol} --- factory CREATE2      & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & Validation double signature (ECDSA + Falcon)            & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & 15 tests forge passants                                  & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & 41/41 tests totaux (toutes phases)                      & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & Deploiement Sepolia                                      & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & Analyse compatibilite bundler                            & \textcolor{pass-green}{\textbf{FAIT}} \\
+$\checkmark$ & Questions de conception repondues                        & \textcolor{pass-green}{\textbf{FAIT}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{resultbox}[Phase 4 : 8/8 objectifs completes]
+Tous les livrables Phase 4 sont complets. SuVaWallet est live sur Sepolia.
+\end{resultbox}
+
+%================================================
+\section{Conclusion}
+%================================================
+
+La Phase 4 livre un wallet quantique-resistant complet compatible ERC-4337. \textbf{SuVaWallet.sol}
+impose une validation double signature --- chaque transaction requiert une signature ECDSA
+(Ethereum standard) ET une signature post-quantique Falcon-256.
+
+Le stack SuVa est maintenant complet jusqu'a la Phase 4 :
+
+\begin{center}
+\begin{tabular}{clcc}
+\toprule
+\textbf{Phase} & \textbf{Description} & \textbf{Statut} & \textbf{Tests} \\
+\midrule
+1  & Validation Dilithium / ETHDilithium       & \textcolor{pass-green}{\textbf{FAIT}} &  8/8 \\
+2  & Integration Falcon / ETHFalcon            & \textcolor{pass-green}{\textbf{FAIT}} &  3/3 \\
+3  & QuantumVault + qUSDT + Sepolia            & \textcolor{pass-green}{\textbf{FAIT}} & 15/15 \\
+4  & SuVaWallet ERC-4337 + Sepolia             & \textcolor{pass-green}{\textbf{FAIT}} & 15/15 \\
+5  & SPHINCS+ feasibilite (recherche)          & A venir & --- \\
+\midrule
+\multicolumn{2}{l}{\textbf{Total}} & & \textbf{41/41} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%================================================
+\appendix
+\section{Annexe A --- Environnement}
+%================================================
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Outil} & \textbf{Version} \\
+\midrule
+Python          & 3.14 (environnement virtuel) \\
+Foundry (forge) & Nightly (win32\_amd64) \\
+Solidity        & 0.8.25 \\
+Version EVM     & Prague \\
+ERC-4337        & EntryPoint v0.6 \\
+ZKNOX\_ethfalcon & scolaire (Phase 3/4) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%================================================
+\section{Annexe B --- Structure du Depot (Phase 4)}
+%================================================
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Chemin} & \textbf{Contenu} \\
+\midrule
+\texttt{src/SuVaWallet.sol}        & Wallet ERC-4337 double signature \\
+\texttt{src/SuVaWalletFactory.sol} & Factory CREATE2 \\
+\texttt{src/IFalconVerifier.sol}   & Interface verificateur Falcon partagee \\
+\texttt{test/SuVaWallet.t.sol}     & 15 tests unitaires \\
+\texttt{script/DeploySuVa.s.sol}   & Script deploiement complet (Phase 3 + 4) \\
+\texttt{rapports/rapport\_phase4\_EN.tex} & Version anglaise \\
+\texttt{rapports/rapport\_phase4\_FR.tex} & Ce document \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%================================================
+\end{document}
+%================================================

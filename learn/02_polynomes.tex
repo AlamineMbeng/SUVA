@@ -1,0 +1,482 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tikz}
+
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{code_bg}{RGB}{245, 247, 250}
+\definecolor{code_kw}{RGB}{0, 80, 200}
+\definecolor{code_str}{RGB}{180, 40, 40}
+\definecolor{code_cmt}{RGB}{80, 130, 80}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{success_bg}{RGB}{230, 255, 235}
+
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+}
+\lstdefinestyle{output}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{gray!10},
+  frame=single, rulecolor=\color{gray!50},
+  breaklines=true,
+}
+
+\newtcolorbox{defbox}[2][]{colback=success_bg,colframe=green!50!black,
+  fonttitle=\bfseries,title={Définition : #2},#1}
+\newtcolorbox{theorembox}[2][]{colback=blue!5,colframe=suva_blue,
+  fonttitle=\bfseries,title={Théorème : #2},#1}
+\newtcolorbox{exercice}[2][]{colback=white,colframe=suva_blue!60,
+  fonttitle=\bfseries,title={Exercice #2},#1,breakable}
+\newtcolorbox{solution}[1][]{colback=gray!5,colframe=gray!40,
+  fonttitle=\bfseries\itshape,title={Solution},#1,breakable}
+\newtcolorbox{importantbox}[1][]{colback=suva_blue!10,colframe=suva_blue,
+  fonttitle=\bfseries,title={Connexion avec le projet},#1}
+\newtcolorbox{warningbox}[1][]{colback=warn_bg,colframe=orange!80!black,
+  fonttitle=\bfseries,title={Attention},#1}
+
+\newcommand{\Zq}{\mathbb{Z}_q}
+\newcommand{\Rq}{R_q}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\pmod}[1]{\ (\mathrm{mod}\ #1)}
+
+\newcommand{\auteur}{Mohamed Lamine MBENGUE}
+\newcommand{\portfolio}{portfolio-alamine.web.app}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{suva_blue}\textbf{SuVa --- Chapitre 2}}
+\fancyhead[R]{\color{gray}Anneaux Polynomiaux}
+\fancyfoot[L]{\footnotesize\color{gray}\auteur}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\footnotesize\color{gray}\portfolio}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% ══════════════════════════════════════════════════════════════════════
+\begin{document}
+
+\begin{center}
+  {\color{suva_blue}\rule{\linewidth}{2pt}}\\[0.5cm]
+  {\Huge\bfseries\color{suva_blue} Chapitre 2}\\[0.3cm]
+  {\large\bfseries Anneaux Polynomiaux et $R_q = \mathbb{Z}_q[x]/(x^n+1)$}\\[0.2cm]
+  {\small\color{gray} L'espace dans lequel vivent toutes les opérations de Dilithium}\\[0.3cm]
+  {\color{suva_blue}\rule{\linewidth}{2pt}}
+\end{center}
+
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40,
+  left=6pt, right=6pt, top=4pt, bottom=4pt]
+\small
+\begin{tabular}{ll}
+  \textbf{Auteur} & Mohamed Lamine MBENGUE \\
+  \textbf{Spécialités} & Sécurité · DevOps · Dev Full Stack Web \& Mobile \\
+  \textbf{Contact} & +221 78 178 44 36 · mbenguemohamedlamine2022@gmail.com \\
+  \textbf{Portfolio} & \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}} \\
+\end{tabular}
+\end{tcolorbox}
+
+\tableofcontents
+\newpage
+
+%══════════════════════════════════════════════════════════════════════
+\section{Anneau de polynômes --- définition}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Polynômes classiques}
+
+Un polynôme à coefficients dans $\Zq$ est une expression~:
+$$f(x) = f_0 + f_1 x + f_2 x^2 + \cdots + f_{n-1} x^{n-1}, \quad f_i \in \Zq$$
+
+\textbf{Addition~:} $(f + g)_i = (f_i + g_i) \bmod q$
+
+\textbf{Multiplication~:} $(f \cdot g)_k = \sum_{i+j=k} f_i g_j \bmod q$
+
+La multiplication naïve (``schoolbook'') de deux polynômes de degré $n-1$
+coûte $O(n^2)$ opérations. Pour $n = 256$, c'est $256^2 = 65\,536$
+multiplications --- acceptable, mais lent.
+
+\subsection{L'anneau quotient $R_q$}
+
+\begin{defbox}{L'anneau $R_q$}
+$$\Rq = \Zq[x] / (x^n + 1)$$
+C'est l'ensemble des polynômes de degré $< n$ à coefficients dans $\Zq$,
+où la multiplication est réduite modulo $x^n + 1$.
+
+La réduction modulo $x^n + 1$ signifie que $x^n \equiv -1$.
+\end{defbox}
+
+\subsection{Pourquoi $x^n + 1$ et pas autre chose ?}
+
+\begin{importantbox}
+Dans le projet, $n = 256$ et le polynôme de réduction est $x^{256} + 1$.
+
+Ce choix n'est pas anodin~:
+\begin{enumerate}
+  \item $x^{256} + 1$ est un \textbf{polynôme cyclotomique} ($x^{512} + 1$ factored).
+  \item Il est \textbf{irréductible} sur $\Zq$ quand $q \equiv 1 \pmod{2n}$,
+        ce que satisfait $q = 8\,380\,417$ (car $8\,380\,416 = 2^{13} \times 3 \times 256 + \ldots$).
+  \item Ce choix permet l'utilisation de la \textbf{NTT} (Number Theoretic Transform)
+        pour calculer la multiplication en $O(n \log n)$ au lieu de $O(n^2)$.
+\end{enumerate}
+\end{importantbox}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Multiplication dans $R_q$ --- méthode naïve}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{Réduction modulo $x^n + 1$}
+
+Quand on multiplie $f$ et $g$ et qu'on obtient un terme $x^k$ avec $k \geq n$~:
+$$x^n \equiv -1 \Rightarrow x^{n+j} \equiv -x^j \Rightarrow x^{2n} \equiv 1$$
+
+\textbf{Exemple avec $n = 4$~:}
+$$\underbrace{x^5}_{\equiv -x} = x^{4+1} = x^4 \cdot x \equiv (-1) \cdot x = -x$$
+$$\underbrace{x^7}_{\equiv -x^3} = x^{4+3} \equiv -x^3$$
+
+\begin{lstlisting}[style=python]
+def poly_mul_schoolbook(f, g, q, n=256):
+    """
+    Multiplication de polynomes dans R_q = Z_q[x]/(x^n + 1).
+    Methode naïve O(n^2).
+    """
+    result = [0] * n
+    for i, fi in enumerate(f):
+        for j, gj in enumerate(g):
+            k = i + j
+            if k < n:
+                result[k] = (result[k] + fi * gj) % q
+            else:
+                # x^(n+r) = -x^r  (car x^n = -1)
+                result[k - n] = (result[k - n] - fi * gj) % q
+    return result
+
+# Test
+q = 8_380_417
+n = 4  # exemple avec n=4 pour lisibilite
+
+f = [1, 2, 0, 0]  # f(x) = 1 + 2x
+g = [0, 0, 1, 0]  # g(x) = x^2
+
+# f * g = (1 + 2x) * x^2 = x^2 + 2x^3
+result = poly_mul_schoolbook(f, g, q, n)
+print(f"Resultat : {result}")  # [0, 0, 1, 2] = x^2 + 2x^3
+
+# Test avec wrapping
+f2 = [0, 0, 0, 1]  # f2(x) = x^3
+g2 = [0, 0, 1, 0]  # g2(x) = x^2
+# f2 * g2 = x^5 = -x  (car x^4 = -1 pour n=4)
+result2 = poly_mul_schoolbook(f2, g2, q, n)
+print(f"x^3 * x^2 = x^5 = -x : {result2}")
+# Attendu : [0, q-1, 0, 0] = [0, 8380416, 0, 0]
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Implémentation dans le projet}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{La classe PolynomialRingDilithium}
+
+Fichier~: \texttt{polynomials/polynomials\_generic.py}
+
+\begin{lstlisting}[style=python]
+# Voici ce que fait la classe (simplifie)
+class PolynomialRingDilithium:
+    def __init__(self, q=8_380_417, n=256):
+        self.q = q
+        self.n = n
+
+    def __call__(self, coefficients):
+        """Cree un polynome depuis une liste de coefficients."""
+        return PolynomialDilithium(coefficients, self.q, self.n)
+
+    def random_element(self):
+        """Cree un polynome aleatoire."""
+        import os
+        coeffs = [int.from_bytes(os.urandom(3), 'little') % self.q
+                  for _ in range(self.n)]
+        return self(coeffs)
+
+class PolynomialDilithium:
+    def __init__(self, coeffs, q, n):
+        self.coeffs = [c % q for c in coeffs]
+        self.q = q
+        self.n = n
+
+    def __add__(self, other):
+        """Addition dans R_q."""
+        return PolynomialDilithium(
+            [(a + b) % self.q for a, b in zip(self.coeffs, other.coeffs)],
+            self.q, self.n
+        )
+
+    def __sub__(self, other):
+        """Soustraction dans R_q."""
+        return PolynomialDilithium(
+            [(a - b) % self.q for a, b in zip(self.coeffs, other.coeffs)],
+            self.q, self.n
+        )
+
+    def __mul__(self, other):
+        """Multiplication dans R_q = Z_q[x]/(x^n+1)."""
+        # Dans le projet reel, on utilise la NTT pour faire ca efficacement
+        return poly_mul_schoolbook(self.coeffs, other.coeffs, self.q, self.n)
+
+    def to_ntt(self):
+        """Transforme en representation NTT (chapitre 3)."""
+        ...  # utilise polyntt package
+
+    def from_ntt(self):
+        """Retourne depuis la representation NTT."""
+        ...
+\end{lstlisting}
+
+\subsection{Opérations sur les modules (vecteurs et matrices)}
+
+Fichier~: \texttt{modules/modules\_generic.py}
+
+Dans Dilithium, on travaille avec des \textbf{vecteurs} et des \textbf{matrices}
+de polynômes dans $\Rq$. Par exemple~:
+\begin{itemize}
+  \item $A \in \Rq^{k \times l}$ : matrice $4 \times 4$ de polynômes
+  \item $s_1 \in \Rq^l$ : vecteur de $4$ polynômes
+  \item $t = As_1 + s_2 \in \Rq^k$ : vecteur de $4$ polynômes
+\end{itemize}
+
+\begin{lstlisting}[style=python]
+# Module = vecteur de polynomes
+# Multiplication matrice-vecteur A @ s1
+
+def matrix_vector_product(A, s1):
+    """
+    Calcule A * s1 dans R_q^k.
+    A est k x l, s1 est de longueur l.
+    Resultat : vecteur de longueur k.
+    """
+    k = len(A)      # nb de lignes
+    l = len(s1)     # nb de colonnes
+    result = []
+    for i in range(k):
+        row_product = sum(A[i][j] * s1[j] for j in range(l))
+        # sum() d'elements de R_q : addition polynomiale
+        result.append(row_product)
+    return result
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Bit-packing --- sérialisation des polynômes}
+%══════════════════════════════════════════════════════════════════════
+
+Un coefficient de $t_1$ a besoin de $\lceil \log_2(q/2^d) \rceil$ bits.
+Pour $q = 8\,380\,417$ et $d = 13$~: $q/2^{13} \approx 1023$, donc 10 bits.
+
+La sérialisation compacte est essentielle pour réduire la taille de la
+signature (2420 bytes pour Dilithium2).
+
+\begin{lstlisting}[style=python]
+def bit_pack_t1(t1_coeffs, n=256):
+    """
+    Pack les coefficients de t1 sur 10 bits chacun.
+    t1 contient des valeurs dans [0, 1023].
+    256 * 10 bits = 2560 bits = 320 bytes par polynome.
+    """
+    result = bytearray()
+    for i in range(0, n, 4):
+        # Emballer 4 coefficients de 10 bits = 5 bytes
+        v0, v1, v2, v3 = t1_coeffs[i:i+4]
+        # 10 bits par coeff, 4 coeffs = 40 bits = 5 bytes
+        b0 = v0 & 0xFF
+        b1 = ((v0 >> 8) & 0x03) | ((v1 & 0x3F) << 2)
+        b2 = ((v1 >> 6) & 0x0F) | ((v2 & 0x0F) << 4)
+        b3 = ((v2 >> 4) & 0x3F) | ((v3 & 0x03) << 6)
+        b4 = (v3 >> 2) & 0xFF
+        result.extend([b0, b1, b2, b3, b4])
+    return bytes(result)
+
+# Test
+coeffs_t1 = list(range(256))  # valeurs 0, 1, ..., 255
+packed = bit_pack_t1(coeffs_t1)
+print(f"Taille packee : {len(packed)} bytes")  # 320 bytes
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Échantillonnage des polynômes secrets}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{sample\_in\_ball --- le polynôme challenge}
+
+\begin{defbox}{sample\_in\_ball}
+Crée un polynôme $c \in \Rq$ avec exactement $\tau = 39$ coefficients
+égaux à $\pm 1$ et les autres à $0$.
+Les positions et signes sont déterminés pseudoaléatoirement depuis
+le hash $\tilde{c}$ (32 bytes).
+\end{defbox}
+
+\begin{lstlisting}[style=python]
+def sample_in_ball(seed_bytes, tau, n=256, q=8_380_417):
+    """
+    Echantillonne un polynome challenge c avec tau coefficients +/-1.
+    Algorithme : choisir tau positions aleatoires parmi n, puis signe.
+    """
+    import hashlib
+
+    # Initialiser le XOF (SHAKE256)
+    shake = hashlib.shake_256()
+    shake.update(seed_bytes)
+
+    coeffs = [0] * n
+
+    # Remplir la "boule" de n a n-tau en arriere
+    for i in range(n - tau, n):
+        # Tirer j aleatoire dans [0, i]
+        j = int.from_bytes(shake.digest(1), 'little') % (i + 1)
+        # Placer le signe depuis le bit de poids fort
+        sign_byte = int.from_bytes(shake.digest(1), 'little')
+        sign = -1 if (sign_byte & 1) else 1
+        # Echanger
+        coeffs[i] = coeffs[j]
+        coeffs[j] = sign
+
+    return coeffs
+
+# Verification : exactement tau = 39 coefficients non-nuls
+c = sample_in_ball(b'\x00' * 32, tau=39)
+nonzero = sum(1 for x in c if x != 0)
+print(f"Coefficients non-nuls : {nonzero}")  # 39
+print(f"Tous +1 ou -1 : {all(abs(x) <= 1 for x in c)}")
+\end{lstlisting}
+
+\subsection{rejection\_sample\_ntt\_poly --- la matrice A}
+
+La matrice $A$ est générée par rejection sampling~: on génère des bytes
+pseudo-aléatoires via SHAKE128 et on garde ceux qui sont dans $[0, q-1)$.
+
+\begin{lstlisting}[style=python]
+def rejection_sample(seed, q=8_380_417, n=256):
+    """
+    Genere un polynome a coefficients uniformes dans Z_q.
+    Rejection sampling : rejette les valeurs >= q.
+    """
+    import hashlib
+    coeffs = []
+    shake = hashlib.shake_128()
+    shake.update(seed)
+
+    while len(coeffs) < n:
+        # Lire 3 bytes -> 24 bits -> valeur dans [0, 2^24)
+        raw = shake.digest(3)
+        val = int.from_bytes(raw, 'little') & 0x7FFFFF  # 23 bits
+        if val < q:
+            coeffs.append(val)
+
+    return coeffs[:n]
+
+# Chaque appel avec le meme seed produit les memes coefficients
+seed = b'\x01' + b'\x00' * 31  # 32 bytes
+p1 = rejection_sample(seed)
+p2 = rejection_sample(seed)
+print(f"Deterministe ? {p1 == p2}")  # True
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Exercices}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{exercice}{1 --- Multiplication dans $R_4$}
+Soit $n = 4$, $q = 17$ et $R_q = \mathbb{Z}_{17}[x]/(x^4 + 1)$.
+\begin{enumerate}[label=\alph*)]
+  \item Calcule $(1 + x)(1 + x)$ dans $R_q$.
+  \item Calcule $x^3 \cdot x^2$ dans $R_q$.
+  \item Calcule $(2 + 3x^2)(1 + x)$ dans $R_q$.
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+q, n = 17, 4
+
+def poly_mul_small(f, g, q, n):
+    res = [0] * n
+    for i, fi in enumerate(f):
+        for j, gj in enumerate(g):
+            k = i + j
+            if k < n: res[k] = (res[k] + fi * gj) % q
+            else:     res[k-n] = (res[k-n] - fi * gj) % q
+    return res
+
+# a) (1+x)^2 dans Z_17[x]/(x^4+1)
+f = [1, 1, 0, 0]
+print(poly_mul_small(f, f, q, n))  # [1, 2, 1, 0] = 1 + 2x + x^2
+
+# b) x^3 * x^2 = x^5 = x^4*x = -x
+f2, g2 = [0,0,0,1], [0,0,1,0]
+print(poly_mul_small(f2, g2, q, n))  # [0, 16, 0, 0] = -x (16 = -1 mod 17)
+
+# c) (2 + 3x^2)(1 + x)
+f3, g3 = [2,0,3,0], [1,1,0,0]
+print(poly_mul_small(f3, g3, q, n))  # [2, 2, 3, 3]
+\end{lstlisting}
+\end{solution}
+
+\begin{exercice}{2 --- Taille des clés}
+Dans Dilithium2 ($n=256$, $q=8\,380\,417$, $k=l=4$, $d=13$)~:
+\begin{enumerate}[label=\alph*)]
+  \item La clé publique contient $\rho$ (32 bytes) + $t_1$ ($k$ polynômes, 10 bits/coeff).
+        Calcule la taille totale de la clé publique.
+  \item La signature contient $\tilde{c}$ (32 bytes) + $z$ ($l$ polynômes, $\lceil \log_2(2\gamma_1) \rceil$ bits/coeff)
+        + $h$ (vecteur de bits compact). Estime la taille de la signature.
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+import math
+q = 8_380_417
+n = 256
+k = l = 4
+d = 13
+gamma_1 = 1 << 17  # 131072
+
+# a) Taille cle publique
+bits_t1_per_coeff = 10  # ceil(log2(q/2^d)) = ceil(log2(1023)) = 10
+bytes_t1 = k * n * bits_t1_per_coeff // 8  # 4*256*10/8 = 1280 bytes
+pk_size = 32 + bytes_t1
+print(f"Cle publique : {pk_size} bytes")  # 1312 bytes
+
+# b) Signature z
+bits_z_per_coeff = math.ceil(math.log2(2 * gamma_1))  # = 18 bits
+bytes_z = l * n * bits_z_per_coeff // 8  # 4*256*18/8 = 2304 bytes
+# + c_tilde (32) + h (compact hint ~100 bytes)
+# Total ~ 32 + 2304 + 84 = 2420 bytes
+print(f"Signature z : ~{bytes_z} bytes (sans hint ni c_tilde)")
+\end{lstlisting}
+\end{solution}
+
+\begin{exercice}{3 --- Exploration du code}
+Ouvre \texttt{polynomials/polynomials.py} dans le projet.
+\begin{enumerate}[label=\alph*)]
+  \item Comment la multiplication \texttt{f * g} est-elle implémentée
+        dans la vraie classe ? (Schoolbook ou NTT ?)
+  \item Quelle méthode convertit un polynôme en représentation NTT ?
+  \item Dans \texttt{Falcon\_dilithium.py}, trouve la ligne qui calcule
+        $t = A \hat{s_1} + s_2$. Explique les opérations.
+\end{enumerate}
+\end{exercice}
+
+\end{document}

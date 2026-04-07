@@ -1,0 +1,624 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows.meta, positioning}
+
+% ── Couleurs ────────────────────────────────────────────────
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{code_bg}{RGB}{245, 247, 250}
+\definecolor{code_kw}{RGB}{0, 80, 200}
+\definecolor{code_str}{RGB}{180, 40, 40}
+\definecolor{code_cmt}{RGB}{80, 130, 80}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{warn_border}{RGB}{200, 150, 0}
+\definecolor{success_bg}{RGB}{230, 255, 235}
+\definecolor{success_border}{RGB}{40, 160, 80}
+\definecolor{dark_bg}{RGB}{25, 30, 50}
+
+% ── Listings ─────────────────────────────────────────────────
+\lstdefinestyle{bash}{
+  basicstyle=\ttfamily\small\color{white},
+  backgroundcolor=\color{dark_bg},
+  frame=single, framerule=0pt,
+  breaklines=true, showstringspaces=false,
+  moredelim=[is][\color{green!70}]{\$}{\$},
+}
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4,
+  showstringspaces=false,
+}
+\lstdefinestyle{output}{
+  basicstyle=\ttfamily\small\color{black},
+  backgroundcolor=\color{gray!10},
+  frame=single, rulecolor=\color{gray!50},
+  breaklines=true,
+}
+
+% ── Boîtes ───────────────────────────────────────────────────
+\newtcolorbox{cmdbox}[1]{
+  colback=dark_bg, colframe=suva_blue, colupper=white,
+  fonttitle=\ttfamily\bfseries\color{white}, title={\texttt{\$} #1}
+}
+\newtcolorbox{infobox}[1][]{
+  colback=blue!5, colframe=suva_blue,
+  fonttitle=\bfseries, title={Info}, #1
+}
+\newtcolorbox{warningbox}[1][]{
+  colback=warn_bg, colframe=warn_border,
+  fonttitle=\bfseries, title={Attention}, #1
+}
+\newtcolorbox{successbox}[1][]{
+  colback=success_bg, colframe=success_border,
+  fonttitle=\bfseries, title={Succès attendu}, #1
+}
+\newtcolorbox{errorbox}[1][]{
+  colback=red!5, colframe=red!60,
+  fonttitle=\bfseries, title={Erreur connue / Solution}, #1
+}
+
+% ── En-têtes ─────────────────────────────────────────────────
+% ── Commande signature ──────────────────────────────────────────────
+\newcommand{\auteur}{Mohamed Lamine MBENGUE}
+\newcommand{\specialites}{Sécurité · DevOps · Dev Full Stack Web \& Mobile}
+\newcommand{\tel}{+221 78 178 44 36}
+\newcommand{\email}{mbenguemohamedlamine2022@gmail.com}
+\newcommand{\portfolio}{portfolio-alamine.web.app}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{suva_blue}\textbf{SuVa / ETHDILITHIUM}}
+\fancyhead[R]{\color{gray}Guide de Test}
+\fancyfoot[L]{\footnotesize\color{gray}\auteur}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\footnotesize\color{gray}\portfolio}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% ────────────────────────────────────────────────────────────
+\begin{document}
+
+\begin{center}
+  {\color{suva_blue}\rule{\linewidth}{2pt}}\\[0.5cm]
+  {\Huge\bfseries\color{suva_blue} Guide de Test du Projet}\\[0.3cm]
+  {\large\color{gray} SuVa / ETHDILITHIUM --- Mise en Route Complète}\\[0.2cm]
+  {\small Mars 2026}\\[0.3cm]
+  {\color{suva_blue}\rule{\linewidth}{2pt}}
+\end{center}
+
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40,
+  left=6pt, right=6pt, top=4pt, bottom=4pt]
+\small
+\begin{tabular}{ll}
+  \textbf{Auteur} & \auteur \\
+  \textbf{Spécialités} & \specialites \\
+  \textbf{Tél} & \tel \quad \textbf{Email} : \email \\
+  \textbf{Portfolio} & \href{https://\portfolio}{\texttt{\portfolio}} \\
+\end{tabular}
+\end{tcolorbox}
+
+\tableofcontents
+\newpage
+
+%═══════════════════════════════════════════════════════════════
+\section{Vue d'ensemble du projet}
+%═══════════════════════════════════════════════════════════════
+
+Le projet est organisé en deux grandes parties~:
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=2cm,
+  block/.style={draw=suva_blue, rounded corners, fill=blue!5,
+    minimum width=4.5cm, minimum height=1cm,
+    text width=4.2cm, align=center, font=\small},
+  arrow/.style={->, thick, suva_blue}
+]
+  \node[block] (py) {\textbf{Python (off-chain)}\\\footnotesize
+    \texttt{python-ref/}\\
+    Génération de clés, Signature};
+  \node[block, right=3cm of py] (sol) {\textbf{Solidity (on-chain)}\\\footnotesize
+    \texttt{src/}\\
+    Vérification on-chain};
+  \draw[arrow] (py) -- node[above, font=\footnotesize] {(pk, sig)} (sol);
+  \node[above=0.5cm of py, font=\scriptsize\color{gray}]
+    {Machine utilisateur};
+  \node[above=0.5cm of sol, font=\scriptsize\color{gray}]
+    {Blockchain Ethereum};
+\end{tikzpicture}
+\end{center}
+
+\bigskip
+Structure du dossier principal \texttt{ETHDILITHIUM-main/}~:
+\begin{lstlisting}[style=bash]
+ETHDILITHIUM-main/
+  makefile                  <- Commandes principales
+  foundry.toml              <- Config Solidity (Foundry)
+  python-ref/               <- Partie Python
+    makefile
+    requirements.txt
+    Falcon_dilithium_py/    <- Code source Python
+      Falcon_dilithium/     <- Algorithme Dilithium
+      modules/              <- Arithmetique matricielle
+      polynomials/          <- Anneaux polynomiaux
+      Falcon_keccak_prng/   <- PRNG Keccak256
+      shake/                <- Wrapper SHAKE
+      utilities/            <- Utilitaires
+      tests/                <- Tests unitaires
+      benchmarks/           <- Benchmarks perf
+  src/                      <- Contrats Solidity
+  test/                     <- Tests Foundry (Solidity)
+  lib/                      <- Dependances Foundry
+\end{lstlisting}
+
+%═══════════════════════════════════════════════════════════════
+\section{Installation de la partie Python}
+%═══════════════════════════════════════════════════════════════
+
+\subsection{Prérequis}
+
+\begin{itemize}
+  \item Python 3.10 ou supérieur (\texttt{python3 --version})
+  \item \texttt{pip} disponible
+  \item \texttt{git} installé
+\end{itemize}
+
+\subsection{Étape 1 — Se placer dans le bon dossier}
+
+\begin{cmdbox}{cd ETHDILITHIUM-main/python-ref}
+\begin{lstlisting}[style=bash]
+cd d:/Projects/suva/falcon_dilithium/ETHDILITHIUM-main/python-ref
+\end{lstlisting}
+\end{cmdbox}
+
+\subsection{Étape 2 — Créer l'environnement virtuel}
+
+\begin{cmdbox}{Créer le venv}
+\begin{lstlisting}[style=bash]
+python3 -m venv myenv
+\end{lstlisting}
+\end{cmdbox}
+
+\subsection{Étape 3 — Activer l'environnement}
+
+\begin{tcolorbox}[colback=gray!5, colframe=gray!40, title=\textbf{Windows}]
+\begin{lstlisting}[style=bash]
+myenv\Scripts\activate
+\end{lstlisting}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5, colframe=gray!40, title=\textbf{Linux / macOS / Git Bash}]
+\begin{lstlisting}[style=bash]
+source myenv/bin/activate
+\end{lstlisting}
+\end{tcolorbox}
+
+Ton prompt doit afficher \texttt{(myenv)} au début.
+
+\subsection{Étape 4 — Installer les dépendances}
+
+\begin{cmdbox}{Installer les packages}
+\begin{lstlisting}[style=bash]
+pip install -r requirements.txt
+pip install -e "git+https://github.com/ZKNoxHQ/NTT.git@main#egg=polyntt&subdirectory=assets/pythonref/"
+\end{lstlisting}
+\end{cmdbox}
+
+\begin{infobox}
+Le package \texttt{polyntt} est le moteur NTT développé par ZKNox.
+Il est installé directement depuis GitHub. Tu as besoin d'une connexion internet.
+\end{infobox}
+
+\subsection{Étape 5 — Vérifier l'installation}
+
+\begin{cmdbox}{Test rapide d'import}
+\begin{lstlisting}[style=bash]
+python3 -c "import polyntt; print('polyntt OK')"
+python3 -c "from Crypto.Cipher import AES; print('pycryptodome OK')"
+\end{lstlisting}
+\end{cmdbox}
+
+\begin{successbox}
+\begin{lstlisting}[style=output]
+polyntt OK
+pycryptodome OK
+\end{lstlisting}
+\end{successbox}
+
+%═══════════════════════════════════════════════════════════════
+\section{Lancer les tests Python}
+%═══════════════════════════════════════════════════════════════
+
+\subsection{Important --- le nom du package}
+
+\begin{warningbox}
+Le dossier s'appelle \texttt{Falcon\_dilithium\_py/} mais les tests importent
+depuis \texttt{dilithium\_py}. Pour résoudre ça, lance les tests
+\textbf{depuis le dossier} \texttt{python-ref/} en pointant vers
+\texttt{Falcon\_dilithium\_py} directement.
+\end{warningbox}
+
+\subsection{Méthode recommandée --- unittest discover}
+
+Se placer dans \texttt{python-ref/Falcon\_dilithium\_py/} puis~:
+
+\begin{cmdbox}{Lancer TOUS les tests}
+\begin{lstlisting}[style=bash]
+cd Falcon_dilithium_py
+python3 -m pytest tests/ -v
+\end{lstlisting}
+\end{cmdbox}
+
+Ou avec unittest~:
+\begin{cmdbox}{Avec unittest}
+\begin{lstlisting}[style=bash]
+python3 -m unittest discover -s tests -v
+\end{lstlisting}
+\end{cmdbox}
+
+\subsection{Lancer un test spécifique}
+
+\begin{cmdbox}{Un seul fichier de test}
+\begin{lstlisting}[style=bash]
+python3 -m pytest tests/test_dilithium.py -v
+python3 -m pytest tests/test_utils.py -v
+python3 -m pytest tests/test_polynomial_generic.py -v
+\end{lstlisting}
+\end{cmdbox}
+
+\subsection{Description de chaque fichier de test}
+
+\begin{center}
+\begin{tabular}{lp{9cm}}
+\toprule
+\textbf{Fichier} & \textbf{Ce qu'il teste} \\
+\midrule
+\texttt{test\_dilithium.py} &
+  Le flux complet : keygen → sign → verify.
+  Teste aussi que la vérification échoue avec une mauvaise clé/message.
+  Inclut les KAT (Known Answer Tests) NIST. \\
+\addlinespace
+\texttt{test\_drbg.py} &
+  Le générateur pseudo-aléatoire AES256-CTR.
+  Vérifie la déterminisme : même seed → mêmes bytes. \\
+\addlinespace
+\texttt{test\_polynomial\_generic.py} &
+  Les opérations sur les polynômes dans $R_q$.
+  Addition, soustraction, multiplication via NTT. \\
+\addlinespace
+\texttt{test\_module\_generic.py} &
+  La multiplication matrice-vecteur $A \cdot s_1$.
+  Operations sur les modules (vecteurs de polynômes). \\
+\addlinespace
+\texttt{test\_shake.py} &
+  Le wrapper SHAKE-128 et SHAKE-256. \\
+\addlinespace
+\texttt{test\_utils.py} &
+  Les fonctions utilitaires : \texttt{decompose},
+  \texttt{high\_bits}, \texttt{make\_hint}, \texttt{use\_hint}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Sortie attendue d'un test réussi}
+
+\begin{successbox}
+\begin{lstlisting}[style=output]
+test_dilithium2 ... ok
+test_dilithium2_keccak_prng ... ok
+test_ethdilithium2_keccak_prng ... ok
+test_ethdilithium2_shake ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 12.453s
+
+OK
+\end{lstlisting}
+\end{successbox}
+
+%═══════════════════════════════════════════════════════════════
+\section{Lancer les exemples}
+%═══════════════════════════════════════════════════════════════
+
+\subsection{Exemple de base}
+
+\begin{cmdbox}{Exemple standard Dilithium}
+\begin{lstlisting}[style=bash]
+cd python-ref/Falcon_dilithium_py
+python3 example.py
+\end{lstlisting}
+\end{cmdbox}
+
+Ce script fait~:
+\begin{lstlisting}[style=python]
+from Falcon_dilithium import ETHDilithium2, Dilithium2
+
+msg = b"We are ZKNox."
+
+# Dilithium standard
+pk, sk = Dilithium2.keygen()
+sig = Dilithium2.sign(sk, msg)
+assert Dilithium2.verify(pk, msg, sig)
+print("Dilithium2 OK")
+
+# ETHDilithium (optimise Keccak)
+pk, sk = ETHDilithium2.keygen()
+sig = ETHDilithium2.sign(sk, msg)
+assert ETHDilithium2.verify(pk, msg, sig)
+print("ETHDilithium2 OK")
+\end{lstlisting}
+
+\subsection{Exemple ZK (BabyBear / KoalaBear)}
+
+\begin{cmdbox}{Exemple ZK}
+\begin{lstlisting}[style=bash]
+python3 example_zk.py
+\end{lstlisting}
+\end{cmdbox}
+
+Ce script teste les variantes ZK-friendly avec des corps alternatifs.
+
+%═══════════════════════════════════════════════════════════════
+\section{Test manuel pas-à-pas en Python interactif}
+%═══════════════════════════════════════════════════════════════
+
+Tu peux tester chaque composant séparément depuis le REPL Python.
+C'est la meilleure façon de comprendre ce qui se passe.
+
+\subsection{Test de l'arithmétique polynomiale}
+
+\begin{lstlisting}[style=python]
+# Depuis python-ref/Falcon_dilithium_py/
+import sys
+sys.path.insert(0, '.')
+
+from polynomials.polynomials import PolynomialRingDilithium
+
+# Creer l'anneau R_q = Z_q[x]/(x^256 + 1)
+R = PolynomialRingDilithium()
+
+# Creer deux polynomes aleatoires
+p1 = R.random_element()  # coefficients aleatoires dans Z_q
+p2 = R.random_element()
+
+# Tester les operations
+p3 = p1 + p2      # addition
+p4 = p1 * p2      # multiplication (via NTT)
+p5 = p1 - p2      # soustraction
+
+print(f"Coefficients de p1[0:5] = {p1.coeffs[:5]}")
+print(f"Coefficients de p3[0:5] = {p3.coeffs[:5]}")
+print(f"Multiplication OK ? {p4.coeffs[0] != 0}")
+\end{lstlisting}
+
+\subsection{Test du keygen complet}
+
+\begin{lstlisting}[style=python]
+from Falcon_dilithium.Falcon_dilithium import Dilithium
+
+# Parametres Dilithium2
+dil = Dilithium(...)  # voir Falcon_default_parameters.py
+
+# Generer une paire de cles
+pk, sk = dil.keygen()
+print(f"Taille cle publique : {len(pk)} bytes")
+# Attendu : 1312 bytes pour Dilithium2
+
+print(f"Taille cle secrete : {len(sk)} bytes")
+# Attendu : 2528 bytes pour Dilithium2
+
+# Signer un message
+msg = b"Hello SuVa"
+sig = dil.sign(sk, msg)
+print(f"Taille signature : {len(sig)} bytes")
+# Attendu : 2420 bytes pour Dilithium2
+
+# Verifier
+ok = dil.verify(pk, msg, sig)
+print(f"Verification : {ok}")  # True
+\end{lstlisting}
+
+\subsection{Test des utilitaires}
+
+\begin{lstlisting}[style=python]
+from utilities.utils import decompose, high_bits, low_bits, make_hint, use_hint
+
+q = 8380417
+alpha = 2 * ((q - 1) // 88)  # 2 * gamma_2
+
+# Decomposer un element
+r = 1234567
+r1, r0 = decompose(r, alpha)
+print(f"r  = {r}")
+print(f"r1 = {r1}  (bits hauts)")
+print(f"r0 = {r0}  (bits bas)")
+print(f"Verification : r1*alpha + r0 = {r1*alpha + r0}")
+
+# Le hint
+h = make_hint(r0, r1, alpha)
+r1_recovered = use_hint(h, r, alpha)
+print(f"r1 original   = {r1}")
+print(f"r1 recupere   = {r1_recovered}")
+print(f"Hint fonctionne : {r1 == r1_recovered}")
+\end{lstlisting}
+
+%═══════════════════════════════════════════════════════════════
+\section{Benchmarks}
+%═══════════════════════════════════════════════════════════════
+
+\begin{cmdbox}{Lancer les benchmarks}
+\begin{lstlisting}[style=bash]
+cd python-ref/Falcon_dilithium_py
+python3 -m benchmarks.benchmark_dilithium
+\end{lstlisting}
+\end{cmdbox}
+
+\begin{successbox}
+Résultats typiques sur une machine moderne (1000 itérations)~:
+\begin{lstlisting}[style=output]
+Dilithium2
+  keygen  : median =  6.2 ms
+  sign    : median = 27.4 ms  (moyenne 27.8 ms)
+  verify  : median =  7.1 ms
+
+Dilithium3
+  keygen  : median =  9.5 ms
+  sign    : median = 46.1 ms
+  verify  : median = 11.3 ms
+\end{lstlisting}
+\end{successbox}
+
+%═══════════════════════════════════════════════════════════════
+\section{Installation et tests Solidity (Foundry)}
+%═══════════════════════════════════════════════════════════════
+
+\subsection{Installer Foundry}
+
+\begin{cmdbox}{Installation de Foundry}
+\begin{lstlisting}[style=bash]
+# Installer foundryup (installer de Foundry)
+curl -L https://foundry.paradigm.xyz | bash
+# Puis dans un nouveau terminal :
+foundryup
+\end{lstlisting}
+\end{cmdbox}
+
+\begin{infobox}
+Foundry installe~: \texttt{forge} (compilateur/testeur),
+\texttt{cast} (interactions avec la blockchain),
+\texttt{anvil} (nœud local).
+Vérifie avec \texttt{forge --version}.
+\end{infobox}
+
+\subsection{Générer les vecteurs de test}
+
+Les tests Solidity nécessitent d'abord de générer des vecteurs de test
+depuis Python~:
+
+\begin{cmdbox}{Générer les vecteurs de test}
+\begin{lstlisting}[style=bash]
+cd ETHDILITHIUM-main/python-ref
+# Generer les vecteurs ETHDilithium
+python3 -m Falcon_dilithium_py.generate_ethdilithium_test_vectors
+# Generer les vecteurs Dilithium standard
+python3 -m Falcon_dilithium_py.generate_dilithium_test_vectors
+\end{lstlisting}
+\end{cmdbox}
+
+Cela écrit un fichier \texttt{test/ZKNOX\_dilithium.t.sol} avec les
+données de test en dur pour Foundry.
+
+\subsection{Lancer les tests Solidity}
+
+\begin{cmdbox}{Tests Solidity rapides (profil lite)}
+\begin{lstlisting}[style=bash]
+cd ETHDILITHIUM-main
+FOUNDRY_PROFILE=lite forge test -vv
+\end{lstlisting}
+\end{cmdbox}
+
+\begin{cmdbox}{Tests Solidity complets (plus lents)}
+\begin{lstlisting}[style=bash]
+forge test -vv
+\end{lstlisting}
+\end{cmdbox}
+
+\begin{infobox}
+\texttt{-vv} = verbose level 2 (affiche les logs des tests).\\
+\texttt{-vvv} = encore plus verbeux (affiche les traces d'exécution).
+\end{infobox}
+
+\subsection{Vérification gas}
+
+Pour voir le coût en gas de chaque opération~:
+
+\begin{cmdbox}{Rapport gas}
+\begin{lstlisting}[style=bash]
+forge test --gas-report
+\end{lstlisting}
+\end{cmdbox}
+
+%═══════════════════════════════════════════════════════════════
+\section{Erreurs fréquentes et solutions}
+%═══════════════════════════════════════════════════════════════
+
+\begin{errorbox}
+\textbf{Erreur~:} \texttt{ModuleNotFoundError: No module named 'polyntt'}
+
+\textbf{Solution~:} Le package NTT n'est pas installé.
+\begin{lstlisting}[style=bash]
+pip install -e "git+https://github.com/ZKNoxHQ/NTT.git@main#egg=polyntt&subdirectory=assets/pythonref/"
+\end{lstlisting}
+\end{errorbox}
+
+\begin{errorbox}
+\textbf{Erreur~:} \texttt{ModuleNotFoundError: No module named 'Crypto'}
+
+\textbf{Solution~:} pycryptodome mal installé.
+\begin{lstlisting}[style=bash]
+pip uninstall pycryptodome pycrypto
+pip install pycryptodome==3.14.1
+\end{lstlisting}
+\end{errorbox}
+
+\begin{errorbox}
+\textbf{Erreur~:} \texttt{ImportError: attempted relative import beyond top-level package}
+
+\textbf{Solution~:} Lance Python depuis le bon répertoire.
+Être dans \texttt{python-ref/} et utiliser \texttt{python3 -m Falcon\_dilithium\_py.tests.test\_dilithium}.
+\end{errorbox}
+
+\begin{errorbox}
+\textbf{Erreur~:} \texttt{forge: command not found}
+
+\textbf{Solution~:} Foundry n'est pas dans le PATH.
+\begin{lstlisting}[style=bash]
+# Ajouter ~/.foundry/bin au PATH (Linux/macOS)
+export PATH="$HOME/.foundry/bin:$PATH"
+# Sur Windows, redemarrer le terminal apres foundryup
+\end{lstlisting}
+\end{errorbox}
+
+%═══════════════════════════════════════════════════════════════
+\section{Récapitulatif des commandes clés}
+%═══════════════════════════════════════════════════════════════
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Action} & \textbf{Commande} \\
+\midrule
+Installer Python deps & \texttt{make install} (dans \texttt{python-ref/}) \\
+Lancer tests Python & \texttt{make test} (dans \texttt{python-ref/}) \\
+Lancer exemple & \texttt{make example} \\
+Générer test vectors & \texttt{make generate\_test\_vectors} \\
+Installer Foundry & \texttt{foundryup} \\
+Tests Solidity rapides & \texttt{FOUNDRY\_PROFILE=lite forge test -vv} \\
+Tests Solidity complets & \texttt{forge test -vv} \\
+Rapport gas & \texttt{forge test --gas-report} \\
+Compiler Solidity & \texttt{forge build} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}

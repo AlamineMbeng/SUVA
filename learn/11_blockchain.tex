@@ -1,0 +1,660 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, chains}
+
+% ── Couleurs ──────────────────────────────────────────────────────────
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{code_bg}{RGB}{245, 247, 250}
+\definecolor{code_kw}{RGB}{0, 80, 200}
+\definecolor{code_str}{RGB}{180, 40, 40}
+\definecolor{code_cmt}{RGB}{80, 130, 80}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{success_bg}{RGB}{230, 255, 235}
+\definecolor{sol_green}{RGB}{0, 120, 80}
+\definecolor{sol_bg}{RGB}{240, 255, 245}
+\definecolor{block_bg}{RGB}{235, 240, 255}
+
+% ── Styles listings ───────────────────────────────────────────────────
+\lstdefinestyle{solidity}{
+  language=C++,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{sol_bg},
+  frame=single, rulecolor=\color{sol_green!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+  morekeywords={uint256, uint8, bytes, bytes32, bool, address, memory,
+    storage, calldata, external, view, pure, returns, mapping, struct,
+    event, emit, require, revert, modifier, payable, public, private,
+    internal, virtual, override, assembly},
+}
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+}
+\lstdefinestyle{bash}{
+  basicstyle=\ttfamily\small\color{white},
+  backgroundcolor=\color{gray!80},
+  frame=single, rulecolor=\color{gray!80},
+  breaklines=true,
+}
+
+% ── En-tête / pied de page ────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{suva_blue}\bfseries Blockchain \& Ethereum}
+\fancyhead[R]{\color{gray}\small Leçon 11 --- SuVa Protocol}
+\fancyfoot[L]{\footnotesize\color{gray}Mohamed Lamine MBENGUE}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\footnotesize\color{gray}portfolio-alamine.web.app}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% ── Environnements tcolorbox ──────────────────────────────────────────
+\newtcolorbox{definition}[1]{
+  colback=suva_blue!5, colframe=suva_blue!60,
+  title={\bfseries Définition : #1}, fonttitle=\color{white},
+  breakable
+}
+\newtcolorbox{exemple}[1]{
+  colback=success_bg, colframe=sol_green!60,
+  title={\bfseries Exemple : #1}, fonttitle=\color{sol_green!80!black},
+  breakable
+}
+\newtcolorbox{attention}{
+  colback=warn_bg, colframe=orange!70,
+  title={\bfseries Attention}, fonttitle=\color{orange!80!black},
+  breakable
+}
+\newtcolorbox{pratique}[1]{
+  colback=block_bg, colframe=suva_blue!80,
+  title={\bfseries Exercice pratique : #1}, fonttitle=\color{white},
+  breakable
+}
+
+% ═════════════════════════════════════════════════════════════════════
+\begin{document}
+% ═════════════════════════════════════════════════════════════════════
+
+\begin{center}
+  {\color{suva_blue}\rule{\textwidth}{2pt}}\\[0.5cm]
+  {\Huge\bfseries\color{suva_blue} Blockchain \& Ethereum}\\[0.3cm]
+  {\large\color{gray} De zéro à smart contract --- Leçon 11}\\[0.5cm]
+  {\color{suva_blue}\rule{\textwidth}{0.5pt}}
+\end{center}
+
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────────────────────────────
+\section{C'est quoi une blockchain ? (la base)}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{definition}{Blockchain}
+Une blockchain (chaîne de blocs) est une \textbf{base de données partagée} entre des milliers
+d'ordinateurs dans le monde. Personne ne la contrôle seul. Une fois qu'une donnée est écrite,
+elle ne peut plus être modifiée ou supprimée.
+\end{definition}
+
+\subsection{L'analogie du cahier public}
+
+Imagine un cahier posé en plein milieu d'une ville. N'importe qui peut lire ce qui est écrit.
+N'importe qui peut écrire une nouvelle ligne. Mais personne ne peut effacer ou modifier ce qui
+est déjà écrit. Et des milliers de personnes gardent une copie exacte de ce cahier chez eux.
+
+C'est une blockchain.
+
+\begin{center}
+\begin{tikzpicture}[
+  block/.style={draw, rounded corners, fill=block_bg, minimum width=3cm,
+                minimum height=2cm, align=center, font=\small},
+  arrow/.style={-Stealth, thick, suva_blue}
+]
+  \node[block] (b0) {\textbf{Bloc 0}\\\textit{(Genesis)}\\Hash: 0000...};
+  \node[block, right=1.2cm of b0] (b1) {\textbf{Bloc 1}\\Tx: Alice→Bob\\Hash: a3f9...};
+  \node[block, right=1.2cm of b1] (b2) {\textbf{Bloc 2}\\Tx: Bob→Carol\\Hash: 7c2e...};
+  \node[block, right=1.2cm of b2] (b3) {\textbf{Bloc 3}\\Tx: ...\\Hash: d8b1...};
+
+  \draw[arrow] (b0) -- (b1) node[midway, above, font=\tiny, gray]{contient hash de b0};
+  \draw[arrow] (b1) -- (b2);
+  \draw[arrow] (b2) -- (b3);
+\end{tikzpicture}
+\end{center}
+
+\subsection{Pourquoi c'est sécurisé ?}
+
+Chaque bloc contient :
+\begin{itemize}
+  \item Des transactions (qui a envoyé quoi à qui)
+  \item Le \textbf{hash} (empreinte numérique) du bloc précédent
+  \item Son propre hash
+\end{itemize}
+
+Si tu modifies un bloc, son hash change → le bloc suivant devient invalide → toute la chaîne
+après est cassée. Et comme des milliers d'ordinateurs ont la même copie, ils verront
+immédiatement que tu as triché.
+
+\begin{attention}
+La blockchain n'est pas magique. Elle est sécurisée parce qu'il est \textbf{économiquement
+impossible} de contrôler plus de 50\% des ordinateurs du réseau en même temps.
+\end{attention}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Ethereum --- La blockchain programmable}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{definition}{Ethereum}
+Ethereum est une blockchain qui va plus loin que Bitcoin. En plus d'envoyer de l'argent,
+on peut y exécuter des \textbf{programmes} appelés smart contracts. Ces programmes
+tournent sur tous les ordinateurs du réseau en même temps.
+\end{definition}
+
+\subsection{Bitcoin vs Ethereum}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+  \toprule
+  \textbf{Aspect} & \textbf{Bitcoin} & \textbf{Ethereum} \\
+  \midrule
+  Usage principal & Envoyer de la monnaie & Monnaie + programmes \\
+  Langage & Script limité & Solidity (Turing-complet) \\
+  Monnaie native & BTC & ETH (Ether) \\
+  Création & 2009 & 2015 \\
+  Smart contracts & Non & Oui \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Les acteurs du réseau}
+
+\begin{itemize}
+  \item \textbf{Nœuds (nodes)} : ordinateurs qui stockent et valident la blockchain
+  \item \textbf{Validateurs} : nœuds qui proposent et confirment les nouveaux blocs
+  \item \textbf{Utilisateurs} : toi, moi --- on envoie des transactions
+  \item \textbf{Smart contracts} : programmes déployés sur la blockchain
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Les transactions}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{definition}{Transaction}
+Une transaction est un message signé envoyé à la blockchain. Elle peut :
+envoyer de l'ETH, appeler une fonction d'un smart contract, ou déployer un nouveau contrat.
+\end{definition}
+
+\subsection{Anatomie d'une transaction}
+
+\begin{center}
+\begin{tikzpicture}[
+  field/.style={draw, fill=suva_blue!8, minimum width=8cm, minimum height=0.7cm,
+                align=left, text width=7.5cm, font=\small}
+]
+  \node[field] (from) at (0,0) {\texttt{from}: 0xABC... (l'envoyeur)};
+  \node[field, below=0.05cm of from] (to) {\texttt{to}: 0xDEF... (le destinataire)};
+  \node[field, below=0.05cm of to] (value) {\texttt{value}: 0.1 ETH (montant)};
+  \node[field, below=0.05cm of value] (data) {\texttt{data}: 0x... (données / appel de fonction)};
+  \node[field, below=0.05cm of data] (gas) {\texttt{gasLimit}: 21000 (max gaz à utiliser)};
+  \node[field, below=0.05cm of gas] (sig) {\texttt{signature}: r, s, v (prouve que tu es bien l'envoyeur)};
+\end{tikzpicture}
+\end{center}
+
+\subsection{Le gas --- payer pour calculer}
+
+\begin{definition}{Gas}
+Le gas est l'unité qui mesure le travail de calcul sur Ethereum. Chaque opération coûte
+un certain nombre de gas. Tu paies ce gas en ETH. Si ton programme est trop long ou
+coûteux, la transaction échoue mais tu paies quand même le gas consommé.
+\end{definition}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lrr}
+  \toprule
+  \textbf{Opération} & \textbf{Gas} & \textbf{Commentaire} \\
+  \midrule
+  Transfert ETH simple & 21\,000 & Le minimum \\
+  Écrire dans le storage & 20\,000 & Très cher \\
+  Lire depuis le storage & 2\,100 & Moins cher \\
+  Addition (ADD) & 3 & Quasi gratuit \\
+  Vérification ECDSA & 3\,000 & Signature actuelle d'Ethereum \\
+  Vérification Dilithium & $\sim$6\,600\,000 & Post-quantique, cher \\
+  Vérification Falcon & $\sim$350\,000 & Post-quantique, acceptable \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\begin{exemple}{Calcul du coût réel}
+Gas utilisé : 21\,000\\
+Gas price : 10 gwei (1 gwei = $10^{-9}$ ETH)\\
+Coût : $21\,000 \times 10 \times 10^{-9}$ ETH $= 0.00021$ ETH $\approx$ \$0.50
+\end{exemple}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Adresses et clés sur Ethereum}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Comment fonctionne une adresse Ethereum}
+
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, fill=block_bg, align=center, font=\small,
+              minimum width=3.5cm, minimum height=1cm},
+  arrow/.style={-Stealth, thick}
+]
+  \node[box] (priv) {Clé privée\\(256 bits aléatoires)};
+  \node[box, right=1.5cm of priv] (pub) {Clé publique\\(courbe elliptique secp256k1)};
+  \node[box, right=1.5cm of pub] (addr) {Adresse\\0x + 20 derniers octets\\du Keccak(clé pub)};
+
+  \draw[arrow] (priv) -- (pub) node[midway, above, font=\tiny]{ECDSA};
+  \draw[arrow] (pub) -- (addr) node[midway, above, font=\tiny]{Keccak-256};
+\end{tikzpicture}
+\end{center}
+
+\begin{attention}
+La clé privée est \textbf{secrète}. Celui qui la possède contrôle tous les fonds.
+On ne peut pas retrouver la clé privée depuis l'adresse publique (sens unique).\\[0.2cm]
+\textbf{Problème quantique} : un ordinateur quantique peut retrouver la clé privée depuis
+la clé publique. C'est exactement ce que SuVa cherche à résoudre.
+\end{attention}
+
+\subsection{Signer une transaction}
+
+Quand tu envoies une transaction, tu la signes avec ta clé privée. Ethereum vérifie
+que la signature correspond à l'adresse \texttt{from}. C'est l'algorithme ECDSA.
+
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, fill=block_bg, align=center, font=\small,
+              minimum width=3cm, minimum height=1cm},
+  arrow/.style={-Stealth, thick, suva_blue}
+]
+  \node[box] (tx) {Transaction\\(non signée)};
+  \node[box, right=1.5cm of tx] (sign) {Signature\\ECDSA(clé privée, tx)};
+  \node[box, right=1.5cm of sign] (net) {Réseau Ethereum\\vérifie avec clé publique};
+
+  \draw[arrow] (tx) -- (sign);
+  \draw[arrow] (sign) -- (net);
+\end{tikzpicture}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Smart Contracts}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{definition}{Smart Contract}
+Un smart contract est un programme stocké sur la blockchain. Il s'exécute automatiquement
+quand on l'appelle. Ses règles sont publiques, son exécution est garantie. Personne
+--- même le créateur --- ne peut le modifier après déploiement (sauf s'il est upgradeable).
+\end{definition}
+
+\subsection{Analogie : distributeur automatique}
+
+Un distributeur de billets :
+\begin{itemize}
+  \item Tu insères ta carte (= tu envoies une transaction)
+  \item Tu entres ton code (= tu signes)
+  \item La machine vérifie (= le contrat vérifie)
+  \item Elle te donne l'argent (= le contrat exécute)
+\end{itemize}
+Pas besoin de banquier humain. Le programme fait tout.
+
+\subsection{Premier smart contract en Solidity}
+
+\begin{lstlisting}[style=solidity, caption={Coffre-fort simple --- Vault.sol}]
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.25;
+
+contract SimpleVault {
+    // owner = adresse qui a deploye le contrat
+    address public owner;
+
+    // Les fonds sont stockes dans le contrat lui-meme
+    constructor() {
+        owner = msg.sender; // msg.sender = celui qui deploie
+    }
+
+    // Deposer de l'ETH dans le coffre
+    function deposit() external payable {
+        // payable = cette fonction peut recevoir de l'ETH
+        // msg.value = montant envoye
+    }
+
+    // Retirer ses fonds
+    function withdraw(uint256 amount) external {
+        require(msg.sender == owner, "Pas le proprietaire");
+        require(address(this).balance >= amount, "Fonds insuffisants");
+
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "Transfert echoue");
+    }
+
+    // Voir le solde du coffre
+    function getBalance() external view returns (uint256) {
+        return address(this).balance;
+    }
+}
+\end{lstlisting}
+
+\subsection{Les concepts Solidity essentiels}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lp{9cm}}
+  \toprule
+  \textbf{Concept} & \textbf{Explication} \\
+  \midrule
+  \texttt{msg.sender} & Adresse qui appelle la fonction \\
+  \texttt{msg.value} & Montant ETH envoyé avec la transaction \\
+  \texttt{storage} & Variables stockées sur la blockchain (cher) \\
+  \texttt{memory} & Variables temporaires dans la transaction (moins cher) \\
+  \texttt{require()} & Si faux → la transaction échoue et est annulée \\
+  \texttt{event} & Log enregistré sur la blockchain (pas dans le storage) \\
+  \texttt{mapping} & Dictionnaire clé → valeur (ex: adresse → solde) \\
+  \texttt{payable} & Fonction qui peut recevoir de l'ETH \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{ERC-20 --- Les tokens}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{definition}{Token ERC-20}
+Un token ERC-20 est un smart contract qui simule une monnaie. USDT, USDC, et même
+des tokens SuVa (qUSDT) sont des ERC-20. Le standard définit les fonctions minimales
+que tout token doit implémenter.
+\end{definition}
+
+\begin{lstlisting}[style=solidity, caption={Interface ERC-20 minimale}]
+interface IERC20 {
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address to, uint256 amount) external returns (bool);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address from, address to, uint256 amount)
+        external returns (bool);
+}
+\end{lstlisting}
+
+\subsection{Lien avec SuVa}
+
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, fill=block_bg, align=center, font=\small,
+              minimum width=3cm, minimum height=1cm},
+  arrow/.style={-Stealth, thick, suva_blue}
+]
+  \node[box] (usdt) {USDT\\\textit{(ERC-20 standard)}};
+  \node[box, right=2cm of usdt] (vault) {QuantumVault.sol\\\textit{(smart contract SuVa)}};
+  \node[box, right=2cm of vault] (qusdt) {qUSDT\\\textit{(ERC-20 SuVa)}};
+
+  \draw[arrow] (usdt) -- (vault) node[midway, above, font=\tiny]{deposit()};
+  \draw[arrow] (vault) -- (qusdt) node[midway, above, font=\tiny]{mint()};
+  \draw[arrow] (qusdt) to[bend right=30] node[midway, below, font=\tiny]{burn() + withdraw()} (usdt);
+\end{tikzpicture}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Foundry --- Tester des smart contracts}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{definition}{Foundry}
+Foundry est le framework de développement Solidity utilisé dans ce projet. Il permet de
+compiler, tester, et déployer des contrats. Les tests sont écrits en Solidity (pas en
+JavaScript comme avec Hardhat).
+\end{definition}
+
+\subsection{Structure d'un projet Foundry}
+
+\begin{lstlisting}[style=bash]
+mon_projet/
+|-- src/          # Contrats Solidity
+|-- test/         # Tests Solidity
+|-- lib/          # Dependances (forge-std, openzeppelin...)
+|-- foundry.toml  # Configuration
+\end{lstlisting}
+
+\subsection{Écrire un test Foundry}
+
+\begin{lstlisting}[style=solidity, caption={Test du SimpleVault}]
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.25;
+
+import "forge-std/Test.sol";
+import "../src/SimpleVault.sol";
+
+contract SimpleVaultTest is Test {
+
+    SimpleVault vault;
+    address alice = address(0x1);
+
+    function setUp() public {
+        // Donner de l'ETH a alice (dans le contexte de test)
+        vm.deal(alice, 10 ether);
+
+        // Deployer le vault avec alice comme proprietaire
+        vm.prank(alice);
+        vault = new SimpleVault();
+    }
+
+    function test_deposit() public {
+        // Alice depose 1 ETH
+        vm.prank(alice);
+        vault.deposit{value: 1 ether}();
+
+        // Verifier que le solde est correct
+        assertEq(vault.getBalance(), 1 ether);
+    }
+
+    function test_withdraw() public {
+        // Setup : alice depose
+        vm.startPrank(alice);
+        vault.deposit{value: 2 ether}();
+
+        // Alice retire 1 ETH
+        vault.withdraw(1 ether);
+        vm.stopPrank();
+
+        assertEq(vault.getBalance(), 1 ether);
+    }
+
+    function test_withdraw_unauthorized() public {
+        address attacker = address(0x2);
+        vm.prank(attacker);
+
+        // Doit echouer car attacker n'est pas owner
+        vm.expectRevert("Pas le proprietaire");
+        vault.withdraw(1 ether);
+    }
+}
+\end{lstlisting}
+
+\subsection{Commandes Foundry essentielles}
+
+\begin{lstlisting}[style=bash]
+forge build                    # Compiler les contrats
+forge test                     # Lancer tous les tests
+forge test -vv                 # Mode verbose (voir les logs)
+forge test --match-test test_deposit  # Tester une seule fonction
+forge test --gas-report        # Rapport de consommation gas
+anvil                          # Lancer un node Ethereum local
+forge script deploy.s.sol      # Executer un script de deploiement
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Exercices pratiques}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{pratique}{B1 --- Comprendre les transactions}
+Lis une transaction réelle sur Ethereum:
+\begin{enumerate}
+  \item Va sur \texttt{etherscan.io}
+  \item Cherche n'importe quelle adresse (ex: Vitalik: \texttt{0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045})
+  \item Clique sur une transaction
+  \item Identifie : \texttt{from}, \texttt{to}, \texttt{value}, \texttt{gas used}, \texttt{gas price}
+  \item Calcule le coût en ETH et en USD
+\end{enumerate}
+\end{pratique}
+
+\begin{pratique}{B2 --- Déployer SimpleVault avec Foundry}
+\begin{lstlisting}[style=bash]
+# 1. Creer le projet
+mkdir my_vault && cd my_vault
+forge init
+
+# 2. Copier SimpleVault.sol dans src/
+# 3. Copier le test dans test/
+
+# 4. Compiler et tester
+forge build
+forge test -vv
+
+# 5. Lancer anvil (node local)
+anvil
+
+# 6. Deployer sur le node local
+forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast
+\end{lstlisting}
+\end{pratique}
+
+\begin{pratique}{B3 --- Mesurer le gas}
+\begin{lstlisting}[style=bash]
+# Voir exactement combien de gas chaque fonction consomme
+forge test --gas-report
+
+# Tu verras quelque chose comme:
+# | Function   | min   | avg   | max   | # calls |
+# | deposit    | 21000 | 21000 | 21000 | 3       |
+# | withdraw   | 25000 | 25000 | 25000 | 2       |
+\end{lstlisting}
+Essaie d'ajouter une ligne \texttt{emit Deposit(msg.sender, msg.value);} dans
+\texttt{deposit()} et vois comment le gas change.
+\end{pratique}
+
+\begin{pratique}{B4 --- Lire le code ETHDILITHIUM (Phase 1 SuVa)}
+\begin{lstlisting}[style=bash]
+cd falcon_dilithium/ETHDILITHIUM-main
+
+# 1. Lancer les tests Solidity
+forge test -vv
+
+# 2. Voir le rapport gas
+forge test --gas-report
+
+# 3. Lancer les tests Python
+cd python-ref
+make test_signer
+\end{lstlisting}
+Questions à noter pendant la lecture :
+\begin{itemize}
+  \item Combien de gas pour \texttt{ZKNOX\_ethdilithium} sur ta machine ?
+  \item Est-ce que tous les tests passent ?
+  \item Quelle est la différence de gas entre Dilithium et ETHDilithium ?
+\end{itemize}
+\end{pratique}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Le lien avec SuVa}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Pourquoi la blockchain pose un problème de sécurité quantique}
+
+Ethereum utilise ECDSA pour signer les transactions. La sécurité d'ECDSA repose sur la
+difficulté de résoudre le \textit{problème du logarithme discret sur courbe elliptique}.
+Un ordinateur quantique avec l'algorithme de Shor peut résoudre ce problème en temps
+polynomial → toutes les signatures ECDSA peuvent être forgées.
+
+\subsection{Ce que SuVa construit concrètement}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+  \toprule
+  \textbf{Composant} & \textbf{Fichier} & \textbf{Phase} \\
+  \midrule
+  Vérificateur Dilithium & \texttt{ZKNOX\_ethdilithium.sol} & Fait \\
+  Signing Python & \texttt{Falcon\_dilithium\_eth.py} & Fait \\
+  Vérificateur Falcon & À intégrer depuis ETHFALCON & Phase 2 \\
+  Vault contract (qUSDT) & \texttt{QuantumVault.sol} (à créer) & Phase 3 \\
+  Wallet ERC-4337 & \texttt{SuVaWallet.sol} (à créer) & Phase 4 \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Résumé de ce que tu dois savoir faire}
+
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue]
+\begin{enumerate}
+  \item \textbf{Lire} un smart contract Solidity et comprendre ce qu'il fait
+  \item \textbf{Écrire} des fonctions \texttt{deposit()}, \texttt{withdraw()}, \texttt{verify()}
+  \item \textbf{Tester} avec Foundry (\texttt{forge test})
+  \item \textbf{Mesurer} le gas de chaque fonction
+  \item \textbf{Déployer} sur un testnet (Sepolia)
+  \item \textbf{Lier} le code Python (signing) avec le Solidity (verification)
+\end{enumerate}
+\end{tcolorbox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section*{Glossaire rapide}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lp{10cm}}
+  \toprule
+  \textbf{Terme} & \textbf{Définition simple} \\
+  \midrule
+  Block & Paquet de transactions validées ensemble \\
+  Hash & Empreinte numérique unique d'une donnée \\
+  Gas & Unité de mesure du calcul sur Ethereum \\
+  Gwei & $10^{-9}$ ETH, unité du gas price \\
+  EOA & Externally Owned Account --- un wallet classique \\
+  Smart Contract & Programme déployé sur la blockchain \\
+  ABI & Application Binary Interface --- décrit les fonctions d'un contrat \\
+  Testnet & Réseau de test (Sepolia) --- ETH gratuit, pas de valeur réelle \\
+  Mainnet & Réseau principal --- ETH a une valeur réelle \\
+  Etherscan & Explorateur de la blockchain Ethereum \\
+  Foundry & Framework de dev Solidity (forge, cast, anvil) \\
+  Anvil & Node Ethereum local pour tester \\
+  ERC-20 & Standard pour les tokens fongibles \\
+  ERC-4337 & Standard pour les smart contract wallets \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{1cm}
+
+% ─────────────────────────────────────────────────────────────────────
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40,
+  left=6pt, right=6pt, top=4pt, bottom=4pt]
+\small\begin{tabular}{ll}
+  \textbf{Auteur} & Mohamed Lamine MBENGUE \\
+  \textbf{Spécialités} & Sécurité · DevOps · Dev Full Stack Web \& Mobile \\
+  \textbf{Contact} & +221 78 178 44 36 · mbenguemohamedlamine2022@gmail.com \\
+  \textbf{Portfolio} & \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}} \\
+\end{tabular}
+\end{tcolorbox}
+
+\end{document}

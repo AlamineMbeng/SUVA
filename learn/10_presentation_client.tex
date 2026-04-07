@@ -1,0 +1,621 @@
+\documentclass[aspectratio=169, 12pt]{beamer}
+
+% ── Thème et couleurs ────────────────────────────────────────────────
+\usetheme{Madrid}
+\usecolortheme{default}
+\setbeamercolor{palette primary}{bg=suva_blue, fg=white}
+\setbeamercolor{palette secondary}{bg=suva_mid, fg=white}
+\setbeamercolor{palette tertiary}{bg=suva_dark, fg=white}
+\setbeamercolor{palette quaternary}{bg=suva_dark, fg=white}
+\setbeamercolor{structure}{fg=suva_blue}
+\setbeamercolor{section in toc}{fg=suva_dark}
+\setbeamercolor{block title}{bg=suva_blue, fg=white}
+\setbeamercolor{block body}{bg=suva_blue!8}
+\setbeamercolor{alerted text}{fg=danger_red}
+\setbeamercolor{example text}{fg=done_green}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{
+  \leavevmode
+  \hbox{%
+    \begin{beamercolorbox}[wd=.33\paperwidth, ht=2.5ex, dp=1.125ex, left]{palette primary}%
+      \hspace{1em}\insertshortauthor
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.34\paperwidth, ht=2.5ex, dp=1.125ex, center]{palette secondary}%
+      \insertshorttitle
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.33\paperwidth, ht=2.5ex, dp=1.125ex, right]{palette primary}%
+      \insertframenumber{} / \inserttotalframenumber\hspace{1em}
+    \end{beamercolorbox}}%
+}
+
+% ── Packages ─────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+\usepackage{fontawesome5}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{colortbl}
+\usepackage{array}
+
+% ── Définitions couleurs ──────────────────────────────────────────────
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{suva_mid}{RGB}{50, 130, 200}
+\definecolor{suva_dark}{RGB}{20, 70, 130}
+\definecolor{done_green}{RGB}{34, 139, 34}
+\definecolor{done_bg}{RGB}{230, 255, 230}
+\definecolor{danger_red}{RGB}{180, 30, 30}
+\definecolor{warn_orange}{RGB}{200, 100, 0}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{gray_light}{RGB}{245, 245, 245}
+
+% ── Notes speaker ─────────────────────────────────────────────────────
+\setbeamertemplate{note page}{
+  \vspace{0.5cm}
+  {\color{suva_dark}\bfseries\large Ce que je dis :}\\[0.3cm]
+  \insertnote
+}
+
+% ── Métadonnées ───────────────────────────────────────────────────────
+\title[SuVa Protocol]{SuVa Protocol}
+\subtitle{État d'avancement \& Prochaines étapes}
+\author[M.L. MBENGUE]{Mohamed Lamine MBENGUE\\
+  {\small Sécurité · DevOps · Dev Full Stack Web \& Mobile}\\
+  {\footnotesize\texttt{mbenguemohamedlamine2022@gmail.com}}}
+\date{Mars 2026}
+\institute{\href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}}}
+
+% ═════════════════════════════════════════════════════════════════════
+\begin{document}
+% ═════════════════════════════════════════════════════════════════════
+
+% ── SLIDE 1 : Titre ───────────────────────────────────────────────────
+{
+\setbeamercolor{background canvas}{bg=suva_dark}
+\setbeamercolor{title}{fg=white}
+\setbeamercolor{subtitle}{fg=suva_mid!60!white}
+\setbeamercolor{author}{fg=white!90}
+\setbeamercolor{date}{fg=white!70}
+\setbeamercolor{institute}{fg=white!70}
+\begin{frame}[plain]
+  \vspace{1cm}
+  \begin{center}
+    {\color{white}\rule{0.6\textwidth}{1.5pt}}\\[0.5cm]
+    {\color{white}\fontsize{28}{34}\selectfont\bfseries SuVa Protocol}\\[0.3cm]
+    {\color{suva_mid!80!white}\large État d'avancement \& Prochaines étapes}\\[0.8cm]
+    {\color{white}\rule{0.6\textwidth}{0.5pt}}\\[0.6cm]
+    {\color{white!90}\normalsize Mohamed Lamine MBENGUE}\\
+    {\color{white!70}\small Sécurité · DevOps · Dev Full Stack}\\[0.3cm]
+    {\color{white!60}\footnotesize Mars 2026}
+  \end{center}
+
+  \note{
+    \textit{Good morning / Good afternoon --- thanks for your time.}\\[0.2cm]
+    Je m'appelle Mohamed Lamine MBENGUE, développeur spécialisé en sécurité et DevOps.
+    Aujourd'hui je vais vous présenter l'état d'avancement du projet SuVa ---
+    ce qui a été accompli, ce qui reste, et les questions clés pour la suite.\\[0.2cm]
+    \textit{This should take about 10 to 15 minutes, then we'll have time for Q\&A.}
+  }
+\end{frame}
+}
+
+% ── SLIDE 2 : Agenda ──────────────────────────────────────────────────
+\begin{frame}{Plan de la présentation}
+
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \begin{tcolorbox}[colback=suva_blue!6, colframe=suva_blue!40,
+        title={\bfseries Au programme}, fonttitle=\color{suva_dark}]
+        \begin{enumerate}
+          \item[\faCheckCircle] Qu'est-ce que SuVa ?
+          \item[\faCheckCircle] Ce qui est \textbf{déjà fait}
+          \item[\faArrowCircleRight] Ce qui \textbf{reste à faire}
+          \item[\faCalendar] Feuille de route
+          \item[\faQuestion] Questions \& échanges
+        \end{enumerate}
+      \end{tcolorbox}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \begin{tcolorbox}[colback=done_bg, colframe=done_green,
+        title={\bfseries\color{done_green} Avancement global}]
+        \begin{center}
+          \begin{tikzpicture}
+            \fill[done_bg, draw=done_green, rounded corners] (0,0) rectangle (4*5/12, 0.5);
+            \fill[gray!20, draw=gray!40, rounded corners] (4*5/12, 0) rectangle (4, 0.5);
+            \node[font=\small\bfseries] at (2, 0.25) {5 / 12 composants};
+          \end{tikzpicture}\\[0.2cm]
+          {\color{done_green}\bfseries\Large 41\%} terminé
+        \end{center}
+      \end{tcolorbox}
+    \end{column}
+  \end{columns}
+
+  \note{
+    \textit{Quick overview of what we'll cover.}\\[0.2cm]
+    On commence par rappeler ce qu'est SuVa --- \textit{making sure we're all on the same page}.
+    Ensuite je vous montre ce qui est fonctionnel aujourd'hui.
+    Puis les prochaines étapes prioritaires.
+    Et on termine sur les questions que j'ai pour vous --- \textit{your answers will shape the next phase.}
+  }
+\end{frame}
+
+% ── SLIDE 3 : Vision ──────────────────────────────────────────────────
+\begin{frame}[shrink=8]{Qu'est-ce que SuVa ?}
+
+  \begin{tcolorbox}[colback=suva_blue!8, colframe=suva_blue,
+    title={\bfseries SuVa (Super Value) Protocol}, fonttitle=\color{white},
+    top=3pt, bottom=3pt]
+    \small Un \textbf{stablecoin quantique-résistant} pour blockchains Ethereum.\\
+    Les ordinateurs quantiques menacent ECDSA (la signature actuelle d'Ethereum).
+    SuVa remplace ECDSA par des signatures \textbf{post-quantiques standardisées par le NIST}.
+  \end{tcolorbox}
+
+  \vspace{0.2cm}
+
+  \begin{columns}[T]
+    \begin{column}{0.31\textwidth}
+      \begin{tcolorbox}[colback=gray_light, colframe=suva_blue!40, height=3cm]
+        \centering
+        {\color{suva_blue}\Large\faShieldAlt}\\[0.15cm]
+        \textbf{Sécurité PQ}\\[0.05cm]
+        {\small Dilithium \& Falcon\\(NIST FIPS 204/206)}
+      \end{tcolorbox}
+    \end{column}
+    \begin{column}{0.31\textwidth}
+      \begin{tcolorbox}[colback=gray_light, colframe=suva_blue!40, height=3cm]
+        \centering
+        {\color{suva_blue}\Large\faExchangeAlt}\\[0.15cm]
+        \textbf{Wrapping 1:1}\\[0.05cm]
+        {\small USDT $\to$ sUSDT\\USDC $\to$ sUSDC}
+      \end{tcolorbox}
+    \end{column}
+    \begin{column}{0.31\textwidth}
+      \begin{tcolorbox}[colback=gray_light, colframe=suva_blue!40, height=3cm]
+        \centering
+        {\color{suva_blue}\Large\faEthereum}\\[0.15cm]
+        \textbf{EVM Ready}\\[0.05cm]
+        {\small Ethereum, L2\\ERC-4337 ready}
+      \end{tcolorbox}
+    \end{column}
+  \end{columns}
+
+  \note{
+    \textit{So, the big picture first.}\\[0.2cm]
+    SuVa, c'est simple à expliquer en une phrase : c'est un stablecoin qui survivra à l'ère quantique.\\[0.2cm]
+    Aujourd'hui, quand vous envoyez des fonds sur Ethereum, vous signez avec ECDSA.
+    Un ordinateur quantique suffisamment puissant pourra casser ECDSA ---
+    \textit{experts estimate within 10 to 20 years}.\\[0.2cm]
+    SuVa remplace ECDSA par Dilithium ou Falcon, les nouveaux standards officiels du NIST 2024.\\[0.2cm]
+    \textit{Bottom line :} vous déposez vos USDT dans SuVa, vous recevez des sUSDT sécurisés.
+    Chaque retrait ou transfert nécessite une signature post-quantique.
+  }
+\end{frame}
+
+% ── SLIDE 4 : Architecture ────────────────────────────────────────────
+\begin{frame}{Architecture du système}
+
+  \begin{center}
+  \begin{tikzpicture}[
+    node distance=1.6cm,
+    box/.style={draw, rounded corners, minimum width=2.8cm, minimum height=1cm,
+                align=center, font=\small\bfseries},
+    arrow/.style={-Stealth, thick, suva_blue},
+    label_style/.style={font=\tiny, color=gray},
+  ]
+    \node[box, fill=done_bg, draw=done_green] (user) {\faUser\\Utilisateur};
+    \node[box, fill=suva_blue!15, draw=suva_blue, right=1.8cm of user] (python)
+      {\faPython\\Python off-chain\\{\tiny keygen + sign}};
+    \node[box, fill=suva_blue!15, draw=suva_blue, right=1.8cm of python] (sol)
+      {\faFileCode\\Solidity on-chain\\{\tiny verify + vault}};
+    \node[box, fill=gray!15, draw=gray!60, above=1.2cm of python] (sdk)
+      {\faCode\\SDK\\{\tiny (à venir)}};
+    \node[box, fill=warn_bg, draw=warn_orange, below=1.2cm of sol] (vault)
+      {\faLock\\Vault Contract\\{\tiny sUSDT/sUSDC}};
+
+    \draw[arrow] (user) -- (python) node[midway, above, label_style] {demande};
+    \draw[arrow] (python) -- (sol) node[midway, above, label_style] {sig hex};
+    \draw[arrow] (sol) -- (vault) node[midway, right, label_style] {si valide};
+    \draw[arrow, dashed, gray] (sdk) -- (python);
+    \draw[arrow, dashed, gray] (sdk) -- (sol);
+
+    % Légende
+    \node[font=\tiny, done_green] at (0, -1.8) {\faCheckCircle\ Fait};
+    \node[font=\tiny, warn_orange] at (1.5, -1.8) {\faTools\ À faire};
+    \node[font=\tiny, gray] at (3, -1.8) {- - - Futur};
+  \end{tikzpicture}
+  \end{center}
+
+  \note{
+    \textit{Here's how the system works, end to end.}\\[0.2cm]
+    L'utilisateur utilise le SDK pour générer ses clés et signer --- \textit{all off-chain, on his device, free.}\\[0.2cm]
+    La signature est envoyée au contrat Solidity sur Ethereum qui vérifie.
+    \textit{If valid}, le vault libère les fonds.\\[0.2cm]
+    En vert : déjà fait. En orange : \textit{work in progress.}
+  }
+\end{frame}
+
+% ── SLIDE 5 : Ce qui est fait ─────────────────────────────────────────
+\begin{frame}[shrink=10]{Ce qui est \textcolor{done_green}{déjà fait} \faCheckCircle}
+
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{\faCode\ Couche Python (off-chain)}
+        \small
+        \begin{itemize}\setlength\itemsep{1pt}
+          \item[\checkmark] Keygen, Sign, Verify
+          \item[\checkmark] Dilithium2 / 3 / 5 (NIST)
+          \item[\checkmark] ETHDilithium (variante Keccak)
+          \item[\checkmark] Tests KAT officiels NIST \textcolor{done_green}{\bfseries 4/4}
+        \end{itemize}
+      \end{block}
+      \vspace{0.15cm}
+      \begin{block}{\faEthereum\ Solidity (on-chain)}
+        \small
+        \begin{itemize}\setlength\itemsep{1pt}
+          \item[\checkmark] Vérificateur Dilithium2
+          \item[\checkmark] NTT optimisée (Yul)
+          \item[\checkmark] PRNG Keccak compatible
+          \item[\checkmark] Tests croisés Python$\leftrightarrow$Solidity
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{tcolorbox}[colback=done_bg, colframe=done_green,
+        title={\bfseries\color{done_green} Chiffres clés},
+        top=3pt, bottom=3pt]
+        \renewcommand{\arraystretch}{1.2}
+        \small
+        \begin{tabular}{lr}
+          \textbf{Tests qui passent} & \textcolor{done_green}{\bfseries 4/4} \\
+          \textbf{Gas Dilithium2} & $\sim$13.5M \\
+          \textbf{Gas ETHDilithium} & $\sim$6.6M \\
+          \textbf{Sig. Dilithium2} & 2\,420 oct. \\
+          \textbf{Standard} & NIST FIPS 204 \\
+        \end{tabular}
+      \end{tcolorbox}
+      \vspace{0.15cm}
+      \begin{tcolorbox}[colback=warn_bg, colframe=warn_orange,
+        title={\bfseries Problème : le gas},
+        top=3pt, bottom=3pt]
+        {\small 6.6M gas = \textbf{100x trop cher} vs ECDSA (3\,000 gas).\\
+        La solution : \textbf{Falcon}.}
+      \end{tcolorbox}
+    \end{column}
+  \end{columns}
+
+  \note{
+    \textit{Let me walk you through what's already done.}\\[0.2cm]
+    Du côté Python : Dilithium tourne correctement, keygen, sign, verify.
+    On a validé avec les vecteurs officiels du NIST --- \textit{all 4 tests pass}.\\[0.2cm]
+    Du côté Solidity : le vérificateur est opérationnel sur l'EVM.
+    Il y a une optimisation en assembleur Yul pour réduire le gas.\\[0.2cm]
+    \textit{But here's the catch} --- 6.6 millions de gas c'est 100 fois trop cher pour un usage réel.
+    ECDSA coûte 3000 gas. Falcon coûterait 350 000 gas.
+    C'est pour ça que Falcon est la \textit{top priority}.
+  }
+\end{frame}
+
+% ── SLIDE 6 : Comparaison Dilithium vs Falcon ─────────────────────────
+\begin{frame}[shrink=8]{Pourquoi passer à Falcon ? \faArrowRight\ 40x moins cher}
+
+  \begin{center}
+  \renewcommand{\arraystretch}{1.25}
+  \small
+  \begin{tabular}{lccccc}
+    \toprule
+    \textbf{Schéma} & \textbf{Gas verify} & \textbf{vs ECDSA} & \textbf{Signature} & \textbf{Standard} & \textbf{Statut} \\
+    \midrule
+    ECDSA (actuel) & 3\,000 & $\times$1 & 65 oct. & --- & \textcolor{danger_red}{Vulnérable PQ} \\
+    Dilithium2 & $\sim$13.5M & $\times$4\,500 & 2\,420 oct. & FIPS 204 & \textcolor{done_green}{\checkmark Fait} \\
+    ETHDilithium & $\sim$6.6M & $\times$2\,200 & 2\,420 oct. & --- & \textcolor{done_green}{\checkmark Fait} \\
+    \rowcolor{done_bg}
+    \textbf{Falcon-512} & $\sim$\textbf{350K} & $\times$\textbf{117} & \textbf{666 oct.} & \textbf{FIPS 206} & \textcolor{warn_orange}{\bfseries Priorité \#1} \\
+    SPHINCS+ & 50--500M & $\times$166K+ & 8--50 Ko & FIPS 205 & \textcolor{gray}{Plus tard} \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \vspace{0.15cm}
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \begin{tcolorbox}[colback=done_bg, colframe=done_green]
+        \centering
+        {\large\bfseries\color{done_green} Falcon-512}\\
+        350K gas · 666 octets\\
+        {\small Réduction de \textbf{95\%} vs ETHDilithium}
+      \end{tcolorbox}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{tcolorbox}[colback=suva_blue!8, colframe=suva_blue]
+        \centering
+        ZKNox a déjà une implémentation\\
+        \textbf{ETHFALCON} disponible\\
+        {\small github.com/ZKNox/ETHFALCON}
+      \end{tcolorbox}
+    \end{column}
+  \end{columns}
+
+  \note{
+    \textit{This table tells the whole story.}\\[0.2cm]
+    ECDSA : 3000 gas, la référence. Mais vulnérable aux ordinateurs quantiques.\\[0.2cm]
+    Dilithium : ça marche, mais 6.6 millions de gas c'est vraiment trop cher
+    pour chaque transaction. \textit{Not production-ready.}\\[0.2cm]
+    Falcon, c'est la cible : 350 000 gas, \textit{that's 40x cheaper} que ETHDilithium.
+    La signature est aussi plus petite : 666 octets contre 2420.\\[0.2cm]
+    \textit{Good news} : ZKNox a déjà une implémentation Falcon pour l'EVM --- ETHFALCON.
+    \textit{We don't start from scratch.} Notre travail : intégrer ça dans SuVa.
+  }
+\end{frame}
+
+% ── SLIDE 7 : Prochaines étapes ───────────────────────────────────────
+\begin{frame}[shrink=15]{Ce qui reste à faire --- Priorités}
+
+  \begin{tcolorbox}[colback=danger_red!8, colframe=danger_red,
+    title={\bfseries\color{white} \faExclamationTriangle\ Priorité \#1 : Intégration Falcon (ETHFALCON)},
+    fonttitle=\color{white}, top=3pt, bottom=3pt]
+    \small
+    \begin{enumerate}\setlength\itemsep{1pt}
+      \item Étudier et adapter les contrats ETHFALCON de ZKNox
+      \item Implémenter le signing Falcon en Python (off-chain)
+      \item Tests croisés Python $\to$ Solidity
+      \item Intégrer dans le vault SuVa
+    \end{enumerate}
+  \end{tcolorbox}
+
+  \vspace{0.15cm}
+
+  \begin{columns}[T]
+    \begin{column}{0.31\textwidth}
+      \begin{tcolorbox}[colback=warn_bg, colframe=warn_orange,
+        title={\bfseries\small Priorité \#2}, top=2pt, bottom=2pt]
+        {\small \faLock\ \textbf{Vault Contract}\\
+        Wrap USDT $\to$ sUSDT\\
+        Deposit / Withdraw}
+      \end{tcolorbox}
+    \end{column}
+    \begin{column}{0.31\textwidth}
+      \begin{tcolorbox}[colback=warn_bg, colframe=warn_orange,
+        title={\bfseries\small Priorité \#2}, top=2pt, bottom=2pt]
+        {\small \faWallet\ \textbf{ERC-4337 Wallet}\\
+        Smart wallet PQ\\
+        Replaces ECDSA}
+      \end{tcolorbox}
+    \end{column}
+    \begin{column}{0.31\textwidth}
+      \begin{tcolorbox}[colback=gray!10, colframe=gray!50,
+        title={\bfseries\small Priorité \#3}, top=2pt, bottom=2pt]
+        {\small \faCode\ \textbf{SDK + Audit}\\
+        Python \& JS SDK\\
+        Security audit}
+      \end{tcolorbox}
+    \end{column}
+  \end{columns}
+
+  \note{
+    \textit{Here's the roadmap for what's next.}\\[0.2cm]
+    La priorité absolue c'est Falcon. C'est le \textit{blocker} pour tout le reste.
+    Sans un coût gas acceptable, pas de déploiement en production.\\[0.2cm]
+    Ensuite le Vault Contract --- le cœur financier du produit, \textit{where the money lives}.\\[0.2cm]
+    Le wallet ERC-4337 permet aux utilisateurs d'utiliser une signature post-quantique
+    sans modifier le protocole Ethereum. \textit{That's the beauty of account abstraction.}\\[0.2cm]
+    Et enfin le SDK et l'audit de sécurité avant le \textit{mainnet launch}.
+  }
+\end{frame}
+
+% ── SLIDE 8 : Roadmap ─────────────────────────────────────────────────
+\begin{frame}[shrink=8]{Feuille de route --- Planning estimé}
+
+  \begin{center}
+  \begin{tikzpicture}[x=2.2cm, y=1.1cm]
+    % Axe
+    \draw[-Stealth, thick, suva_blue] (-0.2, 0) -- (5.2, 0);
+
+    % Phase 1 : FAIT
+    \fill[done_bg, draw=done_green, rounded corners] (0, 0.2) rectangle (1.6, 0.9);
+    \node[font=\small\bfseries, color=done_green] at (0.8, 0.62) {Phase 1 \checkmark};
+    \node[font=\tiny, color=done_green] at (0.8, 0.33) {Dilithium + NTT};
+
+    % Phase 2 : EN COURS / PRIORITÉ
+    \fill[warn_bg, draw=warn_orange, rounded corners] (1.6, 0.2) rectangle (3, 0.9);
+    \node[font=\small\bfseries, color=warn_orange] at (2.3, 0.62) {Phase 2};
+    \node[font=\tiny, color=warn_orange] at (2.3, 0.33) {Falcon (8--10 sem.)};
+
+    % Phase 3
+    \fill[gray!10, draw=gray!50, rounded corners] (3, 0.2) rectangle (4.1, 0.9);
+    \node[font=\small\bfseries, color=gray!70] at (3.55, 0.62) {Phase 3};
+    \node[font=\tiny, color=gray] at (3.55, 0.33) {Vault + ERC-4337};
+
+    % Phase 4
+    \fill[gray!10, draw=gray!50, rounded corners] (4.1, 0.2) rectangle (5, 0.9);
+    \node[font=\small\bfseries, color=gray!70] at (4.55, 0.62) {Phase 4};
+    \node[font=\tiny, color=gray] at (4.55, 0.33) {SDK + Audit};
+
+    % Marqueurs temps
+    \foreach \x/\label in {0/Déc 2024, 1.6/Mars 2026, 3/Juin 2026, 4.1/Sept 2026, 5/Nov 2026} {
+      \draw (\x, -0.1) -- (\x, 0.1);
+      \node[below, font=\tiny, rotate=15] at (\x, -0.12) {\label};
+    }
+
+    % Indicateur "Vous êtes ici"
+    \draw[danger_red, very thick, -Stealth] (1.6, 1.3) -- (1.6, 0.95);
+    \node[font=\tiny\bfseries, color=danger_red] at (1.6, 1.42) {Nous sommes ici};
+  \end{tikzpicture}
+  \end{center}
+
+  \vspace{0.05cm}
+  \small\renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{clp{7cm}c}
+    \toprule
+    \textbf{Phase} & \textbf{Contenu} & \textbf{Key deliverables} & \textbf{Durée} \\
+    \midrule
+    \rowcolor{done_bg}
+    1 & Fondations & NTT, Dilithium Python + Solidity, Tests KAT & Fait \\
+    \rowcolor{warn_bg}
+    2 & \textbf{Falcon} & ETHFALCON adapté, Python signing, Tests croisés & 8--10 sem. \\
+    3 & Vault + 4337 & Vault Contract, ERC-4337 Smart Wallet & 8--12 sem. \\
+    4 & SDK + Audit & SDK Python/JS, Security audit, Mainnet deploy & 8 sem. \\
+    \bottomrule
+  \end{tabular}
+
+  \note{
+    \textit{Here's the timeline I consider realistic.}\\[0.2cm]
+    La phase 1 est terminée. \textit{We are right here} --- début de la phase Falcon.\\[0.2cm]
+    \textit{If we start now}, Falcon opérationnel vers juin 2026.
+    Ensuite 3 mois pour le vault et le wallet ERC-4337.
+    Et fin 2026, \textit{mainnet deployment} après audit.\\[0.2cm]
+    Ce sont des estimations --- elles dépendent de vos réponses et des ressources disponibles.
+    \textit{Flexible, but realistic.}
+  }
+\end{frame}
+
+% ── SLIDE 9 : Questions ───────────────────────────────────────────────
+\begin{frame}[shrink=8]{Questions pour avancer}
+
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{\faCog\ Architecture}
+        \small\begin{itemize}\setlength\itemsep{1pt}
+          \item Falcon seul, ou Dilithium + Falcon en parallèle ?
+          \item Vault upgradeable (proxy) ou immutable ?
+          \item Cible réseau : Ethereum mainnet ou L2 d'abord ?
+        \end{itemize}
+      \end{block}
+      \vspace{0.1cm}
+      \begin{block}{\faShieldAlt\ Sécurité}
+        \small\begin{itemize}\setlength\itemsep{1pt}
+          \item ETHFALCON utilisé tel quel ou modifié ?
+          \item Mécanisme de récupération si clé PQ perdue ?
+          \item Audit prévu, et par qui ?
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{\faGasPump\ Gas \& Budget}
+        \small\begin{itemize}\setlength\itemsep{1pt}
+          \item Budget gas max acceptable par transaction ?
+          \item Date cible testnet ? Mainnet ?
+        \end{itemize}
+      \end{block}
+      \vspace{0.1cm}
+      \begin{block}{\faUsers\ Usage}
+        \small\begin{itemize}\setlength\itemsep{1pt}
+          \item Scénario : wallet mobile, hardware ou serveur ?
+          \item Comment l'utilisateur stocke-t-il sa clé PQ ?
+        \end{itemize}
+      \end{block}
+      \vspace{0.1cm}
+      \begin{tcolorbox}[colback=suva_blue!8, colframe=suva_blue,
+        top=3pt, bottom=3pt]
+        {\small Ces réponses permettent de \textbf{prioriser} et d'éviter de retravailler
+        les mêmes composants deux fois.}
+      \end{tcolorbox}
+    \end{column}
+  \end{columns}
+
+  \note{
+    \textit{These are the key questions I need answered to move forward efficiently.}\\[0.2cm]
+    La plus importante : Falcon seul en production, ou Dilithium + Falcon en parallèle ?
+    \textit{This impacts the whole architecture.}\\[0.2cm]
+    Deuxième : le réseau cible. Mainnet directement, ou d'abord un L2 ?
+    Sur L2, le gas est 100x moins cher --- \textit{Dilithium might already be viable there.}\\[0.2cm]
+    Et le budget gas : quel est le seuil acceptable ?
+    Moins de 500K gas ? \textit{That guides our optimization efforts directly.}\\[0.2cm]
+    \textit{I have a full document with all these questions if you want to review after the call.}
+  }
+\end{frame}
+
+% ── SLIDE 10 : Conclusion ─────────────────────────────────────────────
+{
+\setbeamercolor{background canvas}{bg=suva_dark}
+\begin{frame}[plain]
+  \begin{center}
+    \vspace{0.8cm}
+    {\color{white}\rule{0.5\textwidth}{1pt}}\\[0.5cm]
+
+    \begin{tcolorbox}[colback=white!10!suva_dark, colframe=white!30,
+      width=0.85\textwidth]
+      \centering
+      {\color{white}\bfseries\large Résumé en 3 points}\\[0.3cm]
+      \begin{tabular}{cl}
+        \textcolor{done_green}{\Large\checkmark} & {\color{white} Dilithium est fonctionnel et validé} \\[0.2cm]
+        \textcolor{warn_orange}{\Large\faArrowRight} & {\color{white} Falcon est la priorité absolue (350K gas)} \\[0.2cm]
+        \textcolor{suva_mid}{\Large\faQuestion} & {\color{white} Vos réponses guident la prochaine phase} \\
+      \end{tabular}
+    \end{tcolorbox}
+
+    % \vspace{0.5cm}
+    {\color{white}\rule{0.5\textwidth}{0.5pt}}\\[0.5cm]
+
+    {\color{white!90}\bfseries Mohamed Lamine MBENGUE}\\[0.1cm]
+    {\color{white!70}\small +221 78 178 44 36}\\
+    {\color{white!70}\small mbenguemohamedlamine2022@gmail.com}\\[0.1cm]
+    {\color{suva_mid}\small\href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}}}
+
+    \vspace{0.3cm}
+    {\color{white!60}\large Merci --- Des questions ?}
+  \end{center}
+
+  \note{
+    \textit{To wrap it up --- three key points.}\\[0.2cm]
+    Premièrement : la fondation est solide. Dilithium est implémenté, testé, validé.
+    \textit{The code works on both sides, Python and Solidity.}\\[0.2cm]
+    Deuxièmement : la priorité c'est Falcon. \textit{It's the only scheme with acceptable gas cost for production.}
+    ZKNox a déjà la base, \textit{we can build on top of that.}\\[0.2cm]
+    Troisièmement : vos réponses vont directement influencer la phase suivante.
+    \textit{That will save us time and money.}\\[0.2cm]
+    \textit{Thank you for your time --- I'm happy to take any questions.}
+  }
+\end{frame}
+}
+
+% ── SLIDE BONUS : Notes speaker (à ne pas projeter) ───────────────────
+\appendix
+
+\begin{frame}[noframenumbering]{Guide speaker --- Ce que je dis slide par slide}
+  \begin{tcolorbox}[colback=gray!5, colframe=gray!40, breakable,
+    title={\bfseries Instructions pour utiliser les notes}]
+    \begin{itemize}
+      \item Ouvrir le PDF en mode \textbf{Présentation Dual Screen} (ex. LibreOffice Impress,
+            Adobe Acrobat, ou \texttt{pdfpc})
+      \item Les notes apparaissent sur ton écran, pas sur le projector
+      \item Avec \textbf{pdfpc} (Linux/Mac) : \texttt{pdfpc 10\_presentation\_client.pdf}
+      \item Avec \textbf{Google Slides} : importer le PDF, ajouter les notes manuellement
+            depuis ce document
+      \item \textbf{Pour une présentation en ligne (Zoom/Meet)} : activer le partage d'écran
+            uniquement sur la fenêtre du PDF, et garder les notes sur ton autre écran
+    \end{itemize}
+  \end{tcolorbox}
+
+  % \vspace{0.3cm}
+  % {\bfseries Durée estimée par slide :}
+  % \begin{center}
+  % \begin{tabular}{clc}
+  %   \toprule
+  %   \textbf{Slide} & \textbf{Contenu} & \textbf{Durée} \\
+  %   \midrule
+  %   1 & Titre & 30 sec \\
+  %   2 & Agenda & 45 sec \\
+  %   3 & Vision SuVa & 2 min \\
+  %   4 & Architecture & 1 min 30 \\
+  %   5 & Ce qui est fait & 2 min \\
+  %   6 & Falcon vs Dilithium & 2 min \\
+  %   7 & Prochaines étapes & 1 min 30 \\
+  %   8 & Roadmap & 1 min 30 \\
+  %   9 & Questions & 2 min + échange \\
+  %   10 & Conclusion & 1 min \\
+  %   \midrule
+  %   & \textbf{Total} & \textbf{$\sim$15 min} \\
+  %   \bottomrule
+  % \end{tabular}
+  % \end{center}
+\end{frame}
+
+\end{document}

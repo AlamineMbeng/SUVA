@@ -1,0 +1,487 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins, breakable}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, matrix}
+
+\definecolor{suva_blue}{RGB}{30, 100, 180}
+\definecolor{code_bg}{RGB}{245, 247, 250}
+\definecolor{code_kw}{RGB}{0, 80, 200}
+\definecolor{code_str}{RGB}{180, 40, 40}
+\definecolor{code_cmt}{RGB}{80, 130, 80}
+\definecolor{warn_bg}{RGB}{255, 248, 220}
+\definecolor{success_bg}{RGB}{230, 255, 235}
+
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{code_kw}\bfseries,
+  stringstyle=\color{code_str},
+  commentstyle=\color{code_cmt}\itshape,
+  backgroundcolor=\color{code_bg},
+  frame=single, rulecolor=\color{gray!40},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, tabsize=4, showstringspaces=false,
+}
+\lstdefinestyle{output}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{gray!10},
+  frame=single, rulecolor=\color{gray!50},
+  breaklines=true,
+}
+
+\newtcolorbox{defbox}[2][]{colback=success_bg,colframe=green!50!black,
+  fonttitle=\bfseries,title={Définition : #2},#1}
+\newtcolorbox{theorembox}[2][]{colback=blue!5,colframe=suva_blue,
+  fonttitle=\bfseries,title={Théorème : #2},#1}
+\newtcolorbox{exercice}[2][]{colback=white,colframe=suva_blue!60,
+  fonttitle=\bfseries,title={Exercice #2},#1,breakable}
+\newtcolorbox{solution}[1][]{colback=gray!5,colframe=gray!40,
+  fonttitle=\bfseries\itshape,title={Solution},#1,breakable}
+\newtcolorbox{importantbox}[1][]{colback=suva_blue!10,colframe=suva_blue,
+  fonttitle=\bfseries,title={Connexion avec le projet},#1}
+\newtcolorbox{warningbox}[1][]{colback=warn_bg,colframe=orange!80!black,
+  fonttitle=\bfseries,title={Attention},#1}
+
+\newcommand{\Zq}{\mathbb{Z}_q}
+\newcommand{\Rq}{R_q}
+\newcommand{\NTT}{\mathrm{NTT}}
+\newcommand{\INTT}{\mathrm{NTT}^{-1}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{suva_blue}\textbf{SuVa --- Chapitre 3}}
+\fancyhead[R]{\color{gray}NTT}
+\fancyfoot[L]{\footnotesize\color{gray}Mohamed Lamine MBENGUE}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\footnotesize\color{gray}portfolio-alamine.web.app}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% ══════════════════════════════════════════════════════════════════════
+\begin{document}
+
+\begin{center}
+  {\color{suva_blue}\rule{\linewidth}{2pt}}\\[0.5cm]
+  {\Huge\bfseries\color{suva_blue} Chapitre 3}\\[0.3cm]
+  {\large\bfseries Number Theoretic Transform (NTT)}\\[0.2cm]
+  {\small\color{gray} Le moteur de performance de Dilithium}\\[0.3cm]
+  {\color{suva_blue}\rule{\linewidth}{2pt}}
+\end{center}
+
+\begin{tcolorbox}[colback=suva_blue!5, colframe=suva_blue!40,
+  left=6pt, right=6pt, top=4pt, bottom=4pt]
+\small
+\begin{tabular}{ll}
+  \textbf{Auteur} & Mohamed Lamine MBENGUE \\
+  \textbf{Spécialités} & Sécurité · DevOps · Dev Full Stack Web \& Mobile \\
+  \textbf{Contact} & +221 78 178 44 36 · mbenguemohamedlamine2022@gmail.com \\
+  \textbf{Portfolio} & \href{https://portfolio-alamine.web.app}{\texttt{portfolio-alamine.web.app}} \\
+\end{tabular}
+\end{tcolorbox}
+
+\tableofcontents
+\newpage
+
+%══════════════════════════════════════════════════════════════════════
+\section{Problème : multiplier des polynômes efficacement}
+%══════════════════════════════════════════════════════════════════════
+
+Dans Dilithium, on doit calculer $w = A \cdot y$ : une multiplication
+matrice-vecteur de polynômes. Avec $k = l = 4$ et $n = 256$, c'est~:
+$$4 \times 4 \times 256^2 = 1\,048\,576 \text{ multiplications en méthode naïve}$$
+
+Avec la NTT, on réduit à~:
+$$4 \times 4 \times (256 \log_2 256) = 4 \times 4 \times 2048 = 32\,768$$
+
+Gain~: \textbf{facteur 32}.
+
+%══════════════════════════════════════════════════════════════════════
+\section{La DFT --- intuition}
+%══════════════════════════════════════════════════════════════════════
+
+La DFT (Discrete Fourier Transform) transforme un signal $f$ de longueur $n$~:
+$$\hat{f}_k = \sum_{j=0}^{n-1} f_j \cdot \omega^{jk}, \quad k = 0, \ldots, n-1$$
+où $\omega = e^{2\pi i / n}$ est la racine primitive $n$-ième de l'unité.
+
+\textbf{Propriété clé~:} La multiplication devient une multiplication terme-à-terme~:
+$$\widehat{f \cdot g}_k = \hat{f}_k \cdot \hat{g}_k$$
+
+Donc~: $f \cdot g = \text{DFT}^{-1}(\text{DFT}(f) \odot \text{DFT}(g))$
+
+\begin{itemize}
+  \item DFT naïve~: $O(n^2)$
+  \item FFT (Fast Fourier Transform)~: $O(n \log n)$
+\end{itemize}
+
+%══════════════════════════════════════════════════════════════════════
+\section{La NTT --- version modulaire}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{defbox}{NTT (Number Theoretic Transform)}
+La NTT est la DFT sur $\Zq$ au lieu de $\mathbb{C}$.
+Elle remplace $\omega = e^{2\pi i / n}$ par une \textbf{racine primitive
+$n$-ième de l'unité dans $\Zq$}, notée $\zeta$.
+
+$$\hat{f}_k = \sum_{j=0}^{n-1} f_j \cdot \zeta^{jk} \pmod{q}$$
+
+\textbf{Condition~:} $\zeta$ existe dans $\Zq$ si $n \mid (q-1)$.
+\end{defbox}
+
+\subsection{Les racines de l'unité dans $\Zq$}
+
+\begin{importantbox}
+Pour Dilithium~: $q = 8\,380\,417$ et $n = 256$.
+
+On a $q - 1 = 8\,380\,416 = 2^{23} \times \text{impair}$.
+Donc $2n = 512$ divise $q - 1$ --- la NTT de taille $n = 256$ existe !
+
+La racine primitive $2n = 512$-ième de l'unité est~:
+$$\zeta_{512} = 1753 \pmod{q}$$
+On vérifie~: $1753^{512} \equiv 1 \pmod{q}$ et $1753^{256} \not\equiv 1$.
+\end{importantbox}
+
+\begin{lstlisting}[style=python]
+q = 8_380_417
+zeta = 1753  # racine primitive 512-ieme
+
+# Verification
+print(f"zeta^512 = {pow(zeta, 512, q)}")  # 1
+print(f"zeta^256 = {pow(zeta, 256, q)}")  # != 1 (devrait etre -1)
+print(f"zeta^256 + 1 = {(pow(zeta, 256, q) + 1) % q}")  # 0
+
+# Generer les puissances de zeta (twiddle factors)
+zetas = [pow(zeta, k, q) for k in range(512)]
+print(f"Les 8 premiers zeta^k : {zetas[:8]}")
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{NTT pour $R_q = \Zq[x]/(x^n+1)$}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{NTT "twisted" (négacyclique)}
+
+La NTT standard s'applique au produit cyclique $\Zq[x]/(x^n-1)$.
+Pour $\Rq = \Zq[x]/(x^n+1)$, on utilise une version "twisted" (négacyclique).
+
+\begin{theorembox}{NTT négacyclique}
+Pour $f \in \Rq$ de taille $n$, la NTT négacyclique est~:
+$$\hat{f}_k = \sum_{j=0}^{n-1} f_j \cdot \psi^j \cdot \omega^{jk}, \quad k = 0, \ldots, n-1$$
+où~:
+\begin{itemize}
+  \item $\psi = \zeta_{2n}$ est la racine primitive $2n$-ième (ici~: $\zeta_{512} = 1753$)
+  \item $\omega = \psi^2 = \zeta_n$ est la racine $n$-ième
+\end{itemize}
+\end{theorembox}
+
+\textbf{Conséquence~:} La multiplication dans $\Rq$ devient~:
+$$\text{NTT}(f \cdot g \bmod x^n+1) = \text{NTT}(f) \odot \text{NTT}(g)$$
+
+Ce qui donne l'algorithme de multiplication efficace~:
+\begin{enumerate}
+  \item $\hat{f} = \NTT(f)$ \hfill$O(n \log n)$
+  \item $\hat{g} = \NTT(g)$ \hfill$O(n \log n)$
+  \item $\hat{h} = \hat{f} \odot \hat{g}$ (pointwise) \hfill$O(n)$
+  \item $h = \INTT(\hat{h})$ \hfill$O(n \log n)$
+\end{enumerate}
+
+\subsection{Dans le projet}
+
+\begin{importantbox}
+Dans le code Python du projet, les polynômes ont deux représentations~:
+
+\begin{itemize}
+  \item \textbf{Représentation normale}~: \texttt{poly.coeffs} (liste de 256 entiers)
+  \item \textbf{Représentation NTT}~: \texttt{poly\_hat.coeffs} (256 entiers en domaine NTT)
+\end{itemize}
+
+Les conversions se font avec~:
+\begin{itemize}
+  \item \texttt{poly.to\_ntt()} : transforme en NTT (forward transform)
+  \item \texttt{poly\_hat.from\_ntt()} : NTT inverse
+\end{itemize}
+
+Quand on voit \texttt{A\_hat @ s1.to\_ntt()}, c'est~:
+\begin{enumerate}
+  \item Convertir $s_1$ en NTT
+  \item Multiplier terme-à-terme chaque ligne de $\hat{A}$ avec $\hat{s_1}$
+  \item Sommer les produits (dans le domaine NTT)
+\end{enumerate}
+\end{importantbox}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Algorithme Cooley-Tukey --- implémentation}
+%══════════════════════════════════════════════════════════════════════
+
+\subsection{NTT itérative (butterfly)}
+
+L'algorithme NTT opère par ``butterfly''~: à chaque étape, on divise
+le problème en deux moitiés et on combine les résultats.
+
+\begin{lstlisting}[style=python]
+def ntt_forward(f, q=8_380_417, n=256, zeta=1753):
+    """
+    NTT negacyclique iterative (Cooley-Tukey).
+    Transforme in-place le tableau f.
+    """
+    f = f.copy()
+    psi = zeta  # racine 2n-ieme
+
+    k = 1
+    length = n // 2
+    while length >= 1:
+        for start in range(0, n, 2 * length):
+            w = pow(psi, k, q)  # twiddle factor
+            k += 1
+            for j in range(start, start + length):
+                t = (w * f[j + length]) % q
+                f[j + length] = (f[j] - t) % q
+                f[j] = (f[j] + t) % q
+        length //= 2
+
+    return f
+
+def ntt_inverse(f_hat, q=8_380_417, n=256, zeta=1753):
+    """
+    NTT inverse.
+    """
+    f = f_hat.copy()
+    psi = zeta
+    psi_inv = pow(psi, q - 2, q)  # inverse de psi
+    n_inv = pow(n, q - 2, q)       # inverse de n
+
+    k = n - 1
+    length = 1
+    while length <= n // 2:
+        for start in range(0, n, 2 * length):
+            w = pow(psi_inv, k, q)
+            k -= 1
+            for j in range(start, start + length):
+                t = f[j]
+                f[j] = (t + f[j + length]) % q
+                f[j + length] = (w * (f[j + length] - t)) % q
+        length *= 2
+
+    # Normalisation par n^(-1)
+    for i in range(n):
+        f[i] = (n_inv * f[i]) % q
+
+    return f
+
+# Test de coherence
+import random
+q = 8_380_417
+n = 256
+
+poly = [random.randint(0, q - 1) for _ in range(n)]
+poly_hat = ntt_forward(poly, q, n)
+poly_back = ntt_inverse(poly_hat, q, n)
+
+print(f"NTT coherente : {poly == poly_back}")
+\end{lstlisting}
+
+\subsection{Multiplication via NTT}
+
+\begin{lstlisting}[style=python]
+def poly_mul_ntt(f, g, q=8_380_417, n=256):
+    """
+    Multiplication dans R_q via NTT.
+    3x NTT(n log n) + 1x produit pointe (n).
+    """
+    f_hat = ntt_forward(f, q, n)
+    g_hat = ntt_forward(g, q, n)
+
+    # Produit pointe
+    fg_hat = [(f_hat[i] * g_hat[i]) % q for i in range(n)]
+
+    # NTT inverse
+    return ntt_inverse(fg_hat, q, n)
+
+# Verification : comparer avec schoolbook
+import random
+q, n = 8_380_417, 8  # petit n pour tester
+f = [random.randint(0, q-1) for _ in range(n)]
+g = [random.randint(0, q-1) for _ in range(n)]
+
+result_ntt = poly_mul_ntt(f, g, q, n)
+result_schoolbook = poly_mul_schoolbook(f, g, q, n)
+
+print(f"NTT == Schoolbook : {result_ntt == result_schoolbook}")
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Les twiddle factors dans le projet Solidity}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{importantbox}
+Dans \texttt{ZKNOX\_NTT.sol}, les twiddle factors (puissances de $\zeta$)
+sont \textbf{précompilés} et stockés dans des contrats déployés séparément.
+
+À l'exécution, \texttt{extcodecopy} lit les constantes depuis ces contrats.
+Cela évite de les recalculer on-chain à chaque vérification.
+
+C'est le composant le plus gas-critique : écrit entièrement en \textbf{Yul}
+(assembleur EVM) pour maximiser l'efficacité.
+\end{importantbox}
+
+Voici comment les twiddle factors sont générés en Python pour être
+exportés vers Solidity~:
+
+\begin{lstlisting}[style=python]
+def generate_twiddle_factors(q=8_380_417, n=256, zeta=1753):
+    """
+    Genere les twiddle factors pour la NTT de taille n.
+    Ces constantes sont hardcodees dans ZKNOX_NTT.sol.
+    """
+    psi = zeta  # racine 2n-ieme
+    twiddles = []
+
+    k = 1
+    length = n // 2
+    while length >= 1:
+        for _ in range(n // (2 * length)):
+            twiddles.append(pow(psi, k, q))
+            k += 1
+        length //= 2
+
+    return twiddles
+
+twiddles = generate_twiddle_factors()
+print(f"Nombre de twiddle factors : {len(twiddles)}")  # 255
+
+# Exporter en Solidity (format uint256[])
+solidity_array = ", ".join(str(t) for t in twiddles)
+print(f"uint256[255] constant TWIDDLES = [{solidity_array[:100]}...]")
+\end{lstlisting}
+
+%══════════════════════════════════════════════════════════════════════
+\section{Exercices}
+%══════════════════════════════════════════════════════════════════════
+
+\begin{exercice}{1 --- Vérification de la racine de l'unité}
+Soit $q = 8\,380\,417$ et $\zeta = 1753$.
+\begin{enumerate}[label=\alph*)]
+  \item Vérifie que $\zeta^{512} \equiv 1 \pmod{q}$.
+  \item Vérifie que $\zeta^{256} \equiv -1 \pmod{q}$.
+  \item Calcule $\zeta^{128}$ --- est-ce une racine $4$-ième de l'unité ?
+  \item Pourquoi $\zeta^{256} = -1$ est-il lié à $x^{256} + 1 = 0$ ?
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+q, zeta = 8_380_417, 1753
+
+# a)
+print(pow(zeta, 512, q))   # 1  -> zeta est bien racine 512-ieme
+
+# b)
+print(pow(zeta, 256, q))   # q-1 = 8380416 = -1 mod q
+
+# c)
+val = pow(zeta, 128, q)
+print(f"zeta^128 = {val}")
+print(f"(zeta^128)^4 = {pow(val, 4, q)}")   # 1 -> c'est bien une racine 4-ieme
+
+# d) L'anneau Z_q[x]/(x^256+1) impose x^256 = -1.
+# La NTT "voit" zeta comme x : zeta^256 = -1 correspond exactement
+# a la relation x^256 = -1 dans l'anneau.
+\end{lstlisting}
+\end{solution}
+
+\begin{exercice}{2 --- NTT de taille 4}
+Soit $q = 17$, $n = 4$, et $\zeta_8 = 2$ (racine primitive $8$-ième modulo $17$).
+
+Vérifie~: $2^8 \equiv 1 \pmod{17}$ et $2^4 \equiv -1 \pmod{17}$.
+
+\begin{enumerate}[label=\alph*)]
+  \item Calcule $\NTT([1, 2, 3, 4])$ manuellement.
+  \item Calcule $\INTT$ du résultat et vérifie que tu retrouves $[1,2,3,4]$.
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+q, n, zeta = 17, 4, 2
+
+# Verification
+print(pow(zeta, 8, q))   # 1
+print(pow(zeta, 4, q))   # 16 = -1 mod 17
+
+# NTT forward
+f = [1, 2, 3, 4]
+f_hat = ntt_forward(f, q, n, zeta)
+print(f"NTT([1,2,3,4]) = {f_hat}")
+
+# NTT inverse
+f_back = ntt_inverse(f_hat, q, n, zeta)
+print(f"INTT(NTT(f)) = {f_back}")   # doit etre [1,2,3,4]
+\end{lstlisting}
+\end{solution}
+
+\begin{exercice}{3 --- Comparaison de performances}
+\begin{enumerate}[label=\alph*)]
+  \item En Python, mesure le temps de \texttt{poly\_mul\_schoolbook} vs
+        \texttt{poly\_mul\_ntt} pour $n = 256$.
+        (Utilise \texttt{import time; t = time.perf\_counter()})
+  \item Quel gain de vitesse obtiens-tu ?
+  \item Pourquoi le gain théorique ($n^2$ vs $n\log n$) et le gain
+        mesuré peuvent différer ?
+\end{enumerate}
+\end{exercice}
+
+\begin{solution}
+\begin{lstlisting}[style=python]
+import time, random
+
+q, n = 8_380_417, 256
+f = [random.randint(0, q-1) for _ in range(n)]
+g = [random.randint(0, q-1) for _ in range(n)]
+
+# Schoolbook
+t0 = time.perf_counter()
+for _ in range(10):
+    poly_mul_schoolbook(f, g, q, n)
+t_school = (time.perf_counter() - t0) / 10
+
+# NTT
+t0 = time.perf_counter()
+for _ in range(10):
+    poly_mul_ntt(f, g, q, n)
+t_ntt = (time.perf_counter() - t0) / 10
+
+print(f"Schoolbook : {t_school*1000:.2f} ms")
+print(f"NTT        : {t_ntt*1000:.2f} ms")
+print(f"Gain       : {t_school/t_ntt:.1f}x")
+
+# Note : le gain mesure < n/log(n) car :
+# - Overhead Python (interpretation)
+# - pow() sur grands entiers est lent en Python
+# Le vrai gain apparait en C/Rust/Yul
+\end{lstlisting}
+\end{solution}
+
+\begin{exercice}{4 --- Le domaine NTT dans le code}
+Dans \texttt{Falcon\_dilithium.py}, la ligne~:
+\begin{center}
+\texttt{t = (A\_hat @ s1.to\_ntt()).from\_ntt() + s2}
+\end{center}
+\begin{enumerate}[label=\alph*)]
+  \item Pourquoi convertit-on $s_1$ avec \texttt{.to\_ntt()} avant de multiplier par $A$ ?
+  \item $\hat{A}$ est-il déjà en représentation NTT ? Comment est-il généré ?
+  \item Pourquoi appelle-t-on \texttt{.from\_ntt()} avant d'ajouter $s_2$ ?
+  \item Quel serait le problème si on oubliait le \texttt{.from\_ntt()} ?
+\end{enumerate}
+\end{exercice}
+
+\end{document}
